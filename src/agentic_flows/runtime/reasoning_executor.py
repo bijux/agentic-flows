@@ -1,0 +1,52 @@
+import hashlib
+import json
+from dataclasses import asdict
+from typing import List
+
+import bijux_rar
+
+from agentic_flows.spec.artifact import Artifact
+from agentic_flows.spec.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
+
+
+class ReasoningExecutor:
+    def execute(
+        self,
+        agent_outputs: List[Artifact],
+        retrieved_evidence: List[RetrievedEvidence],
+    ) -> ReasoningBundle:
+        if not hasattr(bijux_rar, "reason"):
+            raise RuntimeError("bijux_rar.reason is required for reasoning")
+
+        seed = self._deterministic_seed(agent_outputs, retrieved_evidence)
+        bundle = bijux_rar.reason(
+            agent_outputs=agent_outputs,
+            evidence=retrieved_evidence,
+            seed=seed,
+        )
+        if not isinstance(bundle, ReasoningBundle):
+            raise ValueError("bijux_rar.reason must return ReasoningBundle")
+        return bundle
+
+    @staticmethod
+    def bundle_hash(bundle: ReasoningBundle) -> str:
+        payload = json.dumps(asdict(bundle), sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _deterministic_seed(
+        agent_outputs: List[Artifact],
+        retrieved_evidence: List[RetrievedEvidence],
+    ) -> int:
+        payload = json.dumps(
+            {
+                "artifact_hashes": [artifact.content_hash for artifact in agent_outputs],
+                "evidence_hashes": [evidence.content_hash for evidence in retrieved_evidence],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        return int(digest[:8], 16)

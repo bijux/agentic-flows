@@ -1,0 +1,43 @@
+from typing import Iterable, List
+
+from agentic_flows.spec.execution_event import ExecutionEvent
+
+
+class AppendOnlyList(List[ExecutionEvent]):
+    def __setitem__(self, *_args, **_kwargs) -> None:
+        raise TypeError("execution events are append-only")
+
+    def __delitem__(self, *_args, **_kwargs) -> None:
+        raise TypeError("execution events are append-only")
+
+    def clear(self) -> None:
+        raise TypeError("execution events are append-only")
+
+    def extend(self, _iterable: Iterable[ExecutionEvent]) -> None:
+        raise TypeError("execution events are append-only")
+
+    def insert(self, _index: int, _value: ExecutionEvent) -> None:
+        raise TypeError("execution events are append-only")
+
+    def pop(self, _index: int = -1) -> ExecutionEvent:
+        raise TypeError("execution events are append-only")
+
+    def remove(self, _value: ExecutionEvent) -> None:
+        raise TypeError("execution events are append-only")
+
+    def reverse(self) -> None:
+        raise TypeError("execution events are append-only")
+
+    def sort(self, *_args, **_kwargs) -> None:
+        raise TypeError("execution events are append-only")
+
+
+class TraceRecorder:
+    def __init__(self) -> None:
+        self._events: AppendOnlyList = AppendOnlyList()
+
+    def record(self, event: ExecutionEvent) -> None:
+        self._events.append(event)
+
+    def events(self) -> AppendOnlyList:
+        return self._events

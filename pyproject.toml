@@ -1,0 +1,22 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "agentic-flows"
+version = "0.1.0"
+description = "Canonical contracts and stubs for agentic flow execution."
+authors = ["Bijux"]
+readme = "README.md"
+packages = [{ include = "agentic_flows", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<4.0"
+bijux-cli = "^0.1.0"
+bijux-agent = "^0.1.0"
+bijux-rag = "^0.1.0"
+bijux-rar = "^0.1.0"
+bijux-vex = "^0.1.0"
+
+[tool.poetry.scripts]
+agentic-flows = "agentic_flows.cli.main:main"
