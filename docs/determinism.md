@@ -1,5 +1,7 @@
 # Determinism Contract
 
+This document elaborates on determinism; SEMANTICS.md defines guarantees.
+
 ## Inputs that define a run
 - Flow manifest identifier and content.
 - Declared external inputs, including initial artifacts.

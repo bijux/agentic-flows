@@ -16,9 +16,12 @@ from agentic_flows.spec.ids import (
     EnvironmentFingerprint,
     FlowID,
     InputsFingerprint,
+    PlanHash,
     ResolverID,
     VersionID,
 )
+from agentic_flows.spec.ontology import StepType
+from agentic_flows.spec.resolved_flow import ResolvedFlow
 from agentic_flows.spec.resolved_step import ResolvedStep
 from agentic_flows.spec.semantic_validation import validate_flow_manifest
 
@@ -28,7 +31,7 @@ class FlowResolver:
     _bijux_cli_version: str = bijux_cli_version
     _bijux_agent_version: str = bijux_agent_version
 
-    def resolve(self, manifest: FlowManifest) -> ExecutionPlan:
+    def resolve(self, manifest: FlowManifest) -> ResolvedFlow:
         validate_flow_manifest(manifest)
         ordered_agents = self._toposort_agents(manifest)
         dependencies = self._parse_dependencies(manifest)
@@ -49,6 +52,7 @@ class FlowResolver:
                 ResolvedStep(
                     spec_version="v1",
                     step_index=index,
+                    step_type=StepType.AGENT,
                     agent_id=AgentID(agent_id),
                     inputs_fingerprint=inputs_fingerprint,
                     declared_dependencies=tuple(AgentID(dep) for dep in declared),
@@ -64,17 +68,24 @@ class FlowResolver:
                     retrieval_request=None,
                 )
             )
-        return ExecutionPlan(
+        plan_hash = self._plan_hash(manifest.flow_id, steps, dependencies)
+        plan = ExecutionPlan(
             spec_version="v1",
             flow_id=FlowID(manifest.flow_id),
             steps=tuple(steps),
             environment_fingerprint=EnvironmentFingerprint(
                 compute_environment_fingerprint()
             ),
+            plan_hash=plan_hash,
             resolution_metadata=(
                 ("resolver_id", self.resolver_id),
                 ("bijux_cli_version", self._bijux_cli_version),
             ),
+        )
+        return ResolvedFlow(
+            spec_version="v1",
+            manifest=manifest,
+            plan=plan,
         )
 
     def _toposort_agents(self, manifest: FlowManifest) -> list[str]:
@@ -116,3 +127,27 @@ class FlowResolver:
                 raise ValueError("dependencies must reference known agents")
             mapping[agent_id].append(dependency_id)
         return mapping
+
+    def _plan_hash(
+        self,
+        flow_id: FlowID,
+        steps: list[ResolvedStep],
+        dependencies: dict[str, list[str]],
+    ) -> PlanHash:
+        payload = {
+            "flow_id": flow_id,
+            "steps": [
+                {
+                    "index": step.step_index,
+                    "agent_id": step.agent_id,
+                    "inputs_fingerprint": step.inputs_fingerprint,
+                    "declared_dependencies": list(step.declared_dependencies),
+                    "step_type": step.step_type,
+                }
+                for step in steps
+            ],
+            "dependencies": {
+                agent_id: sorted(deps) for agent_id, deps in dependencies.items()
+            },
+        }
+        return PlanHash(fingerprint_inputs(payload))

@@ -8,11 +8,10 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from agentic_flows.runtime.dry_run_executor import DryRunExecutor
-from agentic_flows.runtime.live_executor import LiveExecutor
-from agentic_flows.runtime.resolver import FlowResolver
+from agentic_flows.runtime.run_flow import RunMode, run_flow
 from agentic_flows.spec.flow_manifest import FlowManifest
 from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID
+from agentic_flows.spec.verification import VerificationPolicy
 
 
 def _load_manifest(path: Path) -> FlowManifest:
@@ -50,39 +49,40 @@ def main() -> None:
     manifest = _load_manifest(manifest_path)
 
     if args.command == "plan":
-        resolver = FlowResolver()
-        plan = resolver.resolve(manifest)
-        payload = asdict(plan)
+        result = run_flow(manifest, mode=RunMode.PLAN)
+        payload = asdict(result.resolved_flow.plan)
         print(json.dumps(payload, sort_keys=True))
         return
 
     if args.command == "dry-run":
-        resolver = FlowResolver()
-        executor = DryRunExecutor()
-        plan = resolver.resolve(manifest)
-        trace = executor.execute(plan)
-        payload = asdict(trace)
+        policy = _require_verification_policy(manifest)
+        result = run_flow(
+            manifest,
+            mode=RunMode.DRY_RUN,
+            verification_policy=policy,
+        )
+        payload = asdict(result.trace)
         print(json.dumps(payload, sort_keys=True))
         return
 
     if args.command == "run":
-        resolver = FlowResolver()
-        executor = LiveExecutor()
-        plan = resolver.resolve(manifest)
-        trace, artifacts, evidence, reasoning_bundles, verification_results = (
-            executor.execute(plan)
+        policy = _require_verification_policy(manifest)
+        result = run_flow(
+            manifest,
+            mode=RunMode.LIVE,
+            verification_policy=policy,
         )
-        payload = asdict(trace)
+        payload = asdict(result.trace)
         artifact_list = [
             {"artifact_id": artifact.artifact_id, "content_hash": artifact.content_hash}
-            for artifact in artifacts
+            for artifact in result.artifacts
         ]
         retrieval_requests = [
             {
                 "request_id": step.retrieval_request.request_id,
                 "vector_contract_id": step.retrieval_request.vector_contract_id,
             }
-            for step in plan.steps
+            for step in result.resolved_flow.plan.steps
             if step.retrieval_request is not None
         ]
         evidence_list = [
@@ -91,7 +91,7 @@ def main() -> None:
                 "content_hash": item.content_hash,
                 "vector_contract_id": item.vector_contract_id,
             }
-            for item in evidence
+            for item in result.evidence
         ]
         claims_list = [
             {
@@ -99,17 +99,17 @@ def main() -> None:
                 "confidence": claim.confidence,
                 "evidence_ids": claim.supported_by,
             }
-            for bundle in reasoning_bundles
+            for bundle in result.reasoning_bundles
             for claim in bundle.claims
         ]
         verification_list = [
             {
-                "step_index": plan.steps[index].step_index,
+                "step_index": result.resolved_flow.plan.steps[index].step_index,
                 "status": result.status,
                 "rule_ids": result.violations,
                 "escalated": result.status == "ESCALATE",
             }
-            for index, result in enumerate(verification_results)
+            for index, result in enumerate(result.verification_results)
         ]
         output = {
             "trace": payload,
@@ -123,3 +123,17 @@ def main() -> None:
         return
 
     print(f"Flow loaded successfully: {manifest.flow_id}")
+
+
+def _require_verification_policy(manifest: FlowManifest) -> VerificationPolicy:
+    if not manifest.verification_gates:
+        raise ValueError("verification_policy is required before execution")
+    return VerificationPolicy(
+        spec_version="v1",
+        verification_level="baseline",
+        failure_mode="halt",
+        required_evidence=(),
+        rules=(),
+        fail_on=(),
+        escalate_on=(),
+    )

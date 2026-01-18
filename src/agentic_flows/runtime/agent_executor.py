@@ -11,15 +11,19 @@ from typing import Any
 
 import bijux_agent
 
+from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.seed import deterministic_seed
 from agentic_flows.spec.artifact import Artifact
-from agentic_flows.spec.artifact_types import ArtifactType
 from agentic_flows.spec.ids import ArtifactID, ContentHash
+from agentic_flows.spec.ontology import ArtifactType
 from agentic_flows.spec.resolved_step import ResolvedStep
 from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
 
 
 class AgentExecutor:
+    def __init__(self, artifact_store: ArtifactStore) -> None:
+        self._artifact_store = artifact_store
+
     def execute_step(
         self, step: ResolvedStep, evidence: list[RetrievedEvidence] | None = None
     ) -> list[Artifact]:
@@ -60,7 +64,7 @@ class AgentExecutor:
 
             artifact_type = ArtifactType(str(entry["artifact_type"]))
             artifacts.append(
-                Artifact(
+                self._artifact_store.create(
                     spec_version="v1",
                     artifact_id=ArtifactID(str(entry["artifact_id"])),
                     artifact_type=artifact_type,

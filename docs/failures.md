@@ -1,5 +1,7 @@
 # Failure Taxonomy
 
+This document describes failure handling; SEMANTICS.md defines guarantees.
+
 ## Resolution
 - Must trace: yes
 - Must abort: yes

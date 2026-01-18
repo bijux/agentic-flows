@@ -21,41 +21,23 @@ from agentic_flows.spec.ids import (
 )
 from agentic_flows.spec.ontology import StepType
 from agentic_flows.spec.resolved_step import ResolvedStep
-from agentic_flows.testing import baseline_policy, plan_hash_for, resolved_flow_for
+from agentic_flows.testing import plan_hash_for, resolved_flow_for
 
 
-def test_execution_order_mismatch_rejected() -> None:
-    step_one = ResolvedStep(
+def test_verification_policy_required_before_execution() -> None:
+    step = ResolvedStep(
         spec_version="v1",
-        step_index=1,
+        step_index=0,
         step_type=StepType.AGENT,
         agent_id=AgentID("agent-a"),
-        inputs_fingerprint=InputsFingerprint("inputs-a"),
+        inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
         expected_artifacts=(),
         agent_invocation=AgentInvocation(
             spec_version="v1",
             agent_id=AgentID("agent-a"),
             agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs-a"),
-            declared_outputs=(),
-            execution_mode="seeded",
-        ),
-        retrieval_request=None,
-    )
-    step_two = ResolvedStep(
-        spec_version="v1",
-        step_index=0,
-        step_type=StepType.AGENT,
-        agent_id=AgentID("agent-b"),
-        inputs_fingerprint=InputsFingerprint("inputs-b"),
-        declared_dependencies=(),
-        expected_artifacts=(),
-        agent_invocation=AgentInvocation(
-            spec_version="v1",
-            agent_id=AgentID("agent-b"),
-            agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs-b"),
+            inputs_fingerprint=InputsFingerprint("inputs"),
             declared_outputs=(),
             execution_mode="seeded",
         ),
@@ -63,28 +45,27 @@ def test_execution_order_mismatch_rejected() -> None:
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-order"),
-        agents=(AgentID("agent-a"), AgentID("agent-b")),
+        flow_id=FlowID("flow-policy"),
+        agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
     plan = ExecutionPlan(
         spec_version="v1",
-        flow_id=FlowID("flow-order"),
-        steps=(step_one, step_two),
+        flow_id=FlowID("flow-policy"),
+        steps=(step,),
         environment_fingerprint=EnvironmentFingerprint(
             compute_environment_fingerprint()
         ),
-        plan_hash=plan_hash_for("flow-order", (step_one, step_two), {}),
+        plan_hash=plan_hash_for("flow-policy", (step,), {}),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
 
     with pytest.raises(
-        ValueError, match="execution order must match resolver step order"
+        ValueError, match="verification_policy is required before execution"
     ):
         run_flow(
             resolved_flow=resolved_flow_for(manifest, plan),
-            mode=RunMode.DRY_RUN,
-            verification_policy=baseline_policy(),
+            mode=RunMode.LIVE,
         )

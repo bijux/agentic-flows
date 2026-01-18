@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
+from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.resolver import FlowResolver
+from agentic_flows.runtime.run_flow import RunMode, run_flow
 from agentic_flows.spec.flow_manifest import FlowManifest
 from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID
 
@@ -18,6 +19,5 @@ def test_golden_execution_plan() -> None:
         verification_gates=(GateID("gate-a"),),
     )
 
-    resolver = FlowResolver()
     with pytest.raises(NotImplementedError):
-        resolver.resolve(manifest)
+        run_flow(manifest, mode=RunMode.PLAN)

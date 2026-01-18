@@ -76,7 +76,7 @@ class EnvironmentFingerprint(str):
     pass
 
 
-class EventType(str):
+class PlanHash(str):
     pass
 
 
@@ -99,5 +99,5 @@ __all__ = [
     "InputsFingerprint",
     "ContentHash",
     "EnvironmentFingerprint",
-    "EventType",
+    "PlanHash",
 ]

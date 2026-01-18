@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ids import EnvironmentFingerprint, FlowID
+from agentic_flows.spec.ids import EnvironmentFingerprint, FlowID, PlanHash
 from agentic_flows.spec.resolved_step import ResolvedStep
 
 
@@ -15,6 +15,7 @@ class ExecutionPlan:
     flow_id: FlowID
     steps: tuple[ResolvedStep, ...]
     environment_fingerprint: EnvironmentFingerprint
+    plan_hash: PlanHash
     resolution_metadata: tuple[tuple[str, str], ...]
 
 

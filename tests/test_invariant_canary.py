@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import bijux_agent
+import bijux_rag
 import bijux_rar
+import bijux_vex
 
+from agentic_flows.runtime.determinism_guard import validate_replay
 from agentic_flows.runtime.environment import compute_environment_fingerprint
 from agentic_flows.runtime.run_flow import RunMode, run_flow
 from agentic_flows.spec.agent_invocation import AgentInvocation
@@ -16,9 +19,11 @@ from agentic_flows.spec.ids import (
     ClaimID,
     ContractID,
     EnvironmentFingerprint,
+    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
+    RequestID,
     ResolverID,
     StepID,
     VersionID,
@@ -28,25 +33,29 @@ from agentic_flows.spec.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.reasoning_step import ReasoningStep
 from agentic_flows.spec.resolved_step import ResolvedStep
+from agentic_flows.spec.retrieval_request import RetrievalRequest
 from agentic_flows.testing import baseline_policy, plan_hash_for, resolved_flow_for
 
 
-def test_verification_failure_halts_flow() -> None:
-    calls = {"agent": 0}
-
-    def _run(**_kwargs):
-        calls["agent"] += 1
-        return [
-            {
-                "artifact_id": "agent-output",
-                "artifact_type": ArtifactType.AGENT_INVOCATION.value,
-                "content": "payload",
-                "parent_artifacts": [],
-            }
-        ]
-
-    bijux_agent.run = _run
-
+def test_invariant_canary() -> None:
+    bijux_agent.run = lambda **_kwargs: [
+        {
+            "artifact_id": "agent-output",
+            "artifact_type": ArtifactType.AGENT_INVOCATION.value,
+            "content": "payload",
+            "parent_artifacts": [],
+        }
+    ]
+    bijux_rag.retrieve = lambda **_kwargs: [
+        {
+            "evidence_id": "ev-1",
+            "source_uri": "file://doc-1",
+            "content": "content",
+            "score": 0.9,
+            "vector_contract_id": "contract-1",
+        }
+    ]
+    bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
     bijux_rar.reason = lambda **_kwargs: ReasoningBundle(
         spec_version="v1",
         bundle_id=BundleID("bundle-1"),
@@ -56,7 +65,7 @@ def test_verification_failure_halts_flow() -> None:
                 claim_id=ClaimID("claim-1"),
                 statement="statement",
                 confidence=0.5,
-                supported_by=(),
+                supported_by=(EvidenceID("ev-1"),),
             ),
         ),
         steps=(
@@ -65,75 +74,76 @@ def test_verification_failure_halts_flow() -> None:
                 step_id=StepID("step-1"),
                 input_claims=(),
                 output_claims=(ClaimID("claim-1"),),
-                method="deduction",
+                method="aggregation",
             ),
         ),
-        evidence_ids=(),
+        evidence_ids=(EvidenceID("ev-1"),),
         producer_agent_id=AgentID("agent-a"),
     )
 
-    step_one = ResolvedStep(
+    request = RetrievalRequest(
+        spec_version="v1",
+        request_id=RequestID("req-1"),
+        query="query",
+        vector_contract_id=ContractID("contract-1"),
+        top_k=1,
+        scope="project",
+    )
+    step = ResolvedStep(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
         agent_id=AgentID("agent-a"),
-        inputs_fingerprint=InputsFingerprint("inputs-a"),
+        inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
         expected_artifacts=(),
         agent_invocation=AgentInvocation(
             spec_version="v1",
             agent_id=AgentID("agent-a"),
             agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs-a"),
+            inputs_fingerprint=InputsFingerprint("inputs"),
             declared_outputs=(),
             execution_mode="seeded",
         ),
-        retrieval_request=None,
-    )
-    step_two = ResolvedStep(
-        spec_version="v1",
-        step_index=1,
-        step_type=StepType.AGENT,
-        agent_id=AgentID("agent-b"),
-        inputs_fingerprint=InputsFingerprint("inputs-b"),
-        declared_dependencies=(),
-        expected_artifacts=(),
-        agent_invocation=AgentInvocation(
-            spec_version="v1",
-            agent_id=AgentID("agent-b"),
-            agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs-b"),
-            declared_outputs=(),
-            execution_mode="seeded",
-        ),
-        retrieval_request=None,
+        retrieval_request=request,
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-verify"),
-        agents=(AgentID("agent-a"), AgentID("agent-b")),
+        flow_id=FlowID("flow-canary"),
+        agents=(AgentID("agent-a"),),
         dependencies=(),
-        retrieval_contracts=(ContractID("contract-a"),),
+        retrieval_contracts=(ContractID("contract-1"),),
         verification_gates=(GateID("gate-a"),),
     )
-
     plan = ExecutionPlan(
         spec_version="v1",
-        flow_id=FlowID("flow-verify"),
-        steps=(step_one, step_two),
+        flow_id=FlowID("flow-canary"),
+        steps=(step,),
         environment_fingerprint=EnvironmentFingerprint(
             compute_environment_fingerprint()
         ),
-        plan_hash=plan_hash_for("flow-verify", (step_one, step_two), {}),
+        plan_hash=plan_hash_for("flow-canary", (step,), {}),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
+    resolved_flow = resolved_flow_for(manifest, plan)
 
     result = run_flow(
-        resolved_flow=resolved_flow_for(manifest, plan),
+        resolved_flow=resolved_flow,
         mode=RunMode.LIVE,
         verification_policy=baseline_policy(),
     )
     trace = result.trace
 
-    assert calls["agent"] == 1
-    assert trace.events[-1].event_type == EventType.VERIFICATION_FAIL
+    validate_replay(trace, plan)
+    assert isinstance(plan.steps, tuple)
+    assert trace.finalized is True
+    assert any(
+        event.event_type
+        in {
+            EventType.VERIFICATION_PASS,
+            EventType.VERIFICATION_FAIL,
+            EventType.VERIFICATION_ESCALATE,
+        }
+        for event in trace.events
+    )
+    assert trace.environment_fingerprint

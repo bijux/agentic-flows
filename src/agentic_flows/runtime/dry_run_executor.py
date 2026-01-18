@@ -11,20 +11,22 @@ from agentic_flows.runtime.flow_boundary import enforce_flow_boundary
 from agentic_flows.runtime.time import utc_now_deterministic
 from agentic_flows.runtime.trace_recorder import TraceRecorder
 from agentic_flows.spec.execution_event import ExecutionEvent
-from agentic_flows.spec.execution_plan import ExecutionPlan
 from agentic_flows.spec.execution_trace import ExecutionTrace
-from agentic_flows.spec.ids import EventType, ResolverID
+from agentic_flows.spec.ids import ResolverID
+from agentic_flows.spec.ontology import EventType
+from agentic_flows.spec.resolved_flow import ResolvedFlow
 
 
 class DryRunExecutor:
-    def execute(self, plan: ExecutionPlan) -> ExecutionTrace:
+    def execute(self, resolved_flow: ResolvedFlow) -> ExecutionTrace:
+        plan = resolved_flow.plan
         enforce_flow_boundary(plan)
         recorder = TraceRecorder()
         event_index = 0
 
         for step in plan.steps:
             start_payload = {
-                "event_type": "STEP_START",
+                "event_type": EventType.STEP_START.value,
                 "step_index": step.step_index,
                 "agent_id": step.agent_id,
             }
@@ -33,7 +35,7 @@ class DryRunExecutor:
                     spec_version="v1",
                     event_index=event_index,
                     step_index=step.step_index,
-                    event_type=EventType("STEP_START"),
+                    event_type=EventType.STEP_START,
                     timestamp_utc=utc_now_deterministic(event_index),
                     payload_hash=fingerprint_inputs(start_payload),
                 )
@@ -41,7 +43,7 @@ class DryRunExecutor:
             event_index += 1
 
             end_payload = {
-                "event_type": "STEP_END",
+                "event_type": EventType.STEP_END.value,
                 "step_index": step.step_index,
                 "agent_id": step.agent_id,
             }
@@ -50,7 +52,7 @@ class DryRunExecutor:
                     spec_version="v1",
                     event_index=event_index,
                     step_index=step.step_index,
-                    event_type=EventType("STEP_END"),
+                    event_type=EventType.STEP_END,
                     timestamp_utc=utc_now_deterministic(event_index),
                     payload_hash=fingerprint_inputs(end_payload),
                 )
@@ -64,6 +66,7 @@ class DryRunExecutor:
             spec_version="v1",
             flow_id=plan.flow_id,
             environment_fingerprint=plan.environment_fingerprint,
+            plan_hash=plan.plan_hash,
             resolver_id=resolver_id,
             events=recorder.events(),
             finalized=False,

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from agentic_flows.spec.artifact_types import ArtifactType
+from agentic_flows.spec.ontology import ArtifactType
 
 _ALLOWED_PARENTS: dict[ArtifactType, set[ArtifactType]] = {
     ArtifactType.FLOW_MANIFEST: set(),

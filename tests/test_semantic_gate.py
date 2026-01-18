@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
+from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.resolver import FlowResolver
+from agentic_flows.runtime.run_flow import RunMode, run_flow
 from agentic_flows.spec.flow_manifest import FlowManifest
 from agentic_flows.spec.ids import AgentID, FlowID
 
@@ -18,5 +19,7 @@ def test_semantic_gate_blocks_execution() -> None:
         verification_gates=(),
     )
 
-    with pytest.raises(NotImplementedError, match="Semantic validation not yet enforced"):
-        FlowResolver().resolve(manifest)
+    with pytest.raises(
+        NotImplementedError, match="Semantic validation not yet enforced"
+    ):
+        run_flow(manifest, mode=RunMode.PLAN)

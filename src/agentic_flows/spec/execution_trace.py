@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.execution_event import ExecutionEvent
-from agentic_flows.spec.ids import EnvironmentFingerprint, FlowID, ResolverID
+from agentic_flows.spec.ids import EnvironmentFingerprint, FlowID, PlanHash, ResolverID
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,7 @@ class ExecutionTrace:
     spec_version: str
     flow_id: FlowID
     environment_fingerprint: EnvironmentFingerprint
+    plan_hash: PlanHash
     resolver_id: ResolverID
     events: tuple[ExecutionEvent, ...]
     finalized: bool

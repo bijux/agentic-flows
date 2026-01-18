@@ -1,5 +1,7 @@
 # SEMANTICS
 
+This document defines system guarantees. If any other document conflicts, this one wins.
+
 ## Agentic Flow
 - A named specification of steps and their dependencies.
 - Declares required inputs and expected outputs.

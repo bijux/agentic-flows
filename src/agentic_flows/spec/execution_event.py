@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ids import EventType
+from agentic_flows.spec.ontology import EventType
 
 
 @dataclass(frozen=True)

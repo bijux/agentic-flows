@@ -33,6 +33,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Semantics: SEMANTICS.md
   - Getting Started: overview/getting_started.md
   - Concepts: concepts/core_concepts.md
   - Governance:

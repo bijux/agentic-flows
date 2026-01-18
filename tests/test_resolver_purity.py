@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
+from __future__ import annotations
 
 import builtins
 import socket
@@ -8,6 +9,7 @@ import pytest
 
 from agentic_flows.runtime import resolver as resolver_module
 from agentic_flows.runtime.resolver import FlowResolver
+from agentic_flows.runtime.run_flow import RunMode, run_flow
 from agentic_flows.spec.flow_manifest import FlowManifest
 from agentic_flows.spec.ids import AgentID, FlowID
 
@@ -39,11 +41,12 @@ def test_resolve_is_pure(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(socket, "socket", _blocked_socket)
     monkeypatch.setattr("builtins.open", _blocked_open)
-    monkeypatch.setattr(resolver_module, "compute_environment_fingerprint", lambda: "env-fingerprint")
+    monkeypatch.setattr(
+        resolver_module, "compute_environment_fingerprint", lambda: "env-fingerprint"
+    )
 
-    resolver = FlowResolver()
-    resolver._bijux_agent_version = "0.0.0"
+    monkeypatch.setattr(FlowResolver, "_bijux_agent_version", "0.0.0", raising=False)
     with pytest.raises(NotImplementedError):
-        resolver.resolve(manifest)
+        run_flow(manifest, mode=RunMode.PLAN)
 
     assert manifest.__dict__ == original
