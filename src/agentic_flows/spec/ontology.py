@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, auto
 
 from agentic_flows.spec.ids import ActionID as Action
 from agentic_flows.spec.ids import AgentID as Agent
@@ -31,22 +31,25 @@ class ArtifactType(str, Enum):
 
 
 class EventType(str, Enum):
-    STEP_START = "STEP_START"  # noqa: S105
-    STEP_END = "STEP_END"  # noqa: S105
-    STEP_FAILED = "STEP_FAILED"  # noqa: S105
-    RETRIEVAL_START = "RETRIEVAL_START"  # noqa: S105
-    RETRIEVAL_END = "RETRIEVAL_END"  # noqa: S105
-    RETRIEVAL_FAILED = "RETRIEVAL_FAILED"  # noqa: S105
-    REASONING_START = "REASONING_START"  # noqa: S105
-    REASONING_END = "REASONING_END"  # noqa: S105
-    REASONING_FAILED = "REASONING_FAILED"  # noqa: S105
-    VERIFICATION_START = "VERIFICATION_START"  # noqa: S105
-    VERIFICATION_PASS = "VERIFICATION_PASS"  # noqa: S105
-    VERIFICATION_FAIL = "VERIFICATION_FAIL"  # noqa: S105
-    VERIFICATION_ESCALATE = "VERIFICATION_ESCALATE"  # noqa: S105
-    TOOL_CALL_START = "TOOL_CALL_START"  # noqa: S105
-    TOOL_CALL_END = "TOOL_CALL_END"  # noqa: S105
-    TOOL_CALL_FAIL = "TOOL_CALL_FAIL"  # noqa: S105
+    def _generate_next_value_(name, start, count, last_values):  # noqa: N805
+        return name
+
+    STEP_START = auto()
+    STEP_END = auto()
+    STEP_FAILED = auto()
+    RETRIEVAL_START = auto()
+    RETRIEVAL_END = auto()
+    RETRIEVAL_FAILED = auto()
+    REASONING_START = auto()
+    REASONING_END = auto()
+    REASONING_FAILED = auto()
+    VERIFICATION_START = auto()
+    VERIFICATION_PASS = auto()
+    VERIFICATION_FAIL = auto()
+    VERIFICATION_ESCALATE = auto()
+    TOOL_CALL_START = auto()
+    TOOL_CALL_END = auto()
+    TOOL_CALL_FAIL = auto()
 
 
 class StepType(str, Enum):

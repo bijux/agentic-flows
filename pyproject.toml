@@ -63,6 +63,7 @@ agentic-flows = "agentic_flows.cli.main:main"
 [tool.deptry]
 known_first_party = ["agentic_flows"]
 per_rule_ignores = { DEP002 = [
+  "bijux-cli",
   "bandit",
   "codespell",
   "deptry",

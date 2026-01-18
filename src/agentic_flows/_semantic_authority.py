@@ -9,4 +9,4 @@ This file will later be imported everywhere on purpose.
 from __future__ import annotations
 
 SEMANTICS_VERSION = "v1"
-SEMANTICS_SOURCE = "SEMANTICS.md"
+SEMANTICS_SOURCE = "docs/guarantees/system_guarantees.md"

@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
+from dataclasses import asdict
+from enum import Enum
+import json
+from pathlib import Path
+
+import pytest
+
+from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID
+
+pytestmark = pytest.mark.e2e
+
+
+def _normalize_for_json(value):
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, list):
+        return [_normalize_for_json(item) for item in value]
+    if isinstance(value, tuple):
+        return [_normalize_for_json(item) for item in value]
+    if isinstance(value, dict):
+        return {key: _normalize_for_json(item) for key, item in value.items()}
+    return value
+
+
+def test_golden_execution_plan(deterministic_environment) -> None:
+    manifest = FlowManifest(
+        spec_version="v1",
+        flow_id=FlowID("flow-golden"),
+        agents=(AgentID("alpha"), AgentID("bravo"), AgentID("charlie")),
+        dependencies=("bravo:alpha", "charlie:alpha"),
+        retrieval_contracts=(ContractID("contract-a"),),
+        verification_gates=(GateID("gate-a"),),
+    )
+    result = run_flow(manifest, mode=RunMode.PLAN)
+    payload = _normalize_for_json(asdict(result.resolved_flow.plan))
+    golden_path = Path(__file__).parents[1] / "golden" / "test_execution_plan.json"
+    expected = json.loads(golden_path.read_text(encoding="utf-8"))
+    assert payload == expected
