@@ -8,8 +8,8 @@ from enum import Enum
 
 from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.trace_recorder import TraceRecorder
-from agentic_flows.spec.ids import EnvironmentFingerprint
-from agentic_flows.spec.verification import VerificationPolicy
+from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.ontology.ids import EnvironmentFingerprint
 
 
 class RunMode(str, Enum):

@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from agentic_flows.spec.artifact import Artifact, _allow_artifact_creation
-from agentic_flows.spec.ids import ArtifactID, ContentHash
-from agentic_flows.spec.ontology import ArtifactType
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
+from agentic_flows.spec.ontology.ontology import ArtifactType
 
 
 class ArtifactStore(ABC):
@@ -47,18 +47,14 @@ class InMemoryArtifactStore(ArtifactStore):
         parent_artifacts: tuple[ArtifactID, ...],
         content_hash: ContentHash,
     ) -> Artifact:
-        token = _allow_artifact_creation().set(True)
-        try:
-            artifact = Artifact(
-                spec_version=spec_version,
-                artifact_id=artifact_id,
-                artifact_type=artifact_type,
-                producer=producer,
-                parent_artifacts=parent_artifacts,
-                content_hash=content_hash,
-            )
-        finally:
-            _allow_artifact_creation().reset(token)
+        artifact = Artifact(
+            spec_version=spec_version,
+            artifact_id=artifact_id,
+            artifact_type=artifact_type,
+            producer=producer,
+            parent_artifacts=parent_artifacts,
+            content_hash=content_hash,
+        )
         self.save(artifact)
         return artifact
 

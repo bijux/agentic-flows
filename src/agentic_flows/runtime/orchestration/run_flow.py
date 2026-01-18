@@ -11,14 +11,14 @@ from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
 from agentic_flows.runtime.orchestration.resolver import FlowResolver
 from agentic_flows.runtime.trace_recorder import TraceRecorder
-from agentic_flows.spec.artifact import Artifact
-from agentic_flows.spec.execution_trace import ExecutionTrace
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.resolved_flow import ResolvedFlow
-from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.verification import VerificationPolicy
-from agentic_flows.spec.verification_result import VerificationResult
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.resolved_flow import ResolvedFlow
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.model.verification_result import VerificationResult
 
 
 @dataclass(frozen=True)

@@ -9,9 +9,9 @@ import json
 from pathlib import Path
 
 from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID
-from agentic_flows.spec.verification import VerificationPolicy
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
 
 
 def _load_manifest(path: Path) -> FlowManifest:

@@ -12,15 +12,15 @@ from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_bound
 from agentic_flows.runtime.retrieval_fingerprint import fingerprint_retrieval
 from agentic_flows.runtime.time import utc_now_deterministic
 from agentic_flows.runtime.verification_engine import VerificationEngine
-from agentic_flows.spec.artifact import Artifact
-from agentic_flows.spec.execution_event import ExecutionEvent
-from agentic_flows.spec.execution_trace import ExecutionTrace
-from agentic_flows.spec.ids import ContentHash, ResolverID, ToolID
-from agentic_flows.spec.ontology import ArtifactType, EventType
-from agentic_flows.spec.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.resolved_flow import ResolvedFlow
-from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.verification_result import VerificationResult
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.resolved_flow import ResolvedFlow
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.ontology.ids import ContentHash, ResolverID, ToolID
+from agentic_flows.spec.ontology.ontology import ArtifactType, EventType
 
 
 class LiveExecutor:

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from agentic_flows.spec.execution_event import ExecutionEvent
+from agentic_flows.spec.model.execution_event import ExecutionEvent
 
 
 class AppendOnlyList(list[ExecutionEvent]):

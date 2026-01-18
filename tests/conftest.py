@@ -11,10 +11,10 @@ import pytest
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
 from agentic_flows.runtime.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.environment import compute_environment_fingerprint
-from agentic_flows.spec.agent_invocation import AgentInvocation
-from agentic_flows.spec.execution_plan import ExecutionPlan
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import (
+from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
     EnvironmentFingerprint,
@@ -25,10 +25,10 @@ from agentic_flows.spec.ids import (
     ResolverID,
     VersionID,
 )
-from agentic_flows.spec.ontology import StepType
-from agentic_flows.spec.resolved_flow import ResolvedFlow
-from agentic_flows.spec.resolved_step import ResolvedStep
-from agentic_flows.spec.verification import VerificationPolicy
+from agentic_flows.spec.ontology.ontology import StepType
+from agentic_flows.spec.model.resolved_flow import ResolvedFlow
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.verification import VerificationPolicy
 
 
 def pytest_configure() -> None:
@@ -88,7 +88,9 @@ def artifact_store() -> InMemoryArtifactStore:
 
 
 @pytest.fixture
-def deterministic_environment(monkeypatch: pytest.MonkeyPatch) -> EnvironmentFingerprint:
+def deterministic_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvironmentFingerprint:
     fingerprint = EnvironmentFingerprint("env-fingerprint")
     monkeypatch.setattr(
         "agentic_flows.runtime.environment.compute_environment_fingerprint",

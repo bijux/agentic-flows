@@ -6,8 +6,8 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import AgentID, FlowID
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ids import AgentID, FlowID
 
 pytestmark = pytest.mark.regression
 

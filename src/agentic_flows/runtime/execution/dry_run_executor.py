@@ -10,11 +10,11 @@ from agentic_flows.runtime.context import RuntimeContext
 from agentic_flows.runtime.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
 from agentic_flows.runtime.time import utc_now_deterministic
-from agentic_flows.spec.execution_event import ExecutionEvent
-from agentic_flows.spec.execution_trace import ExecutionTrace
-from agentic_flows.spec.ids import ResolverID
-from agentic_flows.spec.ontology import EventType
-from agentic_flows.spec.resolved_flow import ResolvedFlow
+from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.resolved_flow import ResolvedFlow
+from agentic_flows.spec.ontology.ids import ResolverID
+from agentic_flows.spec.ontology.ontology import EventType
 
 
 class DryRunExecutor:

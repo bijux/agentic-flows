@@ -17,10 +17,18 @@ except PackageNotFoundError:
 
 from agentic_flows.runtime.environment import compute_environment_fingerprint
 from agentic_flows.runtime.fingerprint import fingerprint_inputs
-from agentic_flows.spec.agent_invocation import AgentInvocation
-from agentic_flows.spec.execution_plan import ExecutionPlan
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import (
+from agentic_flows.spec.contracts.flow_contract import (
+    validate as validate_flow_manifest,
+)
+from agentic_flows.spec.contracts.resolved_flow_contract import (
+    validate as validate_resolved_flow,
+)
+from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.resolved_flow import ResolvedFlow
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.ontology.ids import (
     AgentID,
     EnvironmentFingerprint,
     FlowID,
@@ -29,13 +37,7 @@ from agentic_flows.spec.ids import (
     ResolverID,
     VersionID,
 )
-from agentic_flows.spec.ontology import StepType
-from agentic_flows.spec.resolved_flow import ResolvedFlow
-from agentic_flows.spec.resolved_step import ResolvedStep
-from agentic_flows.spec.semantic_validation import (
-    validate_flow_manifest,
-    validate_resolved_flow,
-)
+from agentic_flows.spec.ontology.ontology import StepType
 
 
 class FlowResolver:

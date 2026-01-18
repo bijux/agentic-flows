@@ -13,9 +13,9 @@ import bijux_rar
 import bijux_vex
 
 from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.agent_invocation import AgentInvocation
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import (
+from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ids import (
     AgentID,
     BundleID,
     ClaimID,
@@ -27,12 +27,12 @@ from agentic_flows.spec.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology import ArtifactType, StepType
-from agentic_flows.spec.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.reasoning_claim import ReasoningClaim
-from agentic_flows.spec.reasoning_step import ReasoningStep
-from agentic_flows.spec.resolved_step import ResolvedStep
-from agentic_flows.spec.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ontology.ontology import ArtifactType, StepType
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
+from agentic_flows.spec.model.reasoning_step import ReasoningStep
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 
 pytestmark = pytest.mark.regression
 

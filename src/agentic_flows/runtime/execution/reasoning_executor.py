@@ -9,9 +9,9 @@ import json
 
 import bijux_rar
 
-from agentic_flows.spec.artifact import Artifact
-from agentic_flows.spec.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 
 
 class ReasoningExecutor:

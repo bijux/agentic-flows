@@ -7,9 +7,15 @@ import pytest
 
 from agentic_flows.runtime.determinism_guard import validate_replay
 from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.execution_trace import ExecutionTrace
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID, ResolverID
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ids import (
+    AgentID,
+    ContractID,
+    FlowID,
+    GateID,
+    ResolverID,
+)
 
 pytestmark = pytest.mark.regression
 

@@ -7,7 +7,7 @@ import pytest
 
 import agentic_flows
 from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.model.flow_manifest import FlowManifest
 
 pytestmark = pytest.mark.unit
 

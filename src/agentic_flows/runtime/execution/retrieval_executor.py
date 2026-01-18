@@ -9,9 +9,9 @@ from typing import Any
 import bijux_rag
 import bijux_vex
 
-from agentic_flows.spec.ids import ContentHash, ContractID, EvidenceID
-from agentic_flows.spec.retrieval_request import RetrievalRequest
-from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
 
 
 class RetrievalExecutor:

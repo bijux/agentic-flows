@@ -8,9 +8,9 @@ import bijux_rag
 import bijux_vex
 
 from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.agent_invocation import AgentInvocation
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import (
+from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
     FlowID,
@@ -19,9 +19,9 @@ from agentic_flows.spec.ids import (
     RequestID,
     VersionID,
 )
-from agentic_flows.spec.ontology import EventType, StepType
-from agentic_flows.spec.resolved_step import ResolvedStep
-from agentic_flows.spec.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ontology.ontology import EventType, StepType
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 
 import pytest
 

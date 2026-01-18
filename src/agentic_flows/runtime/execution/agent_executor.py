@@ -13,11 +13,11 @@ import bijux_agent
 
 from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.seed import deterministic_seed
-from agentic_flows.spec.artifact import Artifact
-from agentic_flows.spec.ids import ArtifactID, ContentHash
-from agentic_flows.spec.ontology import ArtifactType
-from agentic_flows.spec.resolved_step import ResolvedStep
-from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
+from agentic_flows.spec.ontology.ontology import ArtifactType
 
 
 class AgentExecutor:

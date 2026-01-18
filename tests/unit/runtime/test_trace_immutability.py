@@ -8,10 +8,15 @@ import dataclasses
 import pytest
 
 from agentic_flows.runtime.trace_recorder import AppendOnlyList
-from agentic_flows.spec.execution_event import ExecutionEvent
-from agentic_flows.spec.execution_trace import ExecutionTrace
-from agentic_flows.spec.ids import EnvironmentFingerprint, FlowID, PlanHash, ResolverID
-from agentic_flows.spec.ontology import EventType
+from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.ontology.ids import (
+    EnvironmentFingerprint,
+    FlowID,
+    PlanHash,
+    ResolverID,
+)
+from agentic_flows.spec.ontology.ontology import EventType
 
 pytestmark = pytest.mark.unit
 

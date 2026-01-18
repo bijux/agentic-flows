@@ -6,8 +6,8 @@ from __future__ import annotations
 from typing import Any
 
 from agentic_flows.runtime.environment import compute_environment_fingerprint
-from agentic_flows.spec.execution_plan import ExecutionPlan
-from agentic_flows.spec.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
 
 
 def validate_determinism(

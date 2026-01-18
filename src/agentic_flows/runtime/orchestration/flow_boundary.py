@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 from agentic_flows._semantic_authority import SEMANTICS_SOURCE, SEMANTICS_VERSION
 from agentic_flows.runtime.determinism_guard import validate_determinism
-from agentic_flows.spec.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
 
 
 def enforce_flow_boundary(

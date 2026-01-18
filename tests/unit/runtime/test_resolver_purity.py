@@ -9,8 +9,8 @@ import socket
 import pytest
 
 from agentic_flows.runtime.orchestration.resolver import FlowResolver
-from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.ids import AgentID, FlowID
+from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ids import AgentID, FlowID
 
 pytestmark = pytest.mark.unit
 

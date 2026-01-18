@@ -4,11 +4,11 @@
 # Verification must never call agents or modify artifacts; repeatability is expected when inputs match.
 from __future__ import annotations
 
-from agentic_flows.spec.ids import RuleID
-from agentic_flows.spec.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.verification import VerificationPolicy
-from agentic_flows.spec.verification_result import VerificationResult
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.ontology.ids import RuleID
 
 
 class VerificationEngine:
