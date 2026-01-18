@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
 from bijux_agent import __version__ as bijux_agent_version
 from bijux_cli import __version__ as bijux_cli_version
 
@@ -6,49 +11,66 @@ from agentic_flows.runtime.fingerprint import fingerprint_inputs
 from agentic_flows.spec.agent_invocation import AgentInvocation
 from agentic_flows.spec.execution_plan import ExecutionPlan
 from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.ids import (
+    AgentID,
+    EnvironmentFingerprint,
+    FlowID,
+    InputsFingerprint,
+    ResolverID,
+    VersionID,
+)
 from agentic_flows.spec.resolved_step import ResolvedStep
+from agentic_flows.spec.semantic_validation import validate_flow_manifest
 
 
 class FlowResolver:
-    resolver_id: str = "agentic-flows:v0"
+    resolver_id: ResolverID = ResolverID("agentic-flows:v0")
     _bijux_cli_version: str = bijux_cli_version
     _bijux_agent_version: str = bijux_agent_version
 
     def resolve(self, manifest: FlowManifest) -> ExecutionPlan:
+        validate_flow_manifest(manifest)
         ordered_agents = self._toposort_agents(manifest)
         dependencies = self._parse_dependencies(manifest)
         steps = []
         for index, agent_id in enumerate(ordered_agents):
             declared = sorted(dependencies.get(agent_id, []))
-            inputs_fingerprint = fingerprint_inputs(
-                {
-                    "agent_id": agent_id,
-                    "declared_dependencies": declared,
-                    "retrieval_contracts": list(manifest.retrieval_contracts),
-                    "verification_gates": list(manifest.verification_gates),
-                }
+            inputs_fingerprint = InputsFingerprint(
+                fingerprint_inputs(
+                    {
+                        "agent_id": agent_id,
+                        "declared_dependencies": declared,
+                        "retrieval_contracts": list(manifest.retrieval_contracts),
+                        "verification_gates": list(manifest.verification_gates),
+                    }
+                )
             )
             steps.append(
                 ResolvedStep(
+                    spec_version="v1",
                     step_index=index,
-                    agent_id=agent_id,
+                    agent_id=AgentID(agent_id),
                     inputs_fingerprint=inputs_fingerprint,
-                    declared_dependencies=declared,
-                    expected_artifacts=[],
+                    declared_dependencies=tuple(AgentID(dep) for dep in declared),
+                    expected_artifacts=(),
                     agent_invocation=AgentInvocation(
-                        agent_id=agent_id,
-                        agent_version=self._bijux_agent_version,
+                        spec_version="v1",
+                        agent_id=AgentID(agent_id),
+                        agent_version=VersionID(self._bijux_agent_version),
                         inputs_fingerprint=inputs_fingerprint,
-                        declared_outputs=[],
-                        execution_mode="deterministic",
+                        declared_outputs=(),
+                        execution_mode="seeded",
                     ),
                     retrieval_request=None,
                 )
             )
         return ExecutionPlan(
-            flow_id=manifest.flow_id,
-            steps=steps,
-            environment_fingerprint=compute_environment_fingerprint(),
+            spec_version="v1",
+            flow_id=FlowID(manifest.flow_id),
+            steps=tuple(steps),
+            environment_fingerprint=EnvironmentFingerprint(
+                compute_environment_fingerprint()
+            ),
             resolution_metadata=(
                 ("resolver_id", self.resolver_id),
                 ("bijux_cli_version", self._bijux_cli_version),

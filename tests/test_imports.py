@@ -1,9 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+import agentic_flows
+
 from agentic_flows.runtime.resolver import FlowResolver
-from agentic_flows.spec.artifact import Artifact
-from agentic_flows.spec.execution_plan import ExecutionPlan
-from agentic_flows.spec.execution_trace import ExecutionTrace
 from agentic_flows.spec.flow_manifest import FlowManifest
-from agentic_flows.spec.verification import VerificationPolicy
 
 
 def test_imports() -> None:
@@ -11,7 +12,4 @@ def test_imports() -> None:
     _ = resolver.resolver_id
     assert FlowResolver
     assert FlowManifest
-    assert ExecutionPlan
-    assert ExecutionTrace
-    assert Artifact
-    assert VerificationPolicy
+    assert set(agentic_flows.__all__) == {"FlowManifest", "FlowResolver"}

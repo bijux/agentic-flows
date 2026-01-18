@@ -1,9 +1,14 @@
-from typing import Iterable, List
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
+from collections.abc import Iterable
 
 from agentic_flows.spec.execution_event import ExecutionEvent
 
 
-class AppendOnlyList(List[ExecutionEvent]):
+class AppendOnlyList(list[ExecutionEvent]):
     def __setitem__(self, *_args, **_kwargs) -> None:
         raise TypeError("execution events are append-only")
 
@@ -39,5 +44,5 @@ class TraceRecorder:
     def record(self, event: ExecutionEvent) -> None:
         self._events.append(event)
 
-    def events(self) -> AppendOnlyList:
-        return self._events
+    def events(self) -> tuple[ExecutionEvent, ...]:
+        return tuple(self._events)

@@ -1,52 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
 import dataclasses
 
 import pytest
 
-from agentic_flows.runtime import resolver as resolver_module
-from agentic_flows.runtime.dry_run_executor import DryRunExecutor
-from agentic_flows.runtime.resolver import FlowResolver
+from agentic_flows.runtime.trace_recorder import AppendOnlyList
 from agentic_flows.spec.execution_event import ExecutionEvent
-from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.execution_trace import ExecutionTrace
+from agentic_flows.spec.ids import EnvironmentFingerprint, EventType, FlowID, ResolverID
 
 
 def test_trace_is_immutable() -> None:
-    manifest = FlowManifest(
-        flow_id="flow-trace",
-        agents=("agent-a",),
-        dependencies=(),
-        retrieval_contracts=(),
-        verification_gates=(),
+    events = AppendOnlyList()
+    events.append(
+        ExecutionEvent(
+            spec_version="v1",
+            event_index=0,
+            step_index=0,
+            event_type=EventType("STEP_START"),
+            timestamp_utc="1970-01-01T00:00:00Z",
+            payload_hash="x",
+        )
     )
-
-    resolver_module.compute_environment_fingerprint = lambda: "env-fingerprint"
-    resolver = FlowResolver()
-    resolver._bijux_agent_version = "0.0.0"
-    plan = resolver.resolve(manifest)
-    trace = DryRunExecutor().execute(plan)
+    trace = ExecutionTrace(
+        spec_version="v1",
+        flow_id=FlowID("flow-trace"),
+        environment_fingerprint=EnvironmentFingerprint("env-fingerprint"),
+        resolver_id=ResolverID("agentic-flows:v0"),
+        events=tuple(events),
+        finalized=False,
+    )
+    trace.finalize()
 
     with pytest.raises(dataclasses.FrozenInstanceError):
         trace.flow_id = "mutated"
 
     with pytest.raises(TypeError):
         trace.events[0] = ExecutionEvent(
+            spec_version="v1",
             event_index=999,
             step_index=0,
-            event_type="STEP_START",
+            event_type=EventType("STEP_START"),
             timestamp_utc="1970-01-01T00:00:00Z",
             payload_hash="x",
         )
 
-    with pytest.raises(TypeError):
+    with pytest.raises(AttributeError):
         trace.events.pop()
 
     original_first = trace.events[0]
-    trace.events.append(
-        ExecutionEvent(
-            event_index=999,
-            step_index=0,
-            event_type="STEP_END",
-            timestamp_utc="1970-01-01T00:00:01Z",
-            payload_hash="y",
+    with pytest.raises(AttributeError):
+        trace.events.append(
+            ExecutionEvent(
+                spec_version="v1",
+                event_index=999,
+                step_index=0,
+                event_type=EventType("STEP_END"),
+                timestamp_utc="1970-01-01T00:00:01Z",
+                payload_hash="y",
+            )
         )
-    )
     assert trace.events[0] == original_first

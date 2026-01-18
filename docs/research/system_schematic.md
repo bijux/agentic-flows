@@ -1,0 +1,3 @@
+# System Schematic
+
+Placeholder.

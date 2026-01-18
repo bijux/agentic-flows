@@ -17,6 +17,72 @@ bijux-agent = "^0.1.0"
 bijux-rag = "^0.1.0"
 bijux-rar = "^0.1.0"
 bijux-vex = "^0.1.0"
+pytest = { version = "^8.4.0", optional = true }
+pytest-cov = { version = "^5.0.0", optional = true }
+pytest-benchmark = { version = "^4.0.0", optional = true }
+pytest-asyncio = { version = "^0.23.0", optional = true }
+pytest-timeout = { version = "^2.3.0", optional = true }
+ruff = { version = "^0.7.0", optional = true }
+mypy = { version = "^1.10.0", optional = true }
+codespell = { version = "^2.3.0", optional = true }
+radon = { version = "^6.0.1", optional = true }
+pydocstyle = { version = "^6.3.0", optional = true }
+vulture = { version = "^2.11", optional = true }
+deptry = { version = "^0.23.0", optional = true }
+reuse = { version = "^5.0.2", optional = true }
+interrogate = { version = "^1.7.0", optional = true }
+mkdocs = { version = "^1.6.0", optional = true }
+bandit = { version = "^1.7.9", optional = true }
+pip-audit = { version = "^2.7.3", optional = true }
+
+[tool.poetry.extras]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest-benchmark",
+  "pytest-asyncio",
+  "pytest-timeout",
+  "ruff",
+  "mypy",
+  "codespell",
+  "radon",
+  "pydocstyle",
+  "vulture",
+  "deptry",
+  "reuse",
+  "interrogate",
+  "mkdocs",
+  "bandit",
+  "pip-audit",
+]
+local-esmfold = []
 
 [tool.poetry.scripts]
 agentic-flows = "agentic_flows.cli.main:main"
+
+[tool.deptry]
+known_first_party = ["agentic_flows"]
+per_rule_ignores = { DEP002 = [
+  "bandit",
+  "codespell",
+  "deptry",
+  "interrogate",
+  "mkdocs",
+  "mypy",
+  "pip-audit",
+  "pydocstyle",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-benchmark",
+  "pytest-cov",
+  "pytest-timeout",
+  "radon",
+  "reuse",
+  "ruff",
+  "vulture",
+] }
+
+[tool.interrogate]
+fail-under = 0
+ignore-init-method = true
+ignore-init-module = true

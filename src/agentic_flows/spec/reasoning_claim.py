@@ -1,13 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import List
+
+from agentic_flows.spec.ids import ClaimID, EvidenceID
 
 
 @dataclass(frozen=True)
 class ReasoningClaim:
-    claim_id: str
+    spec_version: str
+    claim_id: ClaimID
     statement: str
     confidence: float
-    supported_by: List[str]
+    supported_by: tuple[EvidenceID, ...]
 
 
 __all__ = ["ReasoningClaim"]

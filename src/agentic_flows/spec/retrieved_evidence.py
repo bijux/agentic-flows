@@ -1,13 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
 from dataclasses import dataclass
+
+from agentic_flows.spec.ids import ContentHash, ContractID, EvidenceID
 
 
 @dataclass(frozen=True)
 class RetrievedEvidence:
-    evidence_id: str
+    spec_version: str
+    evidence_id: EvidenceID
     source_uri: str
-    content_hash: str
+    content_hash: ContentHash
     score: float
-    vector_contract_id: str
+    vector_contract_id: ContractID
 
 
 __all__ = ["RetrievedEvidence"]

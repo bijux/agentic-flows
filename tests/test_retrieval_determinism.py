@@ -1,14 +1,20 @@
-from agentic_flows.runtime.retrieval_executor import RetrievalExecutor
-from agentic_flows.spec.retrieval_request import RetrievalRequest
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
 import bijux_rag
 import bijux_vex
+
+from agentic_flows.runtime.retrieval_executor import RetrievalExecutor
+from agentic_flows.spec.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ids import ContractID, RequestID
 
 
 def test_retrieval_determinism() -> None:
     request = RetrievalRequest(
-        request_id="req-1",
+        spec_version="v1",
+        request_id=RequestID("req-1"),
         query="what is bijux",
-        vector_contract_id="contract-1",
+        vector_contract_id=ContractID("contract-1"),
         top_k=2,
         scope="project",
     )

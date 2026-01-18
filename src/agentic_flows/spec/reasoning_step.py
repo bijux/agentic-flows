@@ -1,12 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import List
+
+from agentic_flows.spec.ids import ClaimID, StepID
 
 
 @dataclass(frozen=True)
 class ReasoningStep:
-    step_id: str
-    input_claims: List[str]
-    output_claims: List[str]
+    spec_version: str
+    step_id: StepID
+    input_claims: tuple[ClaimID, ...]
+    output_claims: tuple[ClaimID, ...]
     method: str
 
 

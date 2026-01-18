@@ -1,9 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
 from dataclasses import dataclass
+
+from agentic_flows.spec.ids import RuleID
 
 
 @dataclass(frozen=True)
 class VerificationRule:
-    rule_id: str
+    spec_version: str
+    rule_id: RuleID
     description: str
     severity: str
     target: str

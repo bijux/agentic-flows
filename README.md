@@ -1,3 +1,6 @@
+# This repository is governed by SEMANTICS.md.
+# Code that violates semantics is considered a bug, not an implementation choice.
+
 agentic-flows defines the minimal contracts and entrypoints for describing, resolving, and tracing agentic flows across the Bijux core stack.
 
 It does not execute flows, schedule work, run agents, or perform retrieval; it only defines the schema and stubs those systems depend on.

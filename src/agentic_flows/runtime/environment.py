@@ -1,6 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
+from importlib import metadata
 import platform
 import sys
-from importlib import metadata
 
 from agentic_flows.runtime.fingerprint import fingerprint_inputs
 

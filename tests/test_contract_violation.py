@@ -1,19 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
 import bijux_agent
 import bijux_rag
 import bijux_vex
 
 from agentic_flows.runtime.live_executor import LiveExecutor
+from agentic_flows.runtime.environment import compute_environment_fingerprint
 from agentic_flows.spec.agent_invocation import AgentInvocation
 from agentic_flows.spec.execution_plan import ExecutionPlan
 from agentic_flows.spec.resolved_step import ResolvedStep
 from agentic_flows.spec.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ids import (
+    AgentID,
+    ContractID,
+    EnvironmentFingerprint,
+    FlowID,
+    InputsFingerprint,
+    RequestID,
+    ResolverID,
+    VersionID,
+)
 
 
 def test_contract_violation_aborts() -> None:
     request = RetrievalRequest(
-        request_id="req-violate",
+        spec_version="v1",
+        request_id=RequestID("req-violate"),
         query="test",
-        vector_contract_id="contract-expected",
+        vector_contract_id=ContractID("contract-expected"),
         top_k=1,
         scope="project",
     )
@@ -38,25 +53,28 @@ def test_contract_violation_aborts() -> None:
     bijux_agent.run = _run
 
     step = ResolvedStep(
+        spec_version="v1",
         step_index=0,
-        agent_id="agent-a",
-        inputs_fingerprint="inputs",
-        declared_dependencies=[],
-        expected_artifacts=[],
+        agent_id=AgentID("agent-a"),
+        inputs_fingerprint=InputsFingerprint("inputs"),
+        declared_dependencies=(),
+        expected_artifacts=(),
         agent_invocation=AgentInvocation(
-            agent_id="agent-a",
-            agent_version="0.0.0",
-            inputs_fingerprint="inputs",
-            declared_outputs=[],
-            execution_mode="deterministic",
+            spec_version="v1",
+            agent_id=AgentID("agent-a"),
+            agent_version=VersionID("0.0.0"),
+            inputs_fingerprint=InputsFingerprint("inputs"),
+            declared_outputs=(),
+            execution_mode="seeded",
         ),
         retrieval_request=request,
     )
     plan = ExecutionPlan(
-        flow_id="flow-violation",
-        steps=[step],
-        environment_fingerprint="env",
-        resolution_metadata=(("resolver_id", "agentic-flows:v0"),),
+        spec_version="v1",
+        flow_id=FlowID("flow-violation"),
+        steps=(step,),
+        environment_fingerprint=EnvironmentFingerprint(compute_environment_fingerprint()),
+        resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
 
     trace, artifacts, evidence, _, _ = LiveExecutor().execute(plan)

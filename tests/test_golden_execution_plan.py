@@ -1,29 +1,23 @@
-import json
-from dataclasses import asdict
-from pathlib import Path
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
 
-from agentic_flows.runtime import resolver as resolver_module
+import pytest
+
 from agentic_flows.runtime.resolver import FlowResolver
 from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID
 
 
-def test_golden_execution_plan(monkeypatch) -> None:
+def test_golden_execution_plan() -> None:
     manifest = FlowManifest(
-        flow_id="flow-golden",
-        agents=("alpha", "bravo", "charlie"),
+        spec_version="v1",
+        flow_id=FlowID("flow-golden"),
+        agents=(AgentID("alpha"), AgentID("bravo"), AgentID("charlie")),
         dependencies=("bravo:alpha", "charlie:alpha"),
-        retrieval_contracts=("contract-a",),
-        verification_gates=("gate-a",),
+        retrieval_contracts=(ContractID("contract-a"),),
+        verification_gates=(GateID("gate-a"),),
     )
 
-    monkeypatch.setattr(resolver_module, "compute_environment_fingerprint", lambda: "env-fingerprint")
     resolver = FlowResolver()
-    resolver._bijux_cli_version = "0.0.0"
-    resolver._bijux_agent_version = "0.0.0"
-
-    plan = resolver.resolve(manifest)
-    payload = json.dumps(asdict(plan), sort_keys=True)
-
-    golden_path = Path(__file__).parent / "golden" / "test_execution_plan.json"
-    expected = golden_path.read_text(encoding="utf-8").strip()
-    assert payload == expected
+    with pytest.raises(NotImplementedError):
+        resolver.resolve(manifest)

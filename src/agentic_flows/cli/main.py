@@ -1,23 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
 import argparse
-import json
 from dataclasses import asdict
+import json
 from pathlib import Path
 
 from agentic_flows.runtime.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.live_executor import LiveExecutor
 from agentic_flows.runtime.resolver import FlowResolver
 from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.ids import AgentID, ContractID, FlowID, GateID
 
 
 def _load_manifest(path: Path) -> FlowManifest:
     raw_contents = path.read_text(encoding="utf-8")
     payload = json.loads(raw_contents)
     return FlowManifest(
-        flow_id=payload["flow_id"],
-        agents=tuple(payload["agents"]),
+        spec_version="v1",
+        flow_id=FlowID(payload["flow_id"]),
+        agents=tuple(AgentID(agent_id) for agent_id in payload["agents"]),
         dependencies=tuple(payload["dependencies"]),
-        retrieval_contracts=tuple(payload["retrieval_contracts"]),
-        verification_gates=tuple(payload["verification_gates"]),
+        retrieval_contracts=tuple(
+            ContractID(contract) for contract in payload["retrieval_contracts"]
+        ),
+        verification_gates=tuple(
+            GateID(gate) for gate in payload["verification_gates"]
+        ),
     )
 
 
@@ -58,7 +69,9 @@ def main() -> None:
         resolver = FlowResolver()
         executor = LiveExecutor()
         plan = resolver.resolve(manifest)
-        trace, artifacts, evidence, reasoning_bundles, verification_results = executor.execute(plan)
+        trace, artifacts, evidence, reasoning_bundles, verification_results = (
+            executor.execute(plan)
+        )
         payload = asdict(trace)
         artifact_list = [
             {"artifact_id": artifact.artifact_id, "content_hash": artifact.content_hash}

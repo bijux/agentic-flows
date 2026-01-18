@@ -1,6 +1,10 @@
-# Verification must never call agents, must never modify artifacts, and must remain deterministic.
-from typing import List
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
 
+# Verification must never call agents or modify artifacts; repeatability is expected when inputs match.
+from __future__ import annotations
+
+from agentic_flows.spec.ids import RuleID
 from agentic_flows.spec.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.verification import VerificationPolicy
@@ -11,7 +15,7 @@ class VerificationEngine:
     def verify(
         self,
         reasoning: ReasoningBundle,
-        evidence: List[RetrievedEvidence],
+        evidence: list[RetrievedEvidence],
         policy: VerificationPolicy,
     ) -> VerificationResult:
         violations = self._baseline_violations(reasoning)
@@ -31,24 +35,25 @@ class VerificationEngine:
                 reason = "policy_escalate_on"
 
         return VerificationResult(
+            spec_version="v1",
             status=status,
             reason=reason,
             violations=violations,
-            verified_artifact_ids=[reasoning.bundle_id],
+            checked_artifact_ids=(reasoning.bundle_id,),
         )
 
     @staticmethod
-    def _baseline_violations(reasoning: ReasoningBundle) -> List[str]:
-        violations: List[str] = []
+    def _baseline_violations(reasoning: ReasoningBundle) -> tuple[RuleID, ...]:
+        violations: list[RuleID] = []
 
         if any(len(claim.supported_by) == 0 for claim in reasoning.claims):
-            violations.append("claim_requires_evidence")
+            violations.append(RuleID("claim_requires_evidence"))
 
         if any(not (0.0 <= claim.confidence <= 1.0) for claim in reasoning.claims):
-            violations.append("confidence_in_range")
+            violations.append(RuleID("confidence_in_range"))
 
         claim_ids = [claim.claim_id for claim in reasoning.claims]
         if len(set(claim_ids)) != len(claim_ids):
-            violations.append("unique_claim_ids")
+            violations.append(RuleID("unique_claim_ids"))
 
-        return violations
+        return tuple(violations)

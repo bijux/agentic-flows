@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
 import builtins
 import socket
 
@@ -6,12 +9,14 @@ import pytest
 from agentic_flows.runtime import resolver as resolver_module
 from agentic_flows.runtime.resolver import FlowResolver
 from agentic_flows.spec.flow_manifest import FlowManifest
+from agentic_flows.spec.ids import AgentID, FlowID
 
 
 def test_resolve_is_pure(monkeypatch: pytest.MonkeyPatch) -> None:
     manifest = FlowManifest(
-        flow_id="flow-pure",
-        agents=("agent-a",),
+        spec_version="v1",
+        flow_id=FlowID("flow-pure"),
+        agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(),
         verification_gates=(),
@@ -38,6 +43,7 @@ def test_resolve_is_pure(monkeypatch: pytest.MonkeyPatch) -> None:
 
     resolver = FlowResolver()
     resolver._bijux_agent_version = "0.0.0"
-    resolver.resolve(manifest)
+    with pytest.raises(NotImplementedError):
+        resolver.resolve(manifest)
 
     assert manifest.__dict__ == original
