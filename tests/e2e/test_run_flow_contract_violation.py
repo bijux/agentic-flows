@@ -7,7 +7,11 @@ import bijux_agent
 import bijux_rag
 import bijux_vex
 
-from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    RunMode,
+    execute_flow,
+)
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -87,8 +91,7 @@ def test_contract_violation_aborts(baseline_policy, resolved_flow_factory) -> No
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        mode=RunMode.LIVE,
-        verification_policy=baseline_policy,
+        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
     )
     trace = result.trace
 

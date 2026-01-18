@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_flows.api import RunMode
+from agentic_flows.api import ExecutionConfig, RunMode
 from agentic_flows.cli import main as cli_main
 from agentic_flows.runtime.orchestration.execute_flow import FlowRunResult
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
@@ -30,7 +30,7 @@ pytestmark = pytest.mark.unit
 @dataclass(frozen=True)
 class _RunCall:
     manifest: FlowManifest
-    mode: RunMode
+    config: ExecutionConfig
 
 
 def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
@@ -71,8 +71,8 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
 
     calls: list[_RunCall] = []
 
-    def _fake_run_flow(manifest, *, mode=RunMode.LIVE, **_kwargs):
-        calls.append(_RunCall(manifest=manifest, mode=mode))
+    def _fake_run_flow(manifest, *, config: ExecutionConfig, **_kwargs):
+        calls.append(_RunCall(manifest=manifest, config=config))
         return FlowRunResult(
             resolved_flow=resolved,
             trace=None,
@@ -91,6 +91,6 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
     assert calls == [
         _RunCall(
             manifest=resolved.manifest,
-            mode=RunMode.PLAN,
+            config=ExecutionConfig(mode=RunMode.PLAN),
         )
     ]

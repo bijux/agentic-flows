@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
     FlowRunResult,
     RunMode,
     execute_flow,
@@ -14,6 +15,7 @@ from agentic_flows.spec.model.verification import VerificationPolicy
 
 __all__ = [
     "FlowManifest",
+    "ExecutionConfig",
     "FlowRunResult",
     "ExecutionPlan",
     "RunMode",

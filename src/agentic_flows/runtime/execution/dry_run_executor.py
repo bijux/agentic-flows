@@ -6,6 +6,7 @@
 # Forbidden: calling bijux-agent, bijux-rag, bijux-rar, bijux-vex, or any external side effects.
 from __future__ import annotations
 
+from agentic_flows.core.authority import finalize_trace
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
 from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
@@ -41,7 +42,8 @@ class DryRunExecutor:
                     event_type=EventType.STEP_START,
                     timestamp_utc=utc_now_deterministic(event_index),
                     payload_hash=fingerprint_inputs(start_payload),
-                )
+                ),
+                context.authority,
             )
             event_index += 1
 
@@ -58,7 +60,8 @@ class DryRunExecutor:
                     event_type=EventType.STEP_END,
                     timestamp_utc=utc_now_deterministic(event_index),
                     payload_hash=fingerprint_inputs(end_payload),
-                )
+                ),
+                context.authority,
             )
             event_index += 1
 
@@ -75,7 +78,7 @@ class DryRunExecutor:
             tool_invocations=(),
             finalized=False,
         )
-        trace.finalize()
+        finalize_trace(trace)
         return ExecutionOutcome(
             trace=trace,
             artifacts=[],

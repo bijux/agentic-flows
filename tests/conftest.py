@@ -9,7 +9,9 @@ import types
 import pytest
 
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
-from agentic_flows.runtime.observability.environment import compute_environment_fingerprint
+from agentic_flows.runtime.observability.environment import (
+    compute_environment_fingerprint,
+)
 from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.execution_steps import ExecutionSteps

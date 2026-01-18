@@ -8,7 +8,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from agentic_flows.api import RunMode, execute_flow
+from agentic_flows.api import ExecutionConfig, execute_flow
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
 
@@ -47,26 +47,21 @@ def main() -> None:
     manifest_path = Path(args.manifest)
     manifest = _load_manifest(manifest_path)
 
-    if args.command == "plan":
-        result = execute_flow(manifest, mode=RunMode.PLAN)
+    config = ExecutionConfig.from_command(args.command)
+    result = execute_flow(manifest, config=config)
+    _render_result(args.command, result)
+
+
+def _render_result(command: str, result) -> None:
+    if command == "plan":
         payload = asdict(result.resolved_flow.plan)
         print(json.dumps(payload, sort_keys=True))
         return
-
-    if args.command == "dry-run":
-        result = execute_flow(
-            manifest,
-            mode=RunMode.DRY_RUN,
-        )
+    if command == "dry-run":
         payload = asdict(result.trace)
         print(json.dumps(payload, sort_keys=True))
         return
-
-    if args.command == "run":
-        result = execute_flow(
-            manifest,
-            mode=RunMode.LIVE,
-        )
+    if command == "run":
         payload = asdict(result.trace)
         artifact_list = [
             {"artifact_id": artifact.artifact_id, "content_hash": artifact.content_hash}
@@ -116,5 +111,4 @@ def main() -> None:
         }
         print(json.dumps(output, sort_keys=True))
         return
-
-    print(f"Flow loaded successfully: {manifest.flow_id}")
+    print(f"Flow loaded successfully: {result.resolved_flow.manifest.flow_id}")

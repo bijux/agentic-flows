@@ -3,10 +3,8 @@
 
 from __future__ import annotations
 
+from agentic_flows.core.authority import finalize_trace
 from agentic_flows.runtime.context import ExecutionContext
-from agentic_flows.runtime.execution.agent_executor import AgentExecutor
-from agentic_flows.runtime.execution.reasoning_executor import ReasoningExecutor
-from agentic_flows.runtime.execution.retrieval_executor import RetrievalExecutor
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
 from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.observability.retrieval_fingerprint import (
@@ -14,6 +12,7 @@ from agentic_flows.runtime.observability.retrieval_fingerprint import (
 )
 from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
+from agentic_flows.runtime.registry import build_step_registry
 from agentic_flows.runtime.verification_engine import VerificationEngine
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
@@ -24,7 +23,12 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import ContentHash, ResolverID, ToolID
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, EventType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    EventType,
+    StepType,
+)
 
 
 class LiveExecutor:
@@ -51,7 +55,8 @@ class LiveExecutor:
                     event_type=event_type,
                     timestamp_utc=utc_now_deterministic(event_index),
                     payload_hash=fingerprint_inputs(payload),
-                )
+                ),
+                context.authority,
             )
             event_index += 1
 
@@ -60,9 +65,10 @@ class LiveExecutor:
         reasoning_bundles: list[ReasoningBundle] = []
         verification_results: list[VerificationResult] = []
         tool_invocations: list[ToolInvocation] = []
-        agent_executor = AgentExecutor()
-        retrieval_executor = RetrievalExecutor()
-        reasoning_executor = ReasoningExecutor()
+        registry = build_step_registry()
+        agent_executor = registry[StepType.AGENT]
+        retrieval_executor = registry[StepType.RETRIEVAL]
+        reasoning_executor = registry[StepType.REASONING]
         verification_engine = VerificationEngine()
         policy = context.verification_policy
         tool_agent = ToolID("bijux-agent.run")
@@ -73,7 +79,7 @@ class LiveExecutor:
 
         for step in steps_plan.steps:
             current_evidence: list[RetrievedEvidence] = []
-            context.step_evidence[step.step_index] = []
+            context.record_evidence(step.step_index, [])
             record_event(
                 EventType.STEP_START,
                 step.step_index,
@@ -448,7 +454,7 @@ class LiveExecutor:
             tool_invocations=tuple(tool_invocations),
             finalized=False,
         )
-        trace.finalize()
+        finalize_trace(trace)
         return ExecutionOutcome(
             trace=trace,
             artifacts=artifacts,

@@ -5,27 +5,27 @@ from __future__ import annotations
 
 
 class ResolutionFailure(Exception):  # noqa: N818
-    """Resolution failures as defined in docs/failures.md."""
+    """Resolution failures (structural truth) as defined in docs/failures.md."""
 
 
 class ExecutionFailure(Exception):  # noqa: N818
-    """Execution failures as defined in docs/failures.md."""
+    """Execution failures (structural truth) as defined in docs/failures.md."""
 
 
 class RetrievalFailure(Exception):  # noqa: N818
-    """Retrieval failures as defined in docs/failures.md."""
+    """Retrieval failures (structural truth) as defined in docs/failures.md."""
 
 
 class ReasoningFailure(Exception):  # noqa: N818
-    """Reasoning failures as defined in docs/failures.md."""
+    """Reasoning failures (structural truth) as defined in docs/failures.md."""
 
 
 class VerificationFailure(Exception):  # noqa: N818
-    """Verification failures as defined in docs/failures.md."""
+    """Verification failures (epistemic truth) as defined in docs/failures.md."""
 
 
 class SemanticViolationError(RuntimeError):
-    """Runtime semantic invariant violation."""
+    """Semantic violations (structural truth) enforced by authority."""
 
 
 __all__ = [

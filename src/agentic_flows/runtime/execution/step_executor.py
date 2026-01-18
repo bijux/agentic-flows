@@ -24,10 +24,11 @@ class ExecutionOutcome:
 
 
 TStep = TypeVar("TStep", contravariant=True)
+TResult = TypeVar("TResult", covariant=True)
 
 
-class StepExecutor(Protocol[TStep]):
-    def execute(self, step: TStep, context: ExecutionContext) -> ExecutionOutcome: ...
+class StepExecutor(Protocol[TStep, TResult]):
+    def execute(self, step: TStep, context: ExecutionContext) -> TResult: ...
 
 
 __all__ = ["ExecutionOutcome", "StepExecutor"]

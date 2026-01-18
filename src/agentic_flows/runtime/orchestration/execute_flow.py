@@ -5,12 +5,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.core.semantics import enforce_runtime_semantics
+from agentic_flows.core.authority import authority_token, enforce_runtime_semantics
 from agentic_flows.runtime.artifact_store import ArtifactStore, InMemoryArtifactStore
 from agentic_flows.runtime.context import ExecutionContext, RunMode
 from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
-from agentic_flows.runtime.execution.step_executor import StepExecutor
+from agentic_flows.runtime.execution.step_executor import ExecutionOutcome, StepExecutor
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.spec.model.artifact import Artifact
@@ -34,20 +34,36 @@ class FlowRunResult:
     verification_results: list[VerificationResult]
 
 
+@dataclass(frozen=True)
+class ExecutionConfig:
+    mode: RunMode
+    verification_policy: VerificationPolicy | None = None
+    artifact_store: ArtifactStore | None = None
+
+    @classmethod
+    def from_command(cls, command: str) -> ExecutionConfig:
+        if command == "plan":
+            return cls(mode=RunMode.PLAN)
+        if command == "dry-run":
+            return cls(mode=RunMode.DRY_RUN)
+        if command == "run":
+            return cls(mode=RunMode.LIVE)
+        raise ValueError(f"Unsupported command: {command}")
+
+
 def execute_flow(
     manifest: FlowManifest | None = None,
     *,
     resolved_flow: ExecutionPlan | None = None,
-    mode: RunMode = RunMode.LIVE,
-    verification_policy: VerificationPolicy | None = None,
-    artifact_store: ArtifactStore | None = None,
+    config: ExecutionConfig | None = None,
 ) -> FlowRunResult:
+    execution_config = config or ExecutionConfig(mode=RunMode.LIVE)
     if (manifest is None) == (resolved_flow is None):
         raise ValueError("Provide exactly one of manifest or resolved_flow")
     if resolved_flow is None:
         resolved_flow = ExecutionPlanner().resolve(manifest)
 
-    if mode == RunMode.PLAN:
+    if execution_config.mode == RunMode.PLAN:
         return FlowRunResult(
             resolved_flow=resolved_flow,
             trace=None,
@@ -57,24 +73,28 @@ def execute_flow(
             verification_results=[],
         )
 
-    if verification_policy is None:
+    if (
+        execution_config.mode == RunMode.LIVE
+        and execution_config.verification_policy is None
+    ):
         raise ValueError("verification_policy is required before execution")
 
-    strategy: StepExecutor[ExecutionPlan] = LiveExecutor()
-    if mode == RunMode.DRY_RUN:
+    strategy: StepExecutor[ExecutionPlan, ExecutionOutcome] = LiveExecutor()
+    if execution_config.mode == RunMode.DRY_RUN:
         strategy = DryRunExecutor()
 
-    store = artifact_store or InMemoryArtifactStore()
+    store = execution_config.artifact_store or InMemoryArtifactStore()
     seed = _derive_seed_token(resolved_flow.plan)
     context = ExecutionContext(
+        authority=authority_token(),
         seed=seed,
         environment_fingerprint=resolved_flow.plan.environment_fingerprint,
         artifact_store=store,
         trace_recorder=TraceRecorder(),
-        mode=mode,
-        verification_policy=verification_policy,
-        step_evidence={},
-        step_artifacts={},
+        mode=execution_config.mode,
+        verification_policy=execution_config.verification_policy,
+        _step_evidence={},
+        _step_artifacts={},
     )
 
     outcome = strategy.execute(resolved_flow, context)
@@ -86,7 +106,7 @@ def execute_flow(
         reasoning_bundles=outcome.reasoning_bundles,
         verification_results=outcome.verification_results,
     )
-    enforce_runtime_semantics(result, mode=mode.value)
+    enforce_runtime_semantics(result, mode=execution_config.mode.value)
     return result
 
 
@@ -99,4 +119,4 @@ def _derive_seed_token(plan: ExecutionSteps) -> str | None:
     return plan.steps[0].inputs_fingerprint
 
 
-__all__ = ["FlowRunResult", "RunMode", "execute_flow"]
+__all__ = ["ExecutionConfig", "FlowRunResult", "RunMode", "execute_flow"]

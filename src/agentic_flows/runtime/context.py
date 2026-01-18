@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
@@ -22,14 +23,29 @@ class RunMode(str, Enum):
 
 @dataclass(frozen=True)
 class ExecutionContext:
+    authority: AuthorityToken
     seed: str | None
     environment_fingerprint: EnvironmentFingerprint
     artifact_store: ArtifactStore
     trace_recorder: TraceRecorder
     mode: RunMode
     verification_policy: VerificationPolicy | None
-    step_evidence: dict[int, list[RetrievedEvidence]]
-    step_artifacts: dict[int, list[Artifact]]
+    _step_evidence: dict[int, tuple[RetrievedEvidence, ...]]
+    _step_artifacts: dict[int, tuple[Artifact, ...]]
+
+    def record_evidence(
+        self, step_index: int, evidence: list[RetrievedEvidence]
+    ) -> None:
+        self._step_evidence[step_index] = tuple(evidence)
+
+    def record_artifacts(self, step_index: int, artifacts: list[Artifact]) -> None:
+        self._step_artifacts[step_index] = tuple(artifacts)
+
+    def evidence_for_step(self, step_index: int) -> tuple[RetrievedEvidence, ...]:
+        return self._step_evidence.get(step_index, ())
+
+    def artifacts_for_step(self, step_index: int) -> tuple[Artifact, ...]:
+        return self._step_artifacts.get(step_index, ())
 
 
-__all__ = ["ExecutionContext", "RunMode"]
+__all__ = ["RunMode"]

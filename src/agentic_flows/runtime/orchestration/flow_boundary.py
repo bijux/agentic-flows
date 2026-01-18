@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from agentic_flows._semantic_authority import SEMANTICS_SOURCE, SEMANTICS_VERSION
+from agentic_flows.core.authority import SEMANTICS_SOURCE, SEMANTICS_VERSION
 from agentic_flows.runtime.orchestration.determinism_guard import validate_determinism
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 

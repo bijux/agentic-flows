@@ -25,7 +25,7 @@ class AgentExecutor:
         if not hasattr(bijux_agent, "run"):
             raise RuntimeError("bijux_agent.run is required for agent execution")
 
-        evidence = context.step_evidence.get(step.step_index, [])
+        evidence = list(context.evidence_for_step(step.step_index))
         outputs = bijux_agent.run(
             agent_id=step.agent_invocation.agent_id,
             seed=seed,
@@ -34,7 +34,7 @@ class AgentExecutor:
             evidence=evidence,
         )
         artifacts = self._artifacts_from_outputs(step, outputs, context)
-        context.step_artifacts[step.step_index] = artifacts
+        context.record_artifacts(step.step_index, artifacts)
         return artifacts
 
     def _artifacts_from_outputs(

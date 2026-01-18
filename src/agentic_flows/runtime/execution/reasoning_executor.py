@@ -21,8 +21,8 @@ class ReasoningExecutor:
         if not hasattr(bijux_rar, "reason"):
             raise RuntimeError("bijux_rar.reason is required for reasoning")
 
-        agent_outputs = context.step_artifacts.get(step.step_index, [])
-        retrieved_evidence = context.step_evidence.get(step.step_index, [])
+        agent_outputs = list(context.artifacts_for_step(step.step_index))
+        retrieved_evidence = list(context.evidence_for_step(step.step_index))
         seed = self._deterministic_seed(agent_outputs, retrieved_evidence)
         bundle = bijux_rar.reason(
             agent_outputs=agent_outputs,

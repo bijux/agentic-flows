@@ -6,7 +6,11 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
-from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    RunMode,
+    execute_flow,
+)
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.flow_manifest import FlowManifest
@@ -49,6 +53,8 @@ def test_run_flow_uses_resolved_flow_without_recomputation(monkeypatch) -> None:
 
     monkeypatch.setattr(ExecutionPlanner, "resolve", _fail_resolve)
 
-    result = execute_flow(resolved_flow=resolved_flow, mode=RunMode.PLAN)
+    result = execute_flow(
+        resolved_flow=resolved_flow, config=ExecutionConfig(mode=RunMode.PLAN)
+    )
 
     assert result.resolved_flow.plan.plan_hash == PlanHash("sentinel")

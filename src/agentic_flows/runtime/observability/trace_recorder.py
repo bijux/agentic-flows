@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 
 
@@ -41,7 +42,9 @@ class TraceRecorder:
     def __init__(self) -> None:
         self._events: AppendOnlyList = AppendOnlyList()
 
-    def record(self, event: ExecutionEvent) -> None:
+    def record(self, event: ExecutionEvent, authority: AuthorityToken) -> None:
+        if not isinstance(authority, AuthorityToken):
+            raise TypeError("authority token required to record execution events")
         self._events.append(event)
 
     def events(self) -> tuple[ExecutionEvent, ...]:

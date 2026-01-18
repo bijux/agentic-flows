@@ -10,7 +10,11 @@ import bijux_vex
 import pytest
 
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
-from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    RunMode,
+    execute_flow,
+)
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -118,8 +122,7 @@ def test_invariant_canary(baseline_policy, resolved_flow_factory) -> None:
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        mode=RunMode.LIVE,
-        verification_policy=baseline_policy,
+        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
     )
     trace = result.trace
     plan = result.resolved_flow.plan

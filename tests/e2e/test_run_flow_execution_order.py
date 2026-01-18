@@ -5,7 +5,11 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    RunMode,
+    execute_flow,
+)
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -80,6 +84,7 @@ def test_execution_order_mismatch_rejected(
     ):
         execute_flow(
             resolved_flow=resolved_flow,
-            mode=RunMode.DRY_RUN,
-            verification_policy=baseline_policy,
+            config=ExecutionConfig(
+                mode=RunMode.DRY_RUN, verification_policy=baseline_policy
+            ),
         )

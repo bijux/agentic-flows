@@ -21,7 +21,7 @@ class RetrievalExecutor:
     ) -> list[RetrievedEvidence]:
         request = step.retrieval_request
         if request is None:
-            context.step_evidence[step.step_index] = []
+            context.record_evidence(step.step_index, [])
             return []
         if not hasattr(bijux_rag, "retrieve"):
             raise RuntimeError("bijux_rag.retrieve is required for retrieval")
@@ -47,7 +47,7 @@ class RetrievalExecutor:
         if not bijux_vex.enforce_contract(request.vector_contract_id, evidence):
             raise ValueError("retrieval evidence failed vector contract enforcement")
 
-        context.step_evidence[step.step_index] = evidence
+        context.record_evidence(step.step_index, evidence)
         return evidence
 
     def _normalize_evidence(self, raw: Any) -> list[RetrievedEvidence]:

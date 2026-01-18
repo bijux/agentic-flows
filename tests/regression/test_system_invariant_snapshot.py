@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows import api
-from agentic_flows.core import semantics
+from agentic_flows.core import authority
 from agentic_flows.spec.contracts import compatibility_contract
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
@@ -19,9 +19,10 @@ pytestmark = pytest.mark.regression
 
 def test_system_invariant_snapshot() -> None:
     assert set(api.__all__) == {
+        "ExecutionConfig",
+        "ExecutionPlan",
         "FlowManifest",
         "FlowRunResult",
-        "ExecutionPlan",
         "RunMode",
         "VerificationPolicy",
         "execute_flow",
@@ -41,6 +42,6 @@ def test_system_invariant_snapshot() -> None:
         "pre_execution",
         "post_execution",
     ]
-    assert callable(semantics.enforce_runtime_semantics)
+    assert callable(authority.enforce_runtime_semantics)
     assert compatibility_contract.breaks_replay("plan_hash") is True
     assert compatibility_contract.allowed_to_evolve("doc_text") is True
