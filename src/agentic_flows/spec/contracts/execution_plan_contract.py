@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.ontology.ontology import StepType
 
 
-def validate(resolved_flow: ResolvedFlow) -> None:
-    manifest_agents = set(resolved_flow.manifest.agents)
-    steps = resolved_flow.plan.steps
+def validate(plan: ExecutionPlan) -> None:
+    manifest_agents = set(plan.manifest.agents)
+    steps = plan.plan.steps
     step_agents = [step.agent_id for step in steps]
     if len(set(step_agents)) != len(step_agents):
         raise ValueError("resolved steps must be unique per agent")

@@ -5,8 +5,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from agentic_flows.runtime.environment import compute_environment_fingerprint
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.runtime.observability.environment import (
+    compute_environment_fingerprint,
+)
+from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 
 
@@ -26,7 +28,7 @@ def validate_determinism(
         raise ValueError("unordered collections must be normalized before execution")
 
 
-def validate_replay(trace: ExecutionTrace, plan: ExecutionPlan) -> None:
+def validate_replay(trace: ExecutionTrace, plan: ExecutionSteps) -> None:
     if trace.plan_hash != plan.plan_hash:
         raise ValueError("plan_hash mismatch for replay")
     if trace.environment_fingerprint != plan.environment_fingerprint:

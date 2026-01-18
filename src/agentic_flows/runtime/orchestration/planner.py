@@ -15,18 +15,20 @@ try:
 except PackageNotFoundError:
     bijux_cli_version = "0.0.0"
 
-from agentic_flows.runtime.environment import compute_environment_fingerprint
-from agentic_flows.runtime.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.environment import (
+    compute_environment_fingerprint,
+)
+from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.spec.contracts.execution_plan_contract import (
+    validate as validate_execution_plan,
+)
 from agentic_flows.spec.contracts.flow_contract import (
     validate as validate_flow_manifest,
 )
-from agentic_flows.spec.contracts.resolved_flow_contract import (
-    validate as validate_resolved_flow,
-)
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology.ids import (
     AgentID,
@@ -40,12 +42,12 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.ontology import StepType
 
 
-class FlowResolver:
+class ExecutionPlanner:
     resolver_id: ResolverID = ResolverID("agentic-flows:v0")
     _bijux_cli_version: str = bijux_cli_version
     _bijux_agent_version: str = bijux_agent_version
 
-    def resolve(self, manifest: FlowManifest) -> ResolvedFlow:
+    def resolve(self, manifest: FlowManifest) -> ExecutionPlan:
         validate_flow_manifest(manifest)
         ordered_agents = self._toposort_agents(manifest)
         dependencies = self._parse_dependencies(manifest)
@@ -83,7 +85,7 @@ class FlowResolver:
                 )
             )
         plan_hash = self._plan_hash(manifest.flow_id, steps, dependencies)
-        plan = ExecutionPlan(
+        plan = ExecutionSteps(
             spec_version="v1",
             flow_id=FlowID(manifest.flow_id),
             steps=tuple(steps),
@@ -96,12 +98,12 @@ class FlowResolver:
                 ("bijux_cli_version", self._bijux_cli_version),
             ),
         )
-        resolved = ResolvedFlow(
+        resolved = ExecutionPlan(
             spec_version="v1",
             manifest=manifest,
             plan=plan,
         )
-        validate_resolved_flow(resolved)
+        validate_execution_plan(resolved)
         return resolved
 
     def _toposort_agents(self, manifest: FlowManifest) -> list[str]:

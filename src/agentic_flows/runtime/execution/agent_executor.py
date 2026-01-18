@@ -11,37 +11,37 @@ from typing import Any
 
 import bijux_agent
 
-from agentic_flows.runtime.artifact_store import ArtifactStore
-from agentic_flows.runtime.seed import deterministic_seed
+from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.runtime.observability.seed import deterministic_seed
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
 from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
 class AgentExecutor:
-    def __init__(self, artifact_store: ArtifactStore) -> None:
-        self._artifact_store = artifact_store
-
-    def execute_step(
-        self, step: ResolvedStep, evidence: list[RetrievedEvidence] | None = None
-    ) -> list[Artifact]:
+    def execute(self, step: ResolvedStep, context: ExecutionContext) -> list[Artifact]:
         seed = deterministic_seed(step.step_index, step.inputs_fingerprint)
         if not hasattr(bijux_agent, "run"):
             raise RuntimeError("bijux_agent.run is required for agent execution")
 
+        evidence = context.step_evidence.get(step.step_index, [])
         outputs = bijux_agent.run(
             agent_id=step.agent_invocation.agent_id,
             seed=seed,
             inputs_fingerprint=step.inputs_fingerprint,
             declared_outputs=step.agent_invocation.declared_outputs,
-            evidence=evidence or [],
+            evidence=evidence,
         )
-        return self._artifacts_from_outputs(step, outputs)
+        artifacts = self._artifacts_from_outputs(step, outputs, context)
+        context.step_artifacts[step.step_index] = artifacts
+        return artifacts
 
     def _artifacts_from_outputs(
-        self, step: ResolvedStep, outputs: Any
+        self,
+        step: ResolvedStep,
+        outputs: Any,
+        context: ExecutionContext,
     ) -> list[Artifact]:
         if not isinstance(outputs, list):
             raise ValueError("agent outputs must be a list")
@@ -64,7 +64,7 @@ class AgentExecutor:
 
             artifact_type = ArtifactType(str(entry["artifact_type"]))
             artifacts.append(
-                self._artifact_store.create(
+                context.artifact_store.create(
                     spec_version="v1",
                     artifact_id=ArtifactID(str(entry["artifact_id"])),
                     artifact_type=artifact_type,

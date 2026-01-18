@@ -8,7 +8,7 @@ import socket
 
 import pytest
 
-from agentic_flows.runtime.orchestration.resolver import FlowResolver
+from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import AgentID, FlowID
 
@@ -43,13 +43,15 @@ def test_resolve_is_pure(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(socket, "socket", _blocked_socket)
     monkeypatch.setattr("builtins.open", _blocked_open)
     monkeypatch.setattr(
-        "agentic_flows.runtime.orchestration.resolver.compute_environment_fingerprint",
+        "agentic_flows.runtime.orchestration.planner.compute_environment_fingerprint",
         lambda: "env-fingerprint",
     )
 
-    monkeypatch.setattr(FlowResolver, "_bijux_agent_version", "0.0.0", raising=False)
-    monkeypatch.setattr(FlowResolver, "_bijux_cli_version", "0.0.0", raising=False)
-    resolved = FlowResolver().resolve(manifest)
+    monkeypatch.setattr(
+        ExecutionPlanner, "_bijux_agent_version", "0.0.0", raising=False
+    )
+    monkeypatch.setattr(ExecutionPlanner, "_bijux_cli_version", "0.0.0", raising=False)
+    resolved = ExecutionPlanner().resolve(manifest)
 
     assert manifest.__dict__ == original
     assert resolved.plan.environment_fingerprint == "env-fingerprint"

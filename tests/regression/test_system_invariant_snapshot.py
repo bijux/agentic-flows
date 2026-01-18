@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows import api
-from agentic_flows.runtime import semantics
+from agentic_flows.core import semantics
 from agentic_flows.spec.contracts import compatibility_contract
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
@@ -21,10 +21,10 @@ def test_system_invariant_snapshot() -> None:
     assert set(api.__all__) == {
         "FlowManifest",
         "FlowRunResult",
-        "ResolvedFlow",
+        "ExecutionPlan",
         "RunMode",
         "VerificationPolicy",
-        "run_flow",
+        "execute_flow",
     }
     assert [scope.value for scope in ArtifactScope] == [
         "ephemeral",

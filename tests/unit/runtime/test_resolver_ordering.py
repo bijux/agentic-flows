@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.orchestration.resolver import FlowResolver
+from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import AgentID, FlowID
 
@@ -22,7 +22,7 @@ def test_resolver_uses_lexical_tiebreak_for_ordering() -> None:
         verification_gates=(),
     )
 
-    resolved = FlowResolver().resolve(manifest)
+    resolved = ExecutionPlanner().resolve(manifest)
     ordered = [step.agent_id for step in resolved.plan.steps]
 
     assert ordered == [AgentID("alpha"), AgentID("bravo")]

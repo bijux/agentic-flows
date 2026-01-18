@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.determinism_guard import validate_replay
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
+from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -30,7 +30,7 @@ def test_replay_equivalence(deterministic_environment) -> None:
         verification_gates=(GateID("gate-a"),),
     )
 
-    result = run_flow(manifest, mode=RunMode.PLAN)
+    result = execute_flow(manifest, mode=RunMode.PLAN)
     plan = result.resolved_flow.plan
     trace = ExecutionTrace(
         spec_version="v1",

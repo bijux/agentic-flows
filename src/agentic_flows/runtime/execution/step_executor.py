@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Protocol, TypeVar
 
-from agentic_flows.runtime.context import RuntimeContext
+from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification_result import VerificationResult
 
@@ -24,10 +23,11 @@ class ExecutionOutcome:
     verification_results: list[VerificationResult]
 
 
-class ExecutionStrategy(Protocol):
-    def execute(
-        self, resolved_flow: ResolvedFlow, context: RuntimeContext
-    ) -> ExecutionOutcome: ...
+TStep = TypeVar("TStep", contravariant=True)
 
 
-__all__ = ["ExecutionOutcome", "ExecutionStrategy"]
+class StepExecutor(Protocol[TStep]):
+    def execute(self, step: TStep, context: ExecutionContext) -> ExecutionOutcome: ...
+
+
+__all__ = ["ExecutionOutcome", "StepExecutor"]

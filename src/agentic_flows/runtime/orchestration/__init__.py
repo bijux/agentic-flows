@@ -3,18 +3,18 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
-from agentic_flows.runtime.orchestration.resolver import FlowResolver
-from agentic_flows.runtime.orchestration.run_flow import (
+from agentic_flows.runtime.orchestration.execute_flow import (
     FlowRunResult,
     RunMode,
-    run_flow,
+    execute_flow,
 )
+from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
+from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 
 __all__ = [
-    "FlowResolver",
+    "ExecutionPlanner",
     "FlowRunResult",
     "RunMode",
     "enforce_flow_boundary",
-    "run_flow",
+    "execute_flow",
 ]

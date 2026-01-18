@@ -3,20 +3,20 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.orchestration.run_flow import (
+from agentic_flows.runtime.orchestration.execute_flow import (
     FlowRunResult,
     RunMode,
-    run_flow,
+    execute_flow,
 )
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.verification import VerificationPolicy
 
 __all__ = [
     "FlowManifest",
     "FlowRunResult",
-    "ResolvedFlow",
+    "ExecutionPlan",
     "RunMode",
     "VerificationPolicy",
-    "run_flow",
+    "execute_flow",
 ]

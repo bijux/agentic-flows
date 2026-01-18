@@ -6,28 +6,28 @@
 # Forbidden: calling bijux-agent, bijux-rag, bijux-rar, bijux-vex, or any external side effects.
 from __future__ import annotations
 
-from agentic_flows.runtime.context import RuntimeContext
-from agentic_flows.runtime.execution.strategy import ExecutionOutcome
-from agentic_flows.runtime.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
+from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
-from agentic_flows.runtime.time import utc_now_deterministic
 from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.ontology.ids import ResolverID
 from agentic_flows.spec.ontology.ontology import EventType
 
 
 class DryRunExecutor:
     def execute(
-        self, resolved_flow: ResolvedFlow, context: RuntimeContext
+        self, plan: ExecutionPlan, context: ExecutionContext
     ) -> ExecutionOutcome:
-        plan = resolved_flow.plan
-        enforce_flow_boundary(plan)
+        steps_plan = plan.plan
+        enforce_flow_boundary(steps_plan)
         recorder = context.trace_recorder
         event_index = 0
 
-        for step in plan.steps:
+        for step in steps_plan.steps:
             start_payload = {
                 "event_type": EventType.STEP_START.value,
                 "step_index": step.step_index,
@@ -63,13 +63,13 @@ class DryRunExecutor:
             event_index += 1
 
         resolver_id = ResolverID(
-            self._resolver_id_from_metadata(plan.resolution_metadata)
+            self._resolver_id_from_metadata(steps_plan.resolution_metadata)
         )
         trace = ExecutionTrace(
             spec_version="v1",
-            flow_id=plan.flow_id,
-            environment_fingerprint=plan.environment_fingerprint,
-            plan_hash=plan.plan_hash,
+            flow_id=steps_plan.flow_id,
+            environment_fingerprint=steps_plan.environment_fingerprint,
+            plan_hash=steps_plan.plan_hash,
             resolver_id=resolver_id,
             events=recorder.events(),
             tool_invocations=(),

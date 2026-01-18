@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
+from agentic_flows.spec.ontology.ids import *  # noqa: F403
+
+__all__ = [
+    name for name in globals() if name.endswith("ID") or name.endswith("Fingerprint")
+]

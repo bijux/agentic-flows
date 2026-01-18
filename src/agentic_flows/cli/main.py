@@ -8,7 +8,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from agentic_flows.api import RunMode, run_flow
+from agentic_flows.api import RunMode, execute_flow
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
 
@@ -48,13 +48,13 @@ def main() -> None:
     manifest = _load_manifest(manifest_path)
 
     if args.command == "plan":
-        result = run_flow(manifest, mode=RunMode.PLAN)
+        result = execute_flow(manifest, mode=RunMode.PLAN)
         payload = asdict(result.resolved_flow.plan)
         print(json.dumps(payload, sort_keys=True))
         return
 
     if args.command == "dry-run":
-        result = run_flow(
+        result = execute_flow(
             manifest,
             mode=RunMode.DRY_RUN,
         )
@@ -63,7 +63,7 @@ def main() -> None:
         return
 
     if args.command == "run":
-        result = run_flow(
+        result = execute_flow(
             manifest,
             mode=RunMode.LIVE,
         )

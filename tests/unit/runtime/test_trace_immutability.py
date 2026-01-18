@@ -7,7 +7,7 @@ import dataclasses
 
 import pytest
 
-from agentic_flows.runtime.trace_recorder import AppendOnlyList
+from agentic_flows.runtime.observability.trace_recorder import AppendOnlyList
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.ontology.ids import (

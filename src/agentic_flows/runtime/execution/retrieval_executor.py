@@ -9,13 +9,20 @@ from typing import Any
 import bijux_rag
 import bijux_vex
 
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
 
 
 class RetrievalExecutor:
-    def execute(self, request: RetrievalRequest) -> list[RetrievedEvidence]:
+    def execute(
+        self, step: ResolvedStep, context: ExecutionContext
+    ) -> list[RetrievedEvidence]:
+        request = step.retrieval_request
+        if request is None:
+            context.step_evidence[step.step_index] = []
+            return []
         if not hasattr(bijux_rag, "retrieve"):
             raise RuntimeError("bijux_rag.retrieve is required for retrieval")
         if not hasattr(bijux_vex, "enforce_contract"):
@@ -40,6 +47,7 @@ class RetrievalExecutor:
         if not bijux_vex.enforce_contract(request.vector_contract_id, evidence):
             raise ValueError("retrieval evidence failed vector contract enforcement")
 
+        context.step_evidence[step.step_index] = evidence
         return evidence
 
     def _normalize_evidence(self, raw: Any) -> list[RetrievedEvidence]:

@@ -7,7 +7,9 @@ from dataclasses import dataclass
 from enum import Enum
 
 from agentic_flows.runtime.artifact_store import ArtifactStore
-from agentic_flows.runtime.trace_recorder import TraceRecorder
+from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.ontology.ids import EnvironmentFingerprint
 
@@ -19,12 +21,15 @@ class RunMode(str, Enum):
 
 
 @dataclass(frozen=True)
-class RuntimeContext:
+class ExecutionContext:
+    seed: str | None
     environment_fingerprint: EnvironmentFingerprint
     artifact_store: ArtifactStore
     trace_recorder: TraceRecorder
-    run_mode: RunMode
+    mode: RunMode
     verification_policy: VerificationPolicy | None
+    step_evidence: dict[int, list[RetrievedEvidence]]
+    step_artifacts: dict[int, list[Artifact]]
 
 
-__all__ = ["RunMode", "RuntimeContext"]
+__all__ = ["ExecutionContext", "RunMode"]

@@ -9,20 +9,20 @@ import json
 
 import bijux_rar
 
+from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 
 
 class ReasoningExecutor:
-    def execute(
-        self,
-        agent_outputs: list[Artifact],
-        retrieved_evidence: list[RetrievedEvidence],
-    ) -> ReasoningBundle:
+    def execute(self, step: ResolvedStep, context: ExecutionContext) -> ReasoningBundle:
         if not hasattr(bijux_rar, "reason"):
             raise RuntimeError("bijux_rar.reason is required for reasoning")
 
+        agent_outputs = context.step_artifacts.get(step.step_index, [])
+        retrieved_evidence = context.step_evidence.get(step.step_index, [])
         seed = self._deterministic_seed(agent_outputs, retrieved_evidence)
         bundle = bijux_rar.reason(
             agent_outputs=agent_outputs,

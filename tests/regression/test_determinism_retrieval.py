@@ -9,7 +9,7 @@ import bijux_rar
 import bijux_vex
 import pytest
 
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -127,12 +127,12 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
-    result_one = run_flow(
+    result_one = execute_flow(
         resolved_flow=resolved_flow,
         mode=RunMode.LIVE,
         verification_policy=baseline_policy,
     )
-    result_two = run_flow(
+    result_two = execute_flow(
         resolved_flow=resolved_flow,
         mode=RunMode.LIVE,
         verification_policy=baseline_policy,

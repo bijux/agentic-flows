@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
 
@@ -38,7 +38,7 @@ def test_golden_execution_plan(deterministic_environment) -> None:
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
-    result = run_flow(manifest, mode=RunMode.PLAN)
+    result = execute_flow(manifest, mode=RunMode.PLAN)
     payload = _normalize_for_json(asdict(result.resolved_flow.plan))
     golden_path = Path(__file__).parents[1] / "golden" / "test_execution_plan.json"
     expected = json.loads(golden_path.read_text(encoding="utf-8"))

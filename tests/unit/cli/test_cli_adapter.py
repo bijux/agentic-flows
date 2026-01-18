@@ -12,10 +12,10 @@ import pytest
 
 from agentic_flows.api import RunMode
 from agentic_flows.cli import main as cli_main
-from agentic_flows.runtime.orchestration.run_flow import FlowRunResult
+from agentic_flows.runtime.orchestration.execute_flow import FlowRunResult
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     EnvironmentFingerprint,
@@ -48,7 +48,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         encoding="utf-8",
     )
 
-    plan = ExecutionPlan(
+    plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-cli"),
         steps=(),
@@ -56,7 +56,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         plan_hash=PlanHash("plan"),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
-    resolved = ResolvedFlow(
+    resolved = ExecutionPlan(
         spec_version="v1",
         manifest=FlowManifest(
             spec_version="v1",
@@ -83,7 +83,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         )
 
     cli_main_module = importlib.import_module("agentic_flows.cli.main")
-    monkeypatch.setattr(cli_main_module, "run_flow", _fake_run_flow)
+    monkeypatch.setattr(cli_main_module, "execute_flow", _fake_run_flow)
     monkeypatch.setattr("sys.argv", ["agentic-flows", "plan", str(manifest_path)])
 
     cli_main()

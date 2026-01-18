@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -59,7 +59,7 @@ def test_environment_fingerprint_mismatch_blocks_execution(
     )
 
     with pytest.raises(ValueError, match="environment_fingerprint mismatch"):
-        run_flow(
+        execute_flow(
             resolved_flow=resolved_flow,
             mode=RunMode.DRY_RUN,
             verification_policy=baseline_policy,

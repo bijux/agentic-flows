@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
@@ -56,7 +56,7 @@ def test_verification_policy_required_before_execution(
     with pytest.raises(
         ValueError, match="verification_policy is required before execution"
     ):
-        run_flow(
+        execute_flow(
             resolved_flow=resolved_flow,
             mode=RunMode.LIVE,
         )

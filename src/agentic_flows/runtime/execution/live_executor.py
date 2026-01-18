@@ -3,21 +3,23 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.context import RuntimeContext
+from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.agent_executor import AgentExecutor
 from agentic_flows.runtime.execution.reasoning_executor import ReasoningExecutor
 from agentic_flows.runtime.execution.retrieval_executor import RetrievalExecutor
-from agentic_flows.runtime.execution.strategy import ExecutionOutcome
-from agentic_flows.runtime.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
+from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.retrieval_fingerprint import (
+    fingerprint_retrieval,
+)
+from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
-from agentic_flows.runtime.retrieval_fingerprint import fingerprint_retrieval
-from agentic_flows.runtime.time import utc_now_deterministic
 from agentic_flows.runtime.verification_engine import VerificationEngine
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification_result import VerificationResult
@@ -28,11 +30,11 @@ from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, Ev
 class LiveExecutor:
     def execute(
         self,
-        resolved_flow: ResolvedFlow,
-        context: RuntimeContext,
+        plan: ExecutionPlan,
+        context: ExecutionContext,
     ) -> ExecutionOutcome:
-        plan = resolved_flow.plan
-        enforce_flow_boundary(plan)
+        steps_plan = plan.plan
+        enforce_flow_boundary(steps_plan)
         recorder = context.trace_recorder
         event_index = 0
 
@@ -58,7 +60,7 @@ class LiveExecutor:
         reasoning_bundles: list[ReasoningBundle] = []
         verification_results: list[VerificationResult] = []
         tool_invocations: list[ToolInvocation] = []
-        agent_executor = AgentExecutor(context.artifact_store)
+        agent_executor = AgentExecutor()
         retrieval_executor = RetrievalExecutor()
         reasoning_executor = ReasoningExecutor()
         verification_engine = VerificationEngine()
@@ -69,8 +71,9 @@ class LiveExecutor:
 
         pending_invocations: dict[tuple[int, ToolID], ContentHash] = {}
 
-        for step in plan.steps:
+        for step in steps_plan.steps:
             current_evidence: list[RetrievedEvidence] = []
+            context.step_evidence[step.step_index] = []
             record_event(
                 EventType.STEP_START,
                 step.step_index,
@@ -111,7 +114,7 @@ class LiveExecutor:
                 )
 
                 try:
-                    retrieved = retrieval_executor.execute(step.retrieval_request)
+                    retrieved = retrieval_executor.execute(step, context)
                 except Exception as exc:
                     input_fingerprint = pending_invocations.pop(
                         (step.step_index, tool_retrieval),
@@ -206,9 +209,7 @@ class LiveExecutor:
                 fingerprint_inputs(tool_input)
             )
             try:
-                step_artifacts = agent_executor.execute_step(
-                    step, evidence=current_evidence
-                )
+                step_artifacts = agent_executor.execute(step, context)
                 artifacts.extend(step_artifacts)
             except Exception as exc:
                 input_fingerprint = pending_invocations.pop(
@@ -302,10 +303,7 @@ class LiveExecutor:
             )
 
             try:
-                bundle = reasoning_executor.execute(
-                    agent_outputs=step_artifacts,
-                    retrieved_evidence=current_evidence,
-                )
+                bundle = reasoning_executor.execute(step, context)
                 reasoning_bundles.append(bundle)
                 bundle_hash = ContentHash(reasoning_executor.bundle_hash(bundle))
 
@@ -438,13 +436,13 @@ class LiveExecutor:
             )
 
         resolver_id = ResolverID(
-            self._resolver_id_from_metadata(plan.resolution_metadata)
+            self._resolver_id_from_metadata(steps_plan.resolution_metadata)
         )
         trace = ExecutionTrace(
             spec_version="v1",
-            flow_id=plan.flow_id,
-            environment_fingerprint=plan.environment_fingerprint,
-            plan_hash=plan.plan_hash,
+            flow_id=steps_plan.flow_id,
+            environment_fingerprint=steps_plan.environment_fingerprint,
+            plan_hash=steps_plan.plan_hash,
             resolver_id=resolver_id,
             events=recorder.events(),
             tool_invocations=tuple(tool_invocations),

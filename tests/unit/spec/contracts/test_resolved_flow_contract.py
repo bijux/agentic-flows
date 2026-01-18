@@ -7,6 +7,7 @@ import pytest
 
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
     AgentID,
@@ -18,13 +19,12 @@ from agentic_flows.spec.ontology.ids import (
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import StepType
-from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.contracts.flow_contract import (
     validate as validate_flow_manifest,
 )
-from agentic_flows.spec.contracts.resolved_flow_contract import (
-    validate as validate_resolved_flow,
+from agentic_flows.spec.contracts.execution_plan_contract import (
+    validate as validate_execution_plan,
 )
 
 pytestmark = pytest.mark.unit
@@ -71,7 +71,7 @@ def test_semantic_gate_accepts_minimal_valid_flow() -> None:
         ),
         retrieval_request=None,
     )
-    plan = ExecutionPlan(
+    plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-minimal"),
         steps=(step,),
@@ -79,7 +79,7 @@ def test_semantic_gate_accepts_minimal_valid_flow() -> None:
         plan_hash=PlanHash("plan"),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
-    resolved = ResolvedFlow(spec_version="v1", manifest=manifest, plan=plan)
+    resolved = ExecutionPlan(spec_version="v1", manifest=manifest, plan=plan)
 
     validate_flow_manifest(manifest)
-    validate_resolved_flow(resolved)
+    validate_execution_plan(resolved)

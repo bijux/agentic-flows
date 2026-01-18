@@ -6,10 +6,10 @@
 # Code must change to match semantics, never the reverse.
 from __future__ import annotations
 
-from agentic_flows.api import FlowManifest, RunMode, run_flow
+from agentic_flows.api import FlowManifest, RunMode, execute_flow
 
 __all__ = [
     "FlowManifest",
     "RunMode",
-    "run_flow",
+    "execute_flow",
 ]

@@ -3,10 +3,10 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.orchestration.run_flow import (
+from agentic_flows.runtime.orchestration.execute_flow import (
     FlowRunResult,
     RunMode,
-    run_flow,
+    execute_flow,
 )
 
-__all__ = ["FlowRunResult", "RunMode", "run_flow"]
+__all__ = ["FlowRunResult", "RunMode", "execute_flow"]

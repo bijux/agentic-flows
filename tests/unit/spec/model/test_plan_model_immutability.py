@@ -8,7 +8,7 @@ import dataclasses
 import pytest
 
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     EnvironmentFingerprint,
@@ -46,7 +46,7 @@ def _make_step(index: int) -> ResolvedStep:
 
 def test_plan_is_structurally_immutable(plan_hash_for) -> None:
     step = _make_step(0)
-    plan = ExecutionPlan(
+    plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-immutable"),
         steps=(step,),
