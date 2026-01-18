@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from agentic_flows.runtime.context import RuntimeContext
+from agentic_flows.runtime.execution.strategy import ExecutionOutcome
 from agentic_flows.runtime.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
 from agentic_flows.runtime.time import utc_now_deterministic
@@ -20,7 +21,7 @@ from agentic_flows.spec.ontology.ontology import EventType
 class DryRunExecutor:
     def execute(
         self, resolved_flow: ResolvedFlow, context: RuntimeContext
-    ) -> ExecutionTrace:
+    ) -> ExecutionOutcome:
         plan = resolved_flow.plan
         enforce_flow_boundary(plan)
         recorder = context.trace_recorder
@@ -71,10 +72,17 @@ class DryRunExecutor:
             plan_hash=plan.plan_hash,
             resolver_id=resolver_id,
             events=recorder.events(),
+            tool_invocations=(),
             finalized=False,
         )
         trace.finalize()
-        return trace
+        return ExecutionOutcome(
+            trace=trace,
+            artifacts=[],
+            evidence=[],
+            reasoning_bundles=[],
+            verification_results=[],
+        )
 
     @staticmethod
     def _resolver_id_from_metadata(metadata: tuple[tuple[str, str], ...]) -> str:

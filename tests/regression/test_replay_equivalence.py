@@ -39,6 +39,7 @@ def test_replay_equivalence(deterministic_environment) -> None:
         plan_hash=plan.plan_hash,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(),
+        tool_invocations=(),
         finalized=False,
     )
     trace.finalize()

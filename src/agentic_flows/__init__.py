@@ -6,8 +6,7 @@
 # Code must change to match semantics, never the reverse.
 from __future__ import annotations
 
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
-from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.api import FlowManifest, RunMode, run_flow
 
 __all__ = [
     "FlowManifest",

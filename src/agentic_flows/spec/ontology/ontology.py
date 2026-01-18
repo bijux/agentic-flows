@@ -30,6 +30,12 @@ class ArtifactType(str, Enum):
     EXECUTION_TRACE = "execution_trace"
 
 
+class ArtifactScope(str, Enum):
+    EPHEMERAL = "ephemeral"
+    WORKING = "working"
+    AUDIT = "audit"
+
+
 class EventType(str, Enum):
     def _generate_next_value_(name, start, count, last_values):  # noqa: N805
         return name
@@ -59,6 +65,11 @@ class StepType(str, Enum):
     VERIFICATION = "verification"
 
 
+class VerificationPhase(str, Enum):
+    PRE_EXECUTION = "pre_execution"
+    POST_EXECUTION = "post_execution"
+
+
 __all__ = [
     "Agent",
     "Tool",
@@ -68,6 +79,8 @@ __all__ = [
     "Flow",
     "Step",
     "ArtifactType",
+    "ArtifactScope",
     "EventType",
     "StepType",
+    "VerificationPhase",
 ]

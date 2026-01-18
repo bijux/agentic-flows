@@ -22,3 +22,17 @@ class ReasoningFailure(Exception):  # noqa: N818
 
 class VerificationFailure(Exception):  # noqa: N818
     """Verification failures as defined in docs/failures.md."""
+
+
+class SemanticViolationError(RuntimeError):
+    """Runtime semantic invariant violation."""
+
+
+__all__ = [
+    "ResolutionFailure",
+    "ExecutionFailure",
+    "RetrievalFailure",
+    "ReasoningFailure",
+    "VerificationFailure",
+    "SemanticViolationError",
+]

@@ -24,6 +24,7 @@ def test_trace_access_before_finalize_raises() -> None:
         plan_hash=PlanHash("plan-hash"),
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(),
+        tool_invocations=(),
         finalized=False,
     )
 

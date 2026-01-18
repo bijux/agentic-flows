@@ -25,13 +25,19 @@ from agentic_flows.spec.ontology.ids import (
     ToolID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactScope,
+    EventType,
+    StepType,
+    VerificationPhase,
+)
 
 __all__ = [
     "ActionID",
     "AgentID",
     "ArtifactID",
     "ArtifactType",
+    "ArtifactScope",
     "BundleID",
     "ClaimID",
     "ContentHash",
@@ -48,6 +54,7 @@ __all__ = [
     "RuleID",
     "StepID",
     "StepType",
+    "VerificationPhase",
     "ToolID",
     "VersionID",
 ]

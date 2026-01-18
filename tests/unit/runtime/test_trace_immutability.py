@@ -40,6 +40,7 @@ def test_trace_is_immutable() -> None:
         plan_hash=PlanHash("plan-hash"),
         resolver_id=ResolverID("agentic-flows:v0"),
         events=tuple(events),
+        tool_invocations=(),
         finalized=False,
     )
     trace.finalize()

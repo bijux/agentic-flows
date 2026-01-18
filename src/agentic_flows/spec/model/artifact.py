@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
-from agentic_flows.spec.ontology.ontology import ArtifactType
+from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,7 @@ class Artifact:
     producer: Literal["agent", "retrieval", "reasoning"]
     parent_artifacts: tuple[ArtifactID, ...]
     content_hash: ContentHash
+    scope: ArtifactScope
 
 
 __all__ = ["Artifact"]

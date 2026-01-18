@@ -9,6 +9,7 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import RuleID
+from agentic_flows.spec.ontology.ontology import VerificationPhase
 
 
 class VerificationEngine:
@@ -38,8 +39,11 @@ class VerificationEngine:
             spec_version="v1",
             status=status,
             reason=reason,
-            violations=violations,
+            violations=tuple(violations),
             checked_artifact_ids=(reasoning.bundle_id,),
+            phase=VerificationPhase.POST_EXECUTION,
+            rules_applied=tuple(rule.rule_id for rule in policy.rules),
+            decision=status,
         )
 
     @staticmethod

@@ -17,7 +17,7 @@ from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
-from agentic_flows.spec.ontology.ontology import ArtifactType
+from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
 class AgentExecutor:
@@ -73,6 +73,7 @@ class AgentExecutor:
                         ArtifactID(str(item)) for item in parent_artifacts
                     ),
                     content_hash=content_hash,
+                    scope=ArtifactScope.WORKING,
                 )
             )
         return artifacts

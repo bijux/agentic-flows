@@ -2,6 +2,7 @@
 
 This document defines the guarantees of agentic-flows.
 All other documentation is explanatory.
+If it is not exported from `src/agentic_flows/api.py`, it is unstable.
 
 ## SEMANTICS
 

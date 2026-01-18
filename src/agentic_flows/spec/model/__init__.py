@@ -16,6 +16,7 @@ from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.model.verification_rule import VerificationRule
@@ -34,6 +35,7 @@ __all__ = [
     "ResolvedStep",
     "RetrievalRequest",
     "RetrievedEvidence",
+    "ToolInvocation",
     "VerificationPolicy",
     "VerificationResult",
     "VerificationRule",

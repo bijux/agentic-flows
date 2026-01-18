@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology.ids import (
     EnvironmentFingerprint,
     FlowID,
@@ -22,6 +23,7 @@ class ExecutionTrace:
     plan_hash: PlanHash
     resolver_id: ResolverID
     events: tuple[ExecutionEvent, ...]
+    tool_invocations: tuple[ToolInvocation, ...]
     finalized: bool
 
     def finalize(self) -> ExecutionTrace:

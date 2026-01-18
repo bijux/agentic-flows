@@ -8,9 +8,8 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from agentic_flows.runtime.orchestration.run_flow import RunMode, run_flow
+from agentic_flows.api import RunMode, run_flow
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
 
 
@@ -55,22 +54,18 @@ def main() -> None:
         return
 
     if args.command == "dry-run":
-        policy = _require_verification_policy(manifest)
         result = run_flow(
             manifest,
             mode=RunMode.DRY_RUN,
-            verification_policy=policy,
         )
         payload = asdict(result.trace)
         print(json.dumps(payload, sort_keys=True))
         return
 
     if args.command == "run":
-        policy = _require_verification_policy(manifest)
         result = run_flow(
             manifest,
             mode=RunMode.LIVE,
-            verification_policy=policy,
         )
         payload = asdict(result.trace)
         artifact_list = [
@@ -123,17 +118,3 @@ def main() -> None:
         return
 
     print(f"Flow loaded successfully: {manifest.flow_id}")
-
-
-def _require_verification_policy(manifest: FlowManifest) -> VerificationPolicy:
-    if not manifest.verification_gates:
-        raise ValueError("verification_policy is required before execution")
-    return VerificationPolicy(
-        spec_version="v1",
-        verification_level="baseline",
-        failure_mode="halt",
-        required_evidence=(),
-        rules=(),
-        fail_on=(),
-        escalate_on=(),
-    )

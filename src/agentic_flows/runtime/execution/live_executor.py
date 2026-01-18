@@ -7,6 +7,7 @@ from agentic_flows.runtime.context import RuntimeContext
 from agentic_flows.runtime.execution.agent_executor import AgentExecutor
 from agentic_flows.runtime.execution.reasoning_executor import ReasoningExecutor
 from agentic_flows.runtime.execution.retrieval_executor import RetrievalExecutor
+from agentic_flows.runtime.execution.strategy import ExecutionOutcome
 from agentic_flows.runtime.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
 from agentic_flows.runtime.retrieval_fingerprint import fingerprint_retrieval
@@ -18,9 +19,10 @@ from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.resolved_flow import ResolvedFlow
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import ContentHash, ResolverID, ToolID
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType
+from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, EventType
 
 
 class LiveExecutor:
@@ -28,13 +30,7 @@ class LiveExecutor:
         self,
         resolved_flow: ResolvedFlow,
         context: RuntimeContext,
-    ) -> tuple[
-        ExecutionTrace,
-        list[Artifact],
-        list[RetrievedEvidence],
-        list[ReasoningBundle],
-        list[VerificationResult],
-    ]:
+    ) -> ExecutionOutcome:
         plan = resolved_flow.plan
         enforce_flow_boundary(plan)
         recorder = context.trace_recorder
@@ -61,6 +57,7 @@ class LiveExecutor:
         evidence: list[RetrievedEvidence] = []
         reasoning_bundles: list[ReasoningBundle] = []
         verification_results: list[VerificationResult] = []
+        tool_invocations: list[ToolInvocation] = []
         agent_executor = AgentExecutor(context.artifact_store)
         retrieval_executor = RetrievalExecutor()
         reasoning_executor = ReasoningExecutor()
@@ -69,6 +66,8 @@ class LiveExecutor:
         tool_agent = ToolID("bijux-agent.run")
         tool_retrieval = ToolID("bijux-rag.retrieve")
         tool_reasoning = ToolID("bijux-rar.reason")
+
+        pending_invocations: dict[tuple[int, ToolID], ContentHash] = {}
 
         for step in plan.steps:
             current_evidence: list[RetrievedEvidence] = []
@@ -107,10 +106,27 @@ class LiveExecutor:
                         "input_fingerprint": fingerprint_inputs(tool_input),
                     },
                 )
+                pending_invocations[(step.step_index, tool_retrieval)] = ContentHash(
+                    fingerprint_inputs(tool_input)
+                )
 
                 try:
                     retrieved = retrieval_executor.execute(step.retrieval_request)
                 except Exception as exc:
+                    input_fingerprint = pending_invocations.pop(
+                        (step.step_index, tool_retrieval),
+                        ContentHash(fingerprint_inputs(tool_input)),
+                    )
+                    tool_invocations.append(
+                        ToolInvocation(
+                            spec_version="v1",
+                            tool_id=tool_retrieval,
+                            inputs_fingerprint=input_fingerprint,
+                            outputs_fingerprint=None,
+                            duration=0.0,
+                            outcome="fail",
+                        )
+                    )
                     record_event(
                         EventType.TOOL_CALL_FAIL,
                         step.step_index,
@@ -136,6 +152,20 @@ class LiveExecutor:
                 evidence.extend(retrieved)
                 output_fingerprint = fingerprint_inputs(
                     [item.content_hash for item in retrieved]
+                )
+                input_fingerprint = pending_invocations.pop(
+                    (step.step_index, tool_retrieval),
+                    ContentHash(fingerprint_inputs(tool_input)),
+                )
+                tool_invocations.append(
+                    ToolInvocation(
+                        spec_version="v1",
+                        tool_id=tool_retrieval,
+                        inputs_fingerprint=input_fingerprint,
+                        outputs_fingerprint=ContentHash(output_fingerprint),
+                        duration=0.0,
+                        outcome="success",
+                    )
                 )
                 record_event(
                     EventType.TOOL_CALL_END,
@@ -172,12 +202,29 @@ class LiveExecutor:
                     "input_fingerprint": fingerprint_inputs(tool_input),
                 },
             )
+            pending_invocations[(step.step_index, tool_agent)] = ContentHash(
+                fingerprint_inputs(tool_input)
+            )
             try:
                 step_artifacts = agent_executor.execute_step(
                     step, evidence=current_evidence
                 )
                 artifacts.extend(step_artifacts)
             except Exception as exc:
+                input_fingerprint = pending_invocations.pop(
+                    (step.step_index, tool_agent),
+                    ContentHash(fingerprint_inputs(tool_input)),
+                )
+                tool_invocations.append(
+                    ToolInvocation(
+                        spec_version="v1",
+                        tool_id=tool_agent,
+                        inputs_fingerprint=input_fingerprint,
+                        outputs_fingerprint=None,
+                        duration=0.0,
+                        outcome="fail",
+                    )
+                )
                 record_event(
                     EventType.TOOL_CALL_FAIL,
                     step.step_index,
@@ -203,6 +250,20 @@ class LiveExecutor:
                     {"artifact_id": item.artifact_id, "content_hash": item.content_hash}
                     for item in step_artifacts
                 ]
+            )
+            input_fingerprint = pending_invocations.pop(
+                (step.step_index, tool_agent),
+                ContentHash(fingerprint_inputs(tool_input)),
+            )
+            tool_invocations.append(
+                ToolInvocation(
+                    spec_version="v1",
+                    tool_id=tool_agent,
+                    inputs_fingerprint=input_fingerprint,
+                    outputs_fingerprint=ContentHash(output_fingerprint),
+                    duration=0.0,
+                    outcome="success",
+                )
             )
             record_event(
                 EventType.TOOL_CALL_END,
@@ -236,6 +297,9 @@ class LiveExecutor:
                     "input_fingerprint": fingerprint_inputs(tool_input),
                 },
             )
+            pending_invocations[(step.step_index, tool_reasoning)] = ContentHash(
+                fingerprint_inputs(tool_input)
+            )
 
             try:
                 bundle = reasoning_executor.execute(
@@ -264,6 +328,22 @@ class LiveExecutor:
                         ),
                     },
                 )
+                input_fingerprint = pending_invocations.pop(
+                    (step.step_index, tool_reasoning),
+                    ContentHash(fingerprint_inputs(tool_input)),
+                )
+                tool_invocations.append(
+                    ToolInvocation(
+                        spec_version="v1",
+                        tool_id=tool_reasoning,
+                        inputs_fingerprint=input_fingerprint,
+                        outputs_fingerprint=ContentHash(
+                            fingerprint_inputs({"bundle_hash": bundle_hash})
+                        ),
+                        duration=0.0,
+                        outcome="success",
+                    )
+                )
                 record_event(
                     EventType.REASONING_END,
                     step.step_index,
@@ -284,9 +364,24 @@ class LiveExecutor:
                             artifact.artifact_id for artifact in step_artifacts
                         ),
                         content_hash=bundle_hash,
+                        scope=ArtifactScope.AUDIT,
                     )
                 )
             except Exception as exc:
+                input_fingerprint = pending_invocations.pop(
+                    (step.step_index, tool_reasoning),
+                    ContentHash(fingerprint_inputs(tool_input)),
+                )
+                tool_invocations.append(
+                    ToolInvocation(
+                        spec_version="v1",
+                        tool_id=tool_reasoning,
+                        inputs_fingerprint=input_fingerprint,
+                        outputs_fingerprint=None,
+                        duration=0.0,
+                        outcome="fail",
+                    )
+                )
                 record_event(
                     EventType.TOOL_CALL_FAIL,
                     step.step_index,
@@ -352,10 +447,17 @@ class LiveExecutor:
             plan_hash=plan.plan_hash,
             resolver_id=resolver_id,
             events=recorder.events(),
+            tool_invocations=tuple(tool_invocations),
             finalized=False,
         )
         trace.finalize()
-        return trace, artifacts, evidence, reasoning_bundles, verification_results
+        return ExecutionOutcome(
+            trace=trace,
+            artifacts=artifacts,
+            evidence=evidence,
+            reasoning_bundles=reasoning_bundles,
+            verification_results=verification_results,
+        )
 
     @staticmethod
     def _resolver_id_from_metadata(metadata: tuple[tuple[str, str], ...]) -> str:

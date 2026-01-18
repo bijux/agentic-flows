@@ -9,7 +9,9 @@ from agentic_flows.runtime.artifact_store import ArtifactStore, InMemoryArtifact
 from agentic_flows.runtime.context import RunMode, RuntimeContext
 from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
+from agentic_flows.runtime.execution.strategy import ExecutionStrategy
 from agentic_flows.runtime.orchestration.resolver import FlowResolver
+from agentic_flows.runtime.semantics import enforce_runtime_semantics
 from agentic_flows.runtime.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
@@ -57,6 +59,10 @@ def run_flow(
     if verification_policy is None:
         raise ValueError("verification_policy is required before execution")
 
+    strategy: ExecutionStrategy = LiveExecutor()
+    if mode == RunMode.DRY_RUN:
+        strategy = DryRunExecutor()
+
     store = artifact_store or InMemoryArtifactStore()
     context = RuntimeContext(
         environment_fingerprint=resolved_flow.plan.environment_fingerprint,
@@ -66,28 +72,17 @@ def run_flow(
         verification_policy=verification_policy,
     )
 
-    if mode == RunMode.DRY_RUN:
-        trace = DryRunExecutor().execute(resolved_flow, context)
-        return FlowRunResult(
-            resolved_flow=resolved_flow,
-            trace=trace,
-            artifacts=[],
-            evidence=[],
-            reasoning_bundles=[],
-            verification_results=[],
-        )
-
-    trace, artifacts, evidence, reasoning_bundles, verification_results = (
-        LiveExecutor().execute(resolved_flow, context)
-    )
-    return FlowRunResult(
+    outcome = strategy.execute(resolved_flow, context)
+    result = FlowRunResult(
         resolved_flow=resolved_flow,
-        trace=trace,
-        artifacts=artifacts,
-        evidence=evidence,
-        reasoning_bundles=reasoning_bundles,
-        verification_results=verification_results,
+        trace=outcome.trace,
+        artifacts=outcome.artifacts,
+        evidence=outcome.evidence,
+        reasoning_bundles=outcome.reasoning_bundles,
+        verification_results=outcome.verification_results,
     )
+    enforce_runtime_semantics(result, mode=mode)
+    return result
 
 
 __all__ = ["FlowRunResult", "RunMode", "run_flow"]
