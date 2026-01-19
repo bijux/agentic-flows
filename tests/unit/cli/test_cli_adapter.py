@@ -80,6 +80,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             evidence=[],
             reasoning_bundles=[],
             verification_results=[],
+            verification_arbitrations=[],
         )
 
     cli_main_module = importlib.import_module("agentic_flows.cli.main")

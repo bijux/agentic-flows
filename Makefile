@@ -45,12 +45,12 @@ ensure-venv: $(VENV) ## Ensure venv exists and deps are installed
 	@set -e; \
 	echo "→ Ensuring dependencies in $(VENV) ..."; \
 	"$(VENV_PYTHON)" -m pip install --upgrade pip setuptools wheel; \
-	EXTRAS="$${EXTRAS:-dev,local-esmfold}"; \
+	EXTRAS="$${EXTRAS:-dev}"; \
 	if [ -n "$$EXTRAS" ]; then SPEC=".[$$EXTRAS]"; else SPEC="."; fi; \
 	echo "→ Installing: $$SPEC"; \
 	"$(VENV_PYTHON)" -m pip install -e "$$SPEC"
 
-install: ensure-venv ## Install project into .venv (dev+nl+local-esmfold)
+install: ensure-venv ## Install project into .venv (dev)
 	@true
 
 nlenv: ## Print activate command

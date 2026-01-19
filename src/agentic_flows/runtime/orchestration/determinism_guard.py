@@ -75,22 +75,12 @@ def replay_diff(
 
     if diffs and artifacts is not None:
         artifact_list = list(artifacts)
-        diffs["artifact_fingerprint"] = fingerprint_inputs(
-            [
-                {"artifact_id": item.artifact_id, "content_hash": item.content_hash}
-                for item in artifact_list
-            ]
-        )
+        diffs["artifact_fingerprint"] = semantic_artifact_fingerprint(artifact_list)
         diffs["artifact_count"] = len(artifact_list)
 
     if diffs and evidence is not None:
         evidence_list = list(evidence)
-        diffs["evidence_fingerprint"] = fingerprint_inputs(
-            [
-                {"evidence_id": item.evidence_id, "content_hash": item.content_hash}
-                for item in evidence_list
-            ]
-        )
+        diffs["evidence_fingerprint"] = semantic_evidence_fingerprint(evidence_list)
         diffs["evidence_count"] = len(evidence_list)
 
     return diffs
@@ -117,4 +107,34 @@ def _failed_steps(events: Iterable[ExecutionEvent]) -> set[int]:
     return {event.step_index for event in events if event.event_type in failure_events}
 
 
-__all__ = ["replay_diff", "validate_determinism", "validate_replay"]
+def semantic_artifact_fingerprint(artifacts: Iterable[Artifact]) -> str:
+    normalized = sorted(
+        artifacts, key=lambda item: (str(item.artifact_id), str(item.content_hash))
+    )
+    return fingerprint_inputs(
+        [
+            {"artifact_id": item.artifact_id, "content_hash": item.content_hash}
+            for item in normalized
+        ]
+    )
+
+
+def semantic_evidence_fingerprint(evidence: Iterable[RetrievedEvidence]) -> str:
+    normalized = sorted(
+        evidence, key=lambda item: (str(item.evidence_id), str(item.content_hash))
+    )
+    return fingerprint_inputs(
+        [
+            {"evidence_id": item.evidence_id, "content_hash": item.content_hash}
+            for item in normalized
+        ]
+    )
+
+
+__all__ = [
+    "replay_diff",
+    "semantic_artifact_fingerprint",
+    "semantic_evidence_fingerprint",
+    "validate_determinism",
+    "validate_replay",
+]

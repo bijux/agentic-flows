@@ -11,6 +11,7 @@ from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
 
 
@@ -21,6 +22,7 @@ class ExecutionOutcome:
     evidence: list[RetrievedEvidence]
     reasoning_bundles: list[ReasoningBundle]
     verification_results: list[VerificationResult]
+    verification_arbitrations: list[VerificationArbitration]
 
 
 TStep = TypeVar("TStep", contravariant=True)

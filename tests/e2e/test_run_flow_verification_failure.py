@@ -131,4 +131,11 @@ def test_verification_failure_halts_flow(
     trace = result.trace
 
     assert calls["agent"] == 1
-    assert trace.events[-1].event_type == EventType.VERIFICATION_FAIL
+    assert any(
+        event.event_type == EventType.VERIFICATION_FAIL
+        for event in trace.events
+    )
+    assert trace.events[-1].event_type in {
+        EventType.VERIFICATION_FAIL,
+        EventType.VERIFICATION_ARBITRATION,
+    }

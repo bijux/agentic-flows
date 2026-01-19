@@ -11,7 +11,9 @@ from agentic_flows.runtime.budget import BudgetState, ExecutionBudget
 from agentic_flows.runtime.context import ExecutionContext, RunMode
 from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
+from agentic_flows.runtime.execution.observer_executor import ObserverExecutor
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome, StepExecutor
+from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.spec.model.artifact import Artifact
@@ -22,6 +24,7 @@ from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
 
 
@@ -33,6 +36,7 @@ class FlowRunResult:
     evidence: list[RetrievedEvidence]
     reasoning_bundles: list[ReasoningBundle]
     verification_results: list[VerificationResult]
+    verification_arbitrations: list[VerificationArbitration]
 
 
 @dataclass(frozen=True)
@@ -41,6 +45,7 @@ class ExecutionConfig:
     verification_policy: VerificationPolicy | None = None
     artifact_store: ArtifactStore | None = None
     budget: ExecutionBudget | None = None
+    observed_run: ObservedRun | None = None
 
     @classmethod
     def from_command(cls, command: str) -> ExecutionConfig:
@@ -50,6 +55,8 @@ class ExecutionConfig:
             return cls(mode=RunMode.DRY_RUN)
         if command == "run":
             return cls(mode=RunMode.LIVE)
+        if command == "observe":
+            return cls(mode=RunMode.OBSERVE)
         raise ValueError(f"Unsupported command: {command}")
 
 
@@ -73,10 +80,11 @@ def execute_flow(
             evidence=[],
             reasoning_bundles=[],
             verification_results=[],
+            verification_arbitrations=[],
         )
 
     if (
-        execution_config.mode == RunMode.LIVE
+        execution_config.mode in {RunMode.LIVE, RunMode.OBSERVE}
         and execution_config.verification_policy is None
     ):
         raise ValueError("verification_policy is required before execution")
@@ -84,6 +92,8 @@ def execute_flow(
     strategy: StepExecutor[ExecutionPlan, ExecutionOutcome] = LiveExecutor()
     if execution_config.mode == RunMode.DRY_RUN:
         strategy = DryRunExecutor()
+    if execution_config.mode == RunMode.OBSERVE:
+        strategy = ObserverExecutor()
 
     store = execution_config.artifact_store or InMemoryArtifactStore()
     seed = _derive_seed_token(resolved_flow.plan)
@@ -98,6 +108,7 @@ def execute_flow(
         budget=BudgetState(execution_config.budget),
         _step_evidence={},
         _step_artifacts={},
+        observed_run=execution_config.observed_run,
     )
 
     outcome = strategy.execute(resolved_flow, context)
@@ -108,6 +119,7 @@ def execute_flow(
         evidence=outcome.evidence,
         reasoning_bundles=outcome.reasoning_bundles,
         verification_results=outcome.verification_results,
+        verification_arbitrations=outcome.verification_arbitrations,
     )
     enforce_runtime_semantics(result, mode=execution_config.mode.value)
     return result

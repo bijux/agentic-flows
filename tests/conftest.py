@@ -27,7 +27,7 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import StepType
+from agentic_flows.spec.ontology.ontology import ArbitrationRule, StepType
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.verification import VerificationPolicy
@@ -77,6 +77,7 @@ def baseline_policy() -> VerificationPolicy:
         spec_version="v1",
         verification_level="baseline",
         failure_mode="halt",
+        arbitration_rule=ArbitrationRule.UNANIMOUS,
         required_evidence=(),
         rules=(),
         fail_on=(),
@@ -100,6 +101,10 @@ def deterministic_environment(
     )
     monkeypatch.setattr(
         "agentic_flows.runtime.orchestration.planner.compute_environment_fingerprint",
+        lambda: fingerprint,
+    )
+    monkeypatch.setattr(
+        "agentic_flows.runtime.orchestration.determinism_guard.compute_environment_fingerprint",
         lambda: fingerprint,
     )
     return fingerprint

@@ -54,6 +54,8 @@ class EventType(str, Enum):
     VERIFICATION_PASS = auto()
     VERIFICATION_FAIL = auto()
     VERIFICATION_ESCALATE = auto()
+    VERIFICATION_ARBITRATION = auto()
+    EXECUTION_INTERRUPTED = auto()
     TOOL_CALL_START = auto()
     TOOL_CALL_END = auto()
     TOOL_CALL_FAIL = auto()
@@ -71,6 +73,12 @@ class VerificationPhase(str, Enum):
     POST_EXECUTION = "post_execution"
 
 
+class ArbitrationRule(str, Enum):
+    UNANIMOUS = "unanimous"
+    QUORUM = "quorum"
+    STRICT_FIRST_FAILURE = "strict_first_failure"
+
+
 __all__ = [
     "Agent",
     "Tool",
@@ -84,4 +92,5 @@ __all__ = [
     "EventType",
     "StepType",
     "VerificationPhase",
+    "ArbitrationRule",
 ]

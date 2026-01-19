@@ -68,6 +68,7 @@ def test_bypass_verification_is_rejected() -> None:
         def __init__(self) -> None:
             self.trace = trace
             self.verification_results = ()
+            self.verification_arbitrations = ()
             self.reasoning_bundles = (object(),)
 
     with pytest.raises(SemanticViolationError):

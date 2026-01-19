@@ -28,6 +28,7 @@ from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.ontology.ontology import ArbitrationRule
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ArtifactID,
@@ -67,6 +68,7 @@ def test_fabricated_artifact_rejected() -> None:
             spec_version="v1",
             verification_level="baseline",
             failure_mode="halt",
+            arbitration_rule=ArbitrationRule.UNANIMOUS,
             required_evidence=(),
             rules=(),
             fail_on=(),
@@ -197,7 +199,13 @@ def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> 
         config=ExecutionConfig(mode=FlowRunMode.LIVE, verification_policy=baseline_policy),
     )
 
-    assert result.trace.events[-1].event_type == EventType.STEP_FAILED
+    assert any(
+        event.event_type == EventType.STEP_FAILED for event in result.trace.events
+    )
+    assert result.trace.events[-1].event_type in {
+        EventType.STEP_FAILED,
+        EventType.VERIFICATION_ARBITRATION,
+    }
 
 
 def test_fake_evidence_id_rejected(baseline_policy, resolved_flow_factory) -> None:
@@ -285,4 +293,10 @@ def test_fake_evidence_id_rejected(baseline_policy, resolved_flow_factory) -> No
         config=ExecutionConfig(mode=FlowRunMode.LIVE, verification_policy=baseline_policy),
     )
 
-    assert result.trace.events[-1].event_type == EventType.REASONING_FAILED
+    assert any(
+        event.event_type == EventType.REASONING_FAILED for event in result.trace.events
+    )
+    assert result.trace.events[-1].event_type in {
+        EventType.REASONING_FAILED,
+        EventType.VERIFICATION_ARBITRATION,
+    }

@@ -26,6 +26,7 @@ from agentic_flows.spec.ontology.ids import (
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    ArbitrationRule,
     ArtifactScope,
     EventType,
     StepType,
@@ -38,6 +39,7 @@ __all__ = [
     "ArtifactID",
     "ArtifactType",
     "ArtifactScope",
+    "ArbitrationRule",
     "BundleID",
     "ClaimID",
     "ContentHash",

@@ -12,6 +12,7 @@ from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import RuleID
 from agentic_flows.spec.ontology.ontology import EventType, VerificationPhase
@@ -22,7 +23,7 @@ SEMANTICS_SOURCE = "docs/guarantees/system_guarantees.md"
 SEMANTIC_DOMAIN = "structural_truth"
 VERIFICATION_DOMAIN = "epistemic_truth"
 
-Mode = Literal["plan", "dry-run", "live"]
+Mode = Literal["plan", "dry-run", "live", "observe"]
 
 
 class _Event(Protocol):
@@ -37,6 +38,7 @@ class _Trace(Protocol):
 class _RunResult(Protocol):
     trace: _Trace | None
     verification_results: Sequence[object]
+    verification_arbitrations: Sequence[VerificationArbitration]
     reasoning_bundles: Sequence[object]
 
 
@@ -87,6 +89,7 @@ def evaluate_verification(
 
     return VerificationResult(
         spec_version="v1",
+        engine_id="content",
         status=status,
         reason=reason,
         violations=tuple(violations),
@@ -146,7 +149,19 @@ def _require_trace_finalized(result: _RunResult) -> None:
 
 
 def _require_verification_once_per_step(result: _RunResult) -> None:
-    if len(result.verification_results) == len(result.reasoning_bundles):
+    reasoning_bundle_ids = {
+        bundle.bundle_id
+        for bundle in result.reasoning_bundles
+        if hasattr(bundle, "bundle_id")
+    }
+    arbitration_bundle_ids: set[str] = set()
+    for arbitration in result.verification_arbitrations:
+        arbitration_bundle_ids.update(
+            str(item) for item in arbitration.target_artifact_ids
+        )
+    if reasoning_bundle_ids and arbitration_bundle_ids.issuperset(
+        {str(bundle_id) for bundle_id in reasoning_bundle_ids}
+    ):
         return
     trace = result.trace
     if trace is None:

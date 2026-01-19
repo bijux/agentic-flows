@@ -126,4 +126,11 @@ def test_reasoning_content_verification_catches_bad_claim(
         config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
     )
 
-    assert result.trace.events[-1].event_type == EventType.VERIFICATION_FAIL
+    assert any(
+        event.event_type == EventType.VERIFICATION_FAIL
+        for event in result.trace.events
+    )
+    assert result.trace.events[-1].event_type in {
+        EventType.VERIFICATION_FAIL,
+        EventType.VERIFICATION_ARBITRATION,
+    }

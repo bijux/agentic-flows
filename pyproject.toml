@@ -55,7 +55,6 @@ dev = [
   "bandit",
   "pip-audit",
 ]
-local-esmfold = []
 
 [tool.poetry.scripts]
 agentic-flows = "agentic_flows.cli.main:main"

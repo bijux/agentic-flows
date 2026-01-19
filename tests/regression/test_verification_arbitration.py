@@ -9,7 +9,6 @@ import bijux_rar
 import bijux_vex
 import pytest
 
-from agentic_flows.runtime.artifact_store import HostileArtifactStore
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,
@@ -35,23 +34,29 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from agentic_flows.spec.ontology.ontology import ArtifactType, StepType
 from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
 
-def test_hostile_artifact_store_triggers_verification_failure(
+def test_multi_verifier_arbitration_and_contradiction_detection(
     baseline_policy, resolved_flow_factory
 ) -> None:
-    bijux_agent.run = lambda **_kwargs: [
-        {
-            "artifact_id": "agent-output",
-            "artifact_type": ArtifactType.AGENT_INVOCATION.value,
-            "content": "payload",
-            "parent_artifacts": [],
-        }
-    ]
+    counter = {"value": 0}
+
+    def _run(**_kwargs):
+        counter["value"] += 1
+        return [
+            {
+                "artifact_id": f"agent-output-{counter['value']}",
+                "artifact_type": ArtifactType.AGENT_INVOCATION.value,
+                "content": "payload",
+                "parent_artifacts": [],
+            }
+        ]
+
+    bijux_agent.run = _run
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-1",
@@ -63,26 +68,33 @@ def test_hostile_artifact_store_triggers_verification_failure(
     ]
     bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
 
+    statements = []
+
     def _reason(agent_outputs, evidence, seed):
-        statement = build_claim_statement(agent_outputs, evidence)
+        base_statement = build_claim_statement(agent_outputs, evidence)
+        if not statements:
+            statement = base_statement
+        else:
+            statement = f"not {base_statement}"
+        statements.append(statement)
         return ReasoningBundle(
             spec_version="v1",
-            bundle_id=BundleID("bundle-1"),
+            bundle_id=BundleID(f"bundle-{len(statements)}"),
             claims=(
                 ReasoningClaim(
                     spec_version="v1",
-                    claim_id=ClaimID("claim-1"),
+                    claim_id=ClaimID(f"claim-{len(statements)}"),
                     statement=statement,
-                    confidence=0.5,
+                    confidence=0.7,
                     supported_by=(EvidenceID("ev-1"),),
                 ),
             ),
             steps=(
                 ReasoningStep(
                     spec_version="v1",
-                    step_id=StepID("step-1"),
+                    step_id=StepID(f"step-{len(statements)}"),
                     input_claims=(),
-                    output_claims=(ClaimID("claim-1"),),
+                    output_claims=(ClaimID(f"claim-{len(statements)}"),),
                     method="aggregation",
                 ),
             ),
@@ -100,19 +112,37 @@ def test_hostile_artifact_store_triggers_verification_failure(
         top_k=1,
         scope="project",
     )
-    step = ResolvedStep(
+    step_one = ResolvedStep(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
         agent_id=AgentID("agent-a"),
-        inputs_fingerprint=InputsFingerprint("inputs"),
+        inputs_fingerprint=InputsFingerprint("inputs-a"),
         declared_dependencies=(),
         expected_artifacts=(),
         agent_invocation=AgentInvocation(
             spec_version="v1",
             agent_id=AgentID("agent-a"),
             agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs"),
+            inputs_fingerprint=InputsFingerprint("inputs-a"),
+            declared_outputs=(),
+            execution_mode="seeded",
+        ),
+        retrieval_request=request,
+    )
+    step_two = ResolvedStep(
+        spec_version="v1",
+        step_index=1,
+        step_type=StepType.AGENT,
+        agent_id=AgentID("agent-a"),
+        inputs_fingerprint=InputsFingerprint("inputs-b"),
+        declared_dependencies=(),
+        expected_artifacts=(),
+        agent_invocation=AgentInvocation(
+            spec_version="v1",
+            agent_id=AgentID("agent-a"),
+            agent_version=VersionID("0.0.0"),
+            inputs_fingerprint=InputsFingerprint("inputs-b"),
             declared_outputs=(),
             execution_mode="seeded",
         ),
@@ -120,36 +150,28 @@ def test_hostile_artifact_store_triggers_verification_failure(
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-hostile"),
+        flow_id=FlowID("flow-contradiction"),
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
         verification_gates=(GateID("gate-a"),),
     )
-    resolved_flow = resolved_flow_factory(manifest, (step,))
-
-    hostile_store = HostileArtifactStore(
-        seed=7, max_delay=0, drop_rate=0.0, corruption_rate=1.0
-    )
+    resolved_flow = resolved_flow_factory(manifest, (step_one, step_two))
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(
-            mode=RunMode.LIVE,
-            verification_policy=baseline_policy,
-            artifact_store=hostile_store,
-        ),
+        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
     )
-    trace = result.trace
 
     assert any(
-        event.event_type == EventType.VERIFICATION_FAIL for event in trace.events
+        arbitration.decision == "FAIL"
+        for arbitration in result.verification_arbitrations
     )
-    assert trace.events[-1].event_type in {
-        EventType.VERIFICATION_FAIL,
-        EventType.VERIFICATION_ARBITRATION,
-    }
     assert any(
-        str(violation) == "claim_mentions_artifact_hash"
-        for violation in result.verification_results[0].violations
+        len(arbitration.engine_ids) > 1
+        for arbitration in result.verification_arbitrations
+    )
+    assert any(
+        outcome.engine_id == "contradiction" and outcome.status == "FAIL"
+        for outcome in result.verification_results
     )

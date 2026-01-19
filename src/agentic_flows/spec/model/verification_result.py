@@ -12,6 +12,7 @@ from agentic_flows.spec.ontology.ontology import VerificationPhase
 @dataclass(frozen=True)
 class VerificationResult:
     spec_version: str
+    engine_id: str
     status: str
     reason: str
     violations: tuple[RuleID, ...]

@@ -10,6 +10,7 @@ from agentic_flows.core import authority
 from agentic_flows.spec.contracts import compatibility_contract
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
+    ArbitrationRule,
     StepType,
     VerificationPhase,
 )
@@ -41,6 +42,11 @@ def test_system_invariant_snapshot() -> None:
     assert [phase.value for phase in VerificationPhase] == [
         "pre_execution",
         "post_execution",
+    ]
+    assert [rule.value for rule in ArbitrationRule] == [
+        "unanimous",
+        "quorum",
+        "strict_first_failure",
     ]
     assert callable(authority.enforce_runtime_semantics)
     assert compatibility_contract.breaks_replay("plan_hash") is True

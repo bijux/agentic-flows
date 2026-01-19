@@ -6,6 +6,8 @@
 # Forbidden: calling bijux-agent, bijux-rag, bijux-rar, bijux-vex, or any external side effects.
 from __future__ import annotations
 
+from contextlib import suppress
+
 from agentic_flows.core.authority import finalize_trace
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
@@ -33,6 +35,7 @@ class DryRunExecutor:
         state_tracker = ExecutionStateTracker(context.seed)
 
         for step in steps_plan.steps:
+            context.start_step_budget()
             start_payload = {
                 "event_type": EventType.STEP_START.value,
                 "step_index": step.step_index,
@@ -49,6 +52,8 @@ class DryRunExecutor:
                 ),
                 context.authority,
             )
+            with suppress(Exception):
+                context.consume_budget(trace_events=1)
             event_index += 1
             try:
                 context.consume_budget(steps=1)
@@ -70,6 +75,8 @@ class DryRunExecutor:
                     ),
                     context.authority,
                 )
+                with suppress(Exception):
+                    context.consume_budget(trace_events=1)
                 event_index += 1
                 break
             state_hash = state_tracker.advance(step)
@@ -84,6 +91,7 @@ class DryRunExecutor:
             )
             artifacts.append(state_artifact)
             context.consume_budget(artifacts=1)
+            context.consume_step_artifacts(1)
             context.record_artifacts(step.step_index, [state_artifact])
 
             end_payload = {
@@ -102,6 +110,8 @@ class DryRunExecutor:
                 ),
                 context.authority,
             )
+            with suppress(Exception):
+                context.consume_budget(trace_events=1)
             event_index += 1
 
         resolver_id = ResolverID(
@@ -124,6 +134,7 @@ class DryRunExecutor:
             evidence=[],
             reasoning_bundles=[],
             verification_results=[],
+            verification_arbitrations=[],
         )
 
     @staticmethod

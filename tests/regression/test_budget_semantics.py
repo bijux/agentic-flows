@@ -114,7 +114,14 @@ def test_step_budget_halts_flow(baseline_policy, resolved_flow_factory) -> None:
         config=ExecutionConfig(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
-            budget=ExecutionBudget(step_limit=0, token_limit=None, artifact_limit=None),
+            budget=ExecutionBudget(
+                step_limit=0,
+                token_limit=None,
+                artifact_limit=None,
+                artifact_step_limit=None,
+                evidence_limit=None,
+                trace_event_limit=None,
+            ),
         ),
     )
 
@@ -179,8 +186,123 @@ def test_token_budget_failure_is_deterministic(
         config=ExecutionConfig(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
-            budget=ExecutionBudget(step_limit=1, token_limit=0, artifact_limit=None),
+            budget=ExecutionBudget(
+                step_limit=1,
+                token_limit=0,
+                artifact_limit=None,
+                artifact_step_limit=None,
+                evidence_limit=None,
+                trace_event_limit=None,
+            ),
         ),
     )
 
-    assert result.trace.events[-1].event_type == EventType.REASONING_FAILED
+    assert any(
+        event.event_type == EventType.REASONING_FAILED for event in result.trace.events
+    )
+    assert result.trace.events[-1].event_type in {
+        EventType.REASONING_FAILED,
+        EventType.VERIFICATION_ARBITRATION,
+    }
+
+
+def test_artifact_step_budget_halts_flow(
+    baseline_policy, resolved_flow_factory
+) -> None:
+    bijux_agent.run = lambda **_kwargs: [
+        {
+            "artifact_id": "agent-output",
+            "artifact_type": ArtifactType.AGENT_INVOCATION.value,
+            "content": "payload",
+            "parent_artifacts": [],
+        }
+    ]
+    bijux_rag.retrieve = lambda **_kwargs: [
+        {
+            "evidence_id": "ev-1",
+            "source_uri": "file://doc",
+            "content": "content",
+            "score": 0.9,
+            "vector_contract_id": "contract-1",
+        }
+    ]
+    bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+    bijux_rar.reason = lambda **_kwargs: ReasoningBundle(
+        spec_version="v1",
+        bundle_id=BundleID("bundle-1"),
+        claims=(),
+        steps=(),
+        evidence_ids=(),
+        producer_agent_id=AgentID("agent-a"),
+    )
+
+    resolved_flow = _resolved_flow_for_budget(resolved_flow_factory)
+
+    result = execute_flow(
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            budget=ExecutionBudget(
+                step_limit=1,
+                token_limit=None,
+                artifact_limit=None,
+                artifact_step_limit=0,
+                evidence_limit=None,
+                trace_event_limit=None,
+            ),
+        ),
+    )
+
+    assert result.trace.events[-1].event_type == EventType.STEP_FAILED
+
+
+def test_evidence_budget_halts_flow(
+    baseline_policy, resolved_flow_factory
+) -> None:
+    bijux_agent.run = lambda **_kwargs: [
+        {
+            "artifact_id": "agent-output",
+            "artifact_type": ArtifactType.AGENT_INVOCATION.value,
+            "content": "payload",
+            "parent_artifacts": [],
+        }
+    ]
+    bijux_rag.retrieve = lambda **_kwargs: [
+        {
+            "evidence_id": "ev-1",
+            "source_uri": "file://doc",
+            "content": "content",
+            "score": 0.9,
+            "vector_contract_id": "contract-1",
+        }
+    ]
+    bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+    bijux_rar.reason = lambda **_kwargs: ReasoningBundle(
+        spec_version="v1",
+        bundle_id=BundleID("bundle-1"),
+        claims=(),
+        steps=(),
+        evidence_ids=(),
+        producer_agent_id=AgentID("agent-a"),
+    )
+
+    resolved_flow = _resolved_flow_for_budget(resolved_flow_factory)
+
+    result = execute_flow(
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            budget=ExecutionBudget(
+                step_limit=1,
+                token_limit=None,
+                artifact_limit=None,
+                artifact_step_limit=None,
+                evidence_limit=0,
+                trace_event_limit=None,
+            ),
+        ),
+    )
+
+    assert result.trace.events[-1].event_type == EventType.RETRIEVAL_FAILED

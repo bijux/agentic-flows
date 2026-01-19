@@ -110,4 +110,10 @@ def test_reasoning_references_missing_evidence(
     trace = result.trace
 
     assert result.evidence == []
-    assert trace.events[-1].event_type == EventType.REASONING_FAILED
+    assert any(
+        event.event_type == EventType.REASONING_FAILED for event in trace.events
+    )
+    assert trace.events[-1].event_type in {
+        EventType.REASONING_FAILED,
+        EventType.VERIFICATION_ARBITRATION,
+    }
