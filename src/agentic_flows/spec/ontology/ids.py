@@ -80,6 +80,10 @@ class PlanHash(str):
     pass
 
 
+class PolicyFingerprint(str):
+    pass
+
+
 __all__ = [
     "FlowID",
     "AgentID",
@@ -100,4 +104,5 @@ __all__ = [
     "ContentHash",
     "EnvironmentFingerprint",
     "PlanHash",
+    "PolicyFingerprint",
 ]

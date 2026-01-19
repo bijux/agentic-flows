@@ -28,6 +28,7 @@ from agentic_flows.spec.ontology.ids import (
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import ArbitrationRule, StepType
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.verification import VerificationPolicy
@@ -77,7 +78,11 @@ def baseline_policy() -> VerificationPolicy:
         spec_version="v1",
         verification_level="baseline",
         failure_mode="halt",
-        arbitration_rule=ArbitrationRule.UNANIMOUS,
+        arbitration_policy=ArbitrationPolicy(
+            spec_version="v1",
+            rule=ArbitrationRule.UNANIMOUS,
+            quorum_threshold=None,
+        ),
         required_evidence=(),
         rules=(),
         fail_on=(),

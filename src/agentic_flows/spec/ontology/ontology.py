@@ -56,6 +56,8 @@ class EventType(str, Enum):
     VERIFICATION_ESCALATE = auto()
     VERIFICATION_ARBITRATION = auto()
     EXECUTION_INTERRUPTED = auto()
+    HUMAN_INTERVENTION = auto()
+    SEMANTIC_VIOLATION = auto()
     TOOL_CALL_START = auto()
     TOOL_CALL_END = auto()
     TOOL_CALL_FAIL = auto()

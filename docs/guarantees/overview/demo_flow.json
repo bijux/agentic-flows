@@ -1,0 +1,10 @@
+{
+  "flow_id": "demo-flow",
+  "agents": ["agent-a", "force-partial-failure", "agent-b"],
+  "dependencies": [
+    "force-partial-failure:agent-a",
+    "agent-b:force-partial-failure"
+  ],
+  "retrieval_contracts": [],
+  "verification_gates": ["gate-a"]
+}

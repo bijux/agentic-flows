@@ -9,7 +9,10 @@ from typing import Any
 from agentic_flows.runtime.observability.environment import (
     compute_environment_fingerprint,
 )
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.fingerprint import (
+    fingerprint_inputs,
+    fingerprint_policy,
+)
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
@@ -40,8 +43,15 @@ def validate_replay(
     *,
     artifacts: Iterable[Artifact] | None = None,
     evidence: Iterable[RetrievedEvidence] | None = None,
+    verification_policy: object | None = None,
 ) -> None:
-    diffs = replay_diff(trace, plan, artifacts=artifacts, evidence=evidence)
+    diffs = replay_diff(
+        trace,
+        plan,
+        artifacts=artifacts,
+        evidence=evidence,
+        verification_policy=verification_policy,
+    )
     if diffs:
         raise ValueError(f"replay mismatch: {diffs}")
 
@@ -52,6 +62,7 @@ def replay_diff(
     *,
     artifacts: Iterable[Artifact] | None = None,
     evidence: Iterable[RetrievedEvidence] | None = None,
+    verification_policy: object | None = None,
 ) -> dict[str, object]:
     diffs: dict[str, object] = {}
     if trace.plan_hash != plan.plan_hash:
@@ -65,6 +76,20 @@ def replay_diff(
             "observed": trace.environment_fingerprint,
         }
 
+    if trace.verification_policy_fingerprint is not None:
+        if verification_policy is None:
+            diffs["verification_policy"] = {
+                "expected": trace.verification_policy_fingerprint,
+                "observed": None,
+            }
+        else:
+            current = fingerprint_policy(verification_policy)
+            if current != trace.verification_policy_fingerprint:
+                diffs["verification_policy"] = {
+                    "expected": trace.verification_policy_fingerprint,
+                    "observed": current,
+                }
+
     missing_step_end = _missing_step_end(trace.events, plan.steps)
     if missing_step_end:
         diffs["missing_step_end"] = sorted(missing_step_end)
@@ -72,6 +97,10 @@ def replay_diff(
     failed_steps = _failed_steps(trace.events)
     if failed_steps:
         diffs["failed_steps"] = sorted(failed_steps)
+
+    human_events = _human_intervention_events(trace.events)
+    if human_events:
+        diffs["human_intervention_events"] = human_events
 
     if diffs and artifacts is not None:
         artifact_list = list(artifacts)
@@ -105,6 +134,14 @@ def _failed_steps(events: Iterable[ExecutionEvent]) -> set[int]:
         EventType.VERIFICATION_FAIL,
     }
     return {event.step_index for event in events if event.event_type in failure_events}
+
+
+def _human_intervention_events(events: Iterable[ExecutionEvent]) -> list[int]:
+    return [
+        event.event_index
+        for event in events
+        if event.event_type == EventType.HUMAN_INTERVENTION
+    ]
 
 
 def semantic_artifact_fingerprint(artifacts: Iterable[Artifact]) -> str:

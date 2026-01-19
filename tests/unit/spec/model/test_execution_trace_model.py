@@ -20,8 +20,11 @@ def test_trace_access_before_finalize_raises() -> None:
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow-misuse"),
+        parent_flow_id=None,
+        child_flow_ids=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan-hash"),
+        verification_policy_fingerprint=None,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(),
         tool_invocations=(),

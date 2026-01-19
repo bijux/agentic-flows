@@ -9,6 +9,7 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.verification import VerificationPolicy
@@ -19,6 +20,7 @@ __all__ = [
     "FlowRunResult",
     "ExecutionPlan",
     "RunMode",
+    "ArbitrationPolicy",
     "VerificationPolicy",
     "execute_flow",
 ]

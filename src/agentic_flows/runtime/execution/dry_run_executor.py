@@ -12,14 +12,17 @@ from agentic_flows.core.authority import finalize_trace
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.fingerprint import (
+    fingerprint_inputs,
+    fingerprint_policy,
+)
 from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ids import ArtifactID, ResolverID
+from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, ResolverID
 from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, EventType
 
 
@@ -41,17 +44,18 @@ class DryRunExecutor:
                 "step_index": step.step_index,
                 "agent_id": step.agent_id,
             }
-            recorder.record(
-                ExecutionEvent(
-                    spec_version="v1",
-                    event_index=event_index,
-                    step_index=step.step_index,
-                    event_type=EventType.STEP_START,
-                    timestamp_utc=utc_now_deterministic(event_index),
-                    payload_hash=fingerprint_inputs(start_payload),
-                ),
-                context.authority,
+            event = ExecutionEvent(
+                spec_version="v1",
+                event_index=event_index,
+                step_index=step.step_index,
+                event_type=EventType.STEP_START,
+                timestamp_utc=utc_now_deterministic(event_index),
+                payload=start_payload,
+                payload_hash=fingerprint_inputs(start_payload),
             )
+            recorder.record(event, context.authority)
+            for observer in context.observers:
+                observer.on_event(event)
             with suppress(Exception):
                 context.consume_budget(trace_events=1)
             event_index += 1
@@ -64,17 +68,18 @@ class DryRunExecutor:
                     "agent_id": step.agent_id,
                     "error": str(exc),
                 }
-                recorder.record(
-                    ExecutionEvent(
-                        spec_version="v1",
-                        event_index=event_index,
-                        step_index=step.step_index,
-                        event_type=EventType.STEP_FAILED,
-                        timestamp_utc=utc_now_deterministic(event_index),
-                        payload_hash=fingerprint_inputs(fail_payload),
-                    ),
-                    context.authority,
+                event = ExecutionEvent(
+                    spec_version="v1",
+                    event_index=event_index,
+                    step_index=step.step_index,
+                    event_type=EventType.STEP_FAILED,
+                    timestamp_utc=utc_now_deterministic(event_index),
+                    payload=fail_payload,
+                    payload_hash=fingerprint_inputs(fail_payload),
                 )
+                recorder.record(event, context.authority)
+                for observer in context.observers:
+                    observer.on_event(event)
                 with suppress(Exception):
                     context.consume_budget(trace_events=1)
                 event_index += 1
@@ -99,17 +104,18 @@ class DryRunExecutor:
                 "step_index": step.step_index,
                 "agent_id": step.agent_id,
             }
-            recorder.record(
-                ExecutionEvent(
-                    spec_version="v1",
-                    event_index=event_index,
-                    step_index=step.step_index,
-                    event_type=EventType.STEP_END,
-                    timestamp_utc=utc_now_deterministic(event_index),
-                    payload_hash=fingerprint_inputs(end_payload),
-                ),
-                context.authority,
+            event = ExecutionEvent(
+                spec_version="v1",
+                event_index=event_index,
+                step_index=step.step_index,
+                event_type=EventType.STEP_END,
+                timestamp_utc=utc_now_deterministic(event_index),
+                payload=end_payload,
+                payload_hash=fingerprint_inputs(end_payload),
             )
+            recorder.record(event, context.authority)
+            for observer in context.observers:
+                observer.on_event(event)
             with suppress(Exception):
                 context.consume_budget(trace_events=1)
             event_index += 1
@@ -120,8 +126,15 @@ class DryRunExecutor:
         trace = ExecutionTrace(
             spec_version="v1",
             flow_id=steps_plan.flow_id,
+            parent_flow_id=context.parent_flow_id,
+            child_flow_ids=context.child_flow_ids,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
+            verification_policy_fingerprint=(
+                PolicyFingerprint(fingerprint_policy(context.verification_policy))
+                if context.verification_policy is not None
+                else None
+            ),
             resolver_id=resolver_id,
             events=recorder.events(),
             tool_invocations=(),

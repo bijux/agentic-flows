@@ -23,7 +23,7 @@ SEMANTICS_SOURCE = "docs/guarantees/system_guarantees.md"
 SEMANTIC_DOMAIN = "structural_truth"
 VERIFICATION_DOMAIN = "epistemic_truth"
 
-Mode = Literal["plan", "dry-run", "live", "observe"]
+Mode = Literal["plan", "dry-run", "live", "observe", "unsafe"]
 
 
 class _Event(Protocol):
@@ -53,6 +53,9 @@ def authority_token() -> AuthorityToken:
 
 def enforce_runtime_semantics(result: _RunResult, *, mode: Mode) -> None:
     if mode == "plan":
+        return
+    if mode == "unsafe":
+        _require_trace_finalized(result)
         return
     _require_trace_finalized(result)
     if mode == "live":

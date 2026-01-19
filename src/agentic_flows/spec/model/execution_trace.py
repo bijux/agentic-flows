@@ -11,6 +11,7 @@ from agentic_flows.spec.ontology.ids import (
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
+    PolicyFingerprint,
     ResolverID,
 )
 
@@ -19,8 +20,11 @@ from agentic_flows.spec.ontology.ids import (
 class ExecutionTrace:
     spec_version: str
     flow_id: FlowID
+    parent_flow_id: FlowID | None
+    child_flow_ids: tuple[FlowID, ...]
     environment_fingerprint: EnvironmentFingerprint
     plan_hash: PlanHash
+    verification_policy_fingerprint: PolicyFingerprint | None
     resolver_id: ResolverID
     events: tuple[ExecutionEvent, ...]
     tool_invocations: tuple[ToolInvocation, ...]

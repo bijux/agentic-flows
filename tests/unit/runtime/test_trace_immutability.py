@@ -30,14 +30,18 @@ def test_trace_is_immutable() -> None:
             step_index=0,
             event_type=EventType.STEP_START,
             timestamp_utc="1970-01-01T00:00:00Z",
+            payload={"event_type": EventType.STEP_START.value},
             payload_hash="x",
         )
     )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow-trace"),
+        parent_flow_id=None,
+        child_flow_ids=(),
         environment_fingerprint=EnvironmentFingerprint("env-fingerprint"),
         plan_hash=PlanHash("plan-hash"),
+        verification_policy_fingerprint=None,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=tuple(events),
         tool_invocations=(),
@@ -55,6 +59,7 @@ def test_trace_is_immutable() -> None:
             step_index=0,
             event_type=EventType.STEP_START,
             timestamp_utc="1970-01-01T00:00:00Z",
+            payload={"event_type": EventType.STEP_START.value},
             payload_hash="x",
         )
 
@@ -70,6 +75,7 @@ def test_trace_is_immutable() -> None:
                 step_index=0,
                 event_type=EventType.STEP_END,
                 timestamp_utc="1970-01-01T00:00:01Z",
+                payload={"event_type": EventType.STEP_END.value},
                 payload_hash="y",
             )
         )

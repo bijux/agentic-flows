@@ -33,8 +33,11 @@ theme:
 
 nav:
   - System Guarantees: guarantees/system_guarantees.md
+  - Never Support: guarantees/never_support.md
   - Home: guarantees/index.md
-  - Getting Started: guarantees/overview/getting_started.md
+  - Getting Started:
+      - guarantees/overview/getting_started.md
+      - guarantees/overview/cli_demo.md
   - Ontology:
       - Core Concepts: ontology/concepts/core_concepts.md
       - Artifact Ontology: ontology/artifact_ontology.md

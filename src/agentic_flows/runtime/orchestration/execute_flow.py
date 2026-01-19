@@ -13,6 +13,7 @@ from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
 from agentic_flows.runtime.execution.observer_executor import ObserverExecutor
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome, StepExecutor
+from agentic_flows.runtime.observability.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
@@ -26,6 +27,7 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.ontology.ids import FlowID
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,9 @@ class ExecutionConfig:
     artifact_store: ArtifactStore | None = None
     budget: ExecutionBudget | None = None
     observed_run: ObservedRun | None = None
+    parent_flow_id: FlowID | None = None
+    child_flow_ids: tuple[FlowID, ...] | None = None
+    observers: tuple[RuntimeObserver, ...] | None = None
 
     @classmethod
     def from_command(cls, command: str) -> ExecutionConfig:
@@ -57,6 +62,8 @@ class ExecutionConfig:
             return cls(mode=RunMode.LIVE)
         if command == "observe":
             return cls(mode=RunMode.OBSERVE)
+        if command == "unsafe-run":
+            return cls(mode=RunMode.UNSAFE)
         raise ValueError(f"Unsupported command: {command}")
 
 
@@ -84,7 +91,7 @@ def execute_flow(
         )
 
     if (
-        execution_config.mode in {RunMode.LIVE, RunMode.OBSERVE}
+        execution_config.mode in {RunMode.LIVE, RunMode.OBSERVE, RunMode.UNSAFE}
         and execution_config.verification_policy is None
     ):
         raise ValueError("verification_policy is required before execution")
@@ -101,10 +108,13 @@ def execute_flow(
         authority=authority_token(),
         seed=seed,
         environment_fingerprint=resolved_flow.plan.environment_fingerprint,
+        parent_flow_id=execution_config.parent_flow_id,
+        child_flow_ids=execution_config.child_flow_ids or (),
         artifact_store=store,
         trace_recorder=TraceRecorder(),
         mode=execution_config.mode,
         verification_policy=execution_config.verification_policy,
+        observers=execution_config.observers or (),
         budget=BudgetState(execution_config.budget),
         _step_evidence={},
         _step_artifacts={},

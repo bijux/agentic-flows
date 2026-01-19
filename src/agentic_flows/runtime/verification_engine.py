@@ -9,13 +9,15 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from agentic_flows.core.authority import evaluate_verification
+from agentic_flows.runtime.observability.fingerprint import fingerprint_policy
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology.ids import ArtifactID, RuleID
+from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, RuleID
 from agentic_flows.spec.ontology.ontology import ArbitrationRule, VerificationPhase
 
 
@@ -184,7 +186,7 @@ class VerificationOrchestrator:
             engine.verify(reasoning, evidence, artifacts, policy)
             for engine in self._bundle_engines
         ]
-        arbitration = _arbitrate(results, policy.arbitration_rule)
+        arbitration = _arbitrate(results, policy.arbitration_policy)
         return results, arbitration
 
     def verify_flow(
@@ -196,13 +198,14 @@ class VerificationOrchestrator:
             engine.verify_flow(reasoning_bundles, policy)
             for engine in self._flow_engines
         ]
-        arbitration = _arbitrate(results, policy.arbitration_rule)
+        arbitration = _arbitrate(results, policy.arbitration_policy)
         return results, arbitration
 
 
 def _arbitrate(
-    results: list[VerificationResult], rule: ArbitrationRule
+    results: list[VerificationResult], policy: ArbitrationPolicy
 ) -> VerificationArbitration:
+    rule = policy.rule
     statuses = [result.status for result in results]
     decision = "PASS"
     if rule == ArbitrationRule.STRICT_FIRST_FAILURE:
@@ -219,9 +222,12 @@ def _arbitrate(
             decision = "ESCALATE"
     elif rule == ArbitrationRule.QUORUM:
         counts = Counter(statuses)
-        if counts["PASS"] >= (len(statuses) // 2 + 1):
+        threshold = policy.quorum_threshold
+        if threshold is None:
+            threshold = len(statuses) // 2 + 1
+        if counts["PASS"] >= threshold:
             decision = "PASS"
-        elif counts["FAIL"] >= (len(statuses) // 2 + 1):
+        elif counts["FAIL"] >= threshold:
             decision = "FAIL"
         else:
             decision = "ESCALATE"
@@ -233,6 +239,7 @@ def _arbitrate(
     return VerificationArbitration(
         spec_version="v1",
         rule=rule,
+        policy_fingerprint=PolicyFingerprint(fingerprint_policy(policy)),
         decision=decision,
         engine_ids=engine_ids,
         engine_statuses=engine_statuses,

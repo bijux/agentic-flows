@@ -20,6 +20,7 @@ pytestmark = pytest.mark.regression
 
 def test_system_invariant_snapshot() -> None:
     assert set(api.__all__) == {
+        "ArbitrationPolicy",
         "ExecutionConfig",
         "ExecutionPlan",
         "FlowManifest",

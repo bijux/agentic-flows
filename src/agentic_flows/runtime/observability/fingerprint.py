@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict, is_dataclass
 import hashlib
 import json
 from typing import Any
@@ -26,3 +27,8 @@ def fingerprint_inputs(data: dict) -> str:
         normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=True
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def fingerprint_policy(policy: object) -> str:
+    payload = asdict(policy) if is_dataclass(policy) else {"policy": str(policy)}
+    return fingerprint_inputs(payload)

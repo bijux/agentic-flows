@@ -84,4 +84,8 @@ def test_forced_partial_failure_records_incomplete_trace(
     assert result.verification_results[0].reason == "forced_partial_failure"
 
     with pytest.raises(ValueError, match="failed_steps"):
-        validate_replay(trace, result.resolved_flow.plan)
+        validate_replay(
+            trace,
+            result.resolved_flow.plan,
+            verification_policy=baseline_policy,
+        )

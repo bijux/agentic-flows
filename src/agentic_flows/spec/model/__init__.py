@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
@@ -25,6 +26,7 @@ from agentic_flows.spec.model.verification_rule import VerificationRule
 __all__ = [
     "AgentInvocation",
     "Artifact",
+    "ArbitrationPolicy",
     "ExecutionEvent",
     "ExecutionPlan",
     "ExecutionSteps",

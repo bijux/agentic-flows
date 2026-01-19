@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 from contextlib import suppress
+from dataclasses import dataclass
 import signal
 
 from agentic_flows.core.authority import finalize_trace
 from agentic_flows.core.errors import ExecutionFailure
-from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.runtime.context import ExecutionContext, RunMode
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.fingerprint import (
+    fingerprint_inputs,
+    fingerprint_policy,
+)
 from agentic_flows.runtime.observability.flow_invariants import validate_flow_invariants
 from agentic_flows.runtime.observability.retrieval_fingerprint import (
     fingerprint_retrieval,
@@ -29,7 +33,14 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology.ids import ContentHash, ResolverID, RuleID, ToolID
+from agentic_flows.spec.ontology.ids import (
+    ArtifactID,
+    ContentHash,
+    PolicyFingerprint,
+    ResolverID,
+    RuleID,
+    ToolID,
+)
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
@@ -39,37 +50,39 @@ from agentic_flows.spec.ontology.ontology import (
 )
 
 
+@dataclass
+class _PhaseState:
+    recorder: object
+    event_index: int
+    artifacts: list[Artifact]
+    evidence: list[RetrievedEvidence]
+    reasoning_bundles: list[ReasoningBundle]
+    verification_results: list[VerificationResult]
+    verification_arbitrations: list[VerificationArbitration]
+    tool_invocations: list[ToolInvocation]
+    pending_invocations: dict[tuple[int, ToolID], ContentHash]
+    interrupted: bool
+
+
 class LiveExecutor:
     def execute(
         self,
         plan: ExecutionPlan,
         context: ExecutionContext,
     ) -> ExecutionOutcome:
+        steps_plan = self._planning_phase(plan)
+        state = self._execution_phase(steps_plan, context)
+        return self._finalization_phase(steps_plan, context, state)
+
+    @staticmethod
+    def _planning_phase(plan: ExecutionPlan):
         steps_plan = plan.plan
         enforce_flow_boundary(steps_plan)
+        return steps_plan
+
+    def _execution_phase(self, steps_plan, context: ExecutionContext) -> _PhaseState:
         recorder = context.trace_recorder
         event_index = 0
-
-        def record_event(
-            event_type: EventType, step_index: int, payload: dict[str, object]
-        ) -> None:
-            nonlocal event_index
-            payload["event_type"] = event_type.value
-            recorder.record(
-                ExecutionEvent(
-                    spec_version="v1",
-                    event_index=event_index,
-                    step_index=step_index,
-                    event_type=event_type,
-                    timestamp_utc=utc_now_deterministic(event_index),
-                    payload_hash=fingerprint_inputs(payload),
-                ),
-                context.authority,
-            )
-            with suppress(Exception):
-                context.consume_budget(trace_events=1)
-            event_index += 1
-
         artifacts: list[Artifact] = []
         evidence: list[RetrievedEvidence] = []
         reasoning_bundles: list[ReasoningBundle] = []
@@ -85,10 +98,33 @@ class LiveExecutor:
         tool_agent = ToolID("bijux-agent.run")
         tool_retrieval = ToolID("bijux-rag.retrieve")
         tool_reasoning = ToolID("bijux-rar.reason")
-
         pending_invocations: dict[tuple[int, ToolID], ContentHash] = {}
-
         interrupted = False
+
+        def record_event(
+            event_type: EventType, step_index: int, payload: dict[str, object]
+        ) -> None:
+            nonlocal event_index
+            payload["event_type"] = event_type.value
+            event = ExecutionEvent(
+                spec_version="v1",
+                event_index=event_index,
+                step_index=step_index,
+                event_type=event_type,
+                timestamp_utc=utc_now_deterministic(event_index),
+                payload=payload,
+                payload_hash=fingerprint_inputs(payload),
+            )
+            recorder.record(
+                event,
+                context.authority,
+            )
+            for observer in context.observers:
+                observer.on_event(event)
+            with suppress(Exception):
+                context.consume_budget(trace_events=1)
+            event_index += 1
+
         previous_handler = signal.getsignal(signal.SIGINT)
 
         def _handle_interrupt(_signum, _frame) -> None:
@@ -200,9 +236,10 @@ class LiveExecutor:
 
                     current_evidence = retrieved
                     evidence.extend(retrieved)
+                    context.record_evidence(step.step_index, current_evidence)
                     try:
+                        context.consume_budget(artifacts=0)
                         context.consume_evidence_budget(len(retrieved))
-                        validate_outputs(StepType.RETRIEVAL, (), current_evidence)
                     except Exception as exc:
                         record_event(
                             EventType.RETRIEVAL_FAILED,
@@ -215,45 +252,77 @@ class LiveExecutor:
                             },
                         )
                         break
-                        output_fingerprint = fingerprint_inputs(
-                            [item.content_hash for item in retrieved]
-                        )
-                        input_fingerprint = pending_invocations.pop(
-                            (step.step_index, tool_retrieval),
-                            ContentHash(fingerprint_inputs(tool_input)),
-                        )
-                        tool_invocations.append(
-                            ToolInvocation(
+                    try:
+                        for item in retrieved:
+                            context.artifact_store.create(
                                 spec_version="v1",
-                                tool_id=tool_retrieval,
-                                inputs_fingerprint=input_fingerprint,
-                                outputs_fingerprint=ContentHash(output_fingerprint),
-                                duration=0.0,
-                                outcome="success",
+                                artifact_id=ArtifactID(
+                                    f"evidence-{step.step_index}-{item.evidence_id}"
+                                ),
+                                artifact_type=ArtifactType.RETRIEVED_EVIDENCE,
+                                producer="retrieval",
+                                parent_artifacts=(),
+                                content_hash=item.content_hash,
+                                scope=ArtifactScope.AUDIT,
                             )
-                        )
+                    except Exception as exc:
                         record_event(
-                            EventType.TOOL_CALL_END,
-                            step.step_index,
-                            {
-                                "tool_id": tool_retrieval,
-                                "input_fingerprint": fingerprint_inputs(tool_input),
-                                "output_fingerprint": output_fingerprint,
-                            },
-                        )
-
-                        record_event(
-                            EventType.RETRIEVAL_END,
+                            EventType.RETRIEVAL_FAILED,
                             step.step_index,
                             {
                                 "step_index": step.step_index,
                                 "request_id": step.retrieval_request.request_id,
                                 "vector_contract_id": step.retrieval_request.vector_contract_id,
-                                "evidence_hashes": [
-                                    item.content_hash for item in retrieved
-                                ],
+                                "error": str(exc),
                             },
                         )
+                        break
+
+                    output_fingerprint = fingerprint_inputs(
+                        [
+                            {
+                                "evidence_id": item.evidence_id,
+                                "content_hash": item.content_hash,
+                            }
+                            for item in retrieved
+                        ]
+                    )
+                    input_fingerprint = pending_invocations.pop(
+                        (step.step_index, tool_retrieval),
+                        ContentHash(fingerprint_inputs(tool_input)),
+                    )
+                    tool_invocations.append(
+                        ToolInvocation(
+                            spec_version="v1",
+                            tool_id=tool_retrieval,
+                            inputs_fingerprint=input_fingerprint,
+                            outputs_fingerprint=ContentHash(output_fingerprint),
+                            duration=0.0,
+                            outcome="success",
+                        )
+                    )
+                    record_event(
+                        EventType.TOOL_CALL_END,
+                        step.step_index,
+                        {
+                            "tool_id": tool_retrieval,
+                            "input_fingerprint": fingerprint_inputs(tool_input),
+                            "output_fingerprint": output_fingerprint,
+                        },
+                    )
+
+                    record_event(
+                        EventType.RETRIEVAL_END,
+                        step.step_index,
+                        {
+                            "step_index": step.step_index,
+                            "request_id": step.retrieval_request.request_id,
+                            "vector_contract_id": step.retrieval_request.vector_contract_id,
+                            "evidence_hashes": [
+                                item.content_hash for item in retrieved
+                            ],
+                        },
+                    )
 
                 tool_input = {
                     "tool_id": tool_agent,
@@ -381,6 +450,17 @@ class LiveExecutor:
                             "error": "forced_partial_failure",
                         },
                     )
+                    if context.mode == RunMode.UNSAFE:
+                        record_event(
+                            EventType.SEMANTIC_VIOLATION,
+                            step.step_index,
+                            {
+                                "step_index": step.step_index,
+                                "decision": "FAIL",
+                                "rule_ids": ["forced_partial_failure"],
+                            },
+                        )
+                        continue
                     break
 
                 record_event(
@@ -606,7 +686,22 @@ class LiveExecutor:
                 )
 
                 if arbitration.decision != "PASS":
-                    break
+                    if context.mode == RunMode.UNSAFE:
+                        record_event(
+                            EventType.SEMANTIC_VIOLATION,
+                            step.step_index,
+                            {
+                                "step_index": step.step_index,
+                                "decision": arbitration.decision,
+                                "rule_ids": [
+                                    violation
+                                    for result in results
+                                    for violation in result.violations
+                                ],
+                            },
+                        )
+                    else:
+                        break
 
                 record_event(
                     EventType.STEP_END,
@@ -638,10 +733,29 @@ class LiveExecutor:
         finally:
             signal.signal(signal.SIGINT, previous_handler)
 
-        if interrupted:
+        return _PhaseState(
+            recorder=recorder,
+            event_index=event_index,
+            artifacts=artifacts,
+            evidence=evidence,
+            reasoning_bundles=reasoning_bundles,
+            verification_results=verification_results,
+            verification_arbitrations=verification_arbitrations,
+            tool_invocations=tool_invocations,
+            pending_invocations=pending_invocations,
+            interrupted=interrupted,
+        )
+
+    def _finalization_phase(
+        self,
+        steps_plan,
+        context: ExecutionContext,
+        state: _PhaseState,
+    ) -> ExecutionOutcome:
+        if state.interrupted:
             raise ExecutionFailure("execution interrupted")
 
-        validate_flow_invariants(context, artifacts)
+        validate_flow_invariants(context, state.artifacts)
 
         resolver_id = ResolverID(
             self._resolver_id_from_metadata(steps_plan.resolution_metadata)
@@ -649,21 +763,28 @@ class LiveExecutor:
         trace = ExecutionTrace(
             spec_version="v1",
             flow_id=steps_plan.flow_id,
+            parent_flow_id=context.parent_flow_id,
+            child_flow_ids=context.child_flow_ids,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
+            verification_policy_fingerprint=(
+                PolicyFingerprint(fingerprint_policy(context.verification_policy))
+                if context.verification_policy is not None
+                else None
+            ),
             resolver_id=resolver_id,
-            events=recorder.events(),
-            tool_invocations=tuple(tool_invocations),
+            events=state.recorder.events(),
+            tool_invocations=tuple(state.tool_invocations),
             finalized=False,
         )
         finalize_trace(trace)
         return ExecutionOutcome(
             trace=trace,
-            artifacts=artifacts,
-            evidence=evidence,
-            reasoning_bundles=reasoning_bundles,
-            verification_results=verification_results,
-            verification_arbitrations=verification_arbitrations,
+            artifacts=state.artifacts,
+            evidence=state.evidence,
+            reasoning_bundles=state.reasoning_bundles,
+            verification_results=state.verification_results,
+            verification_arbitrations=state.verification_arbitrations,
         )
 
     @staticmethod

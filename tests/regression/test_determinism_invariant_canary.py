@@ -132,7 +132,7 @@ def test_invariant_canary(baseline_policy, resolved_flow_factory) -> None:
     trace = result.trace
     plan = result.resolved_flow.plan
 
-    validate_replay(trace, plan)
+    validate_replay(trace, plan, verification_policy=baseline_policy)
     assert isinstance(plan.steps, tuple)
     assert trace.finalized is True
     assert any(

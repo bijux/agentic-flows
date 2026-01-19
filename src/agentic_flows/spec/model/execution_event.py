@@ -15,6 +15,7 @@ class ExecutionEvent:
     step_index: int
     event_type: EventType
     timestamp_utc: str
+    payload: dict[str, object]
     payload_hash: str
 
 

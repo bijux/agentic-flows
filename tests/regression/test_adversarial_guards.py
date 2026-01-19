@@ -27,6 +27,7 @@ from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.ontology.ontology import ArbitrationRule
 from agentic_flows.spec.ontology.ids import (
@@ -61,6 +62,8 @@ def test_fabricated_artifact_rejected() -> None:
         authority=authority_token(),
         seed="seed",
         environment_fingerprint=EnvironmentFingerprint("env"),
+        parent_flow_id=None,
+        child_flow_ids=(),
         artifact_store=InMemoryArtifactStore(),
         trace_recorder=TraceRecorder(),
         mode=RunMode.LIVE,
@@ -68,12 +71,17 @@ def test_fabricated_artifact_rejected() -> None:
             spec_version="v1",
             verification_level="baseline",
             failure_mode="halt",
-            arbitration_rule=ArbitrationRule.UNANIMOUS,
+            arbitration_policy=ArbitrationPolicy(
+                spec_version="v1",
+                rule=ArbitrationRule.UNANIMOUS,
+                quorum_threshold=None,
+            ),
             required_evidence=(),
             rules=(),
             fail_on=(),
             escalate_on=(),
         ),
+        observers=(),
         budget=BudgetState(None),
         _step_evidence={},
         _step_artifacts={},

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ids import ArtifactID
+from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint
 from agentic_flows.spec.ontology.ontology import ArbitrationRule
 
 
@@ -13,6 +13,7 @@ from agentic_flows.spec.ontology.ontology import ArbitrationRule
 class VerificationArbitration:
     spec_version: str
     rule: ArbitrationRule
+    policy_fingerprint: PolicyFingerprint
     decision: str
     engine_ids: tuple[str, ...]
     engine_statuses: tuple[str, ...]

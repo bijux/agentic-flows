@@ -9,12 +9,13 @@ from enum import Enum
 from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.budget import BudgetState
+from agentic_flows.runtime.observability.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.ontology.ids import EnvironmentFingerprint
+from agentic_flows.spec.ontology.ids import EnvironmentFingerprint, FlowID
 
 
 class RunMode(str, Enum):
@@ -22,6 +23,7 @@ class RunMode(str, Enum):
     DRY_RUN = "dry-run"
     LIVE = "live"
     OBSERVE = "observe"
+    UNSAFE = "unsafe"
 
 
 @dataclass(frozen=True)
@@ -29,10 +31,13 @@ class ExecutionContext:
     authority: AuthorityToken
     seed: str | None
     environment_fingerprint: EnvironmentFingerprint
+    parent_flow_id: FlowID | None
+    child_flow_ids: tuple[FlowID, ...]
     artifact_store: ArtifactStore
     trace_recorder: TraceRecorder
     mode: RunMode
     verification_policy: VerificationPolicy | None
+    observers: tuple[RuntimeObserver, ...]
     budget: BudgetState
     _step_evidence: dict[int, tuple[RetrievedEvidence, ...]]
     _step_artifacts: dict[int, tuple[Artifact, ...]]

@@ -46,8 +46,11 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=plan.flow_id,
+        parent_flow_id=None,
+        child_flow_ids=(),
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=PlanHash("mismatch"),
+        verification_policy_fingerprint=None,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(),
         tool_invocations=(),

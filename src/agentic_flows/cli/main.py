@@ -43,6 +43,9 @@ def main() -> None:
     dry_run_parser = subparsers.add_parser("dry-run")
     dry_run_parser.add_argument("manifest")
 
+    unsafe_parser = subparsers.add_parser("unsafe-run")
+    unsafe_parser.add_argument("manifest")
+
     args = parser.parse_args()
     manifest_path = Path(args.manifest)
     manifest = _load_manifest(manifest_path)
@@ -61,7 +64,7 @@ def _render_result(command: str, result) -> None:
         payload = asdict(result.trace)
         print(json.dumps(payload, sort_keys=True))
         return
-    if command == "run":
+    if command in {"run", "unsafe-run"}:
         payload = asdict(result.trace)
         artifact_list = [
             {"artifact_id": artifact.artifact_id, "content_hash": artifact.content_hash}

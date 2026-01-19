@@ -25,8 +25,11 @@ def test_finalize_trace_twice_rejected() -> None:
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        parent_flow_id=None,
+        child_flow_ids=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
+        verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
@@ -46,6 +49,7 @@ def test_emit_event_without_authority_fails() -> None:
         step_index=0,
         event_type=EventType.STEP_START,
         timestamp_utc="1970-01-01T00:00:00Z",
+        payload={"event_type": EventType.STEP_START.value},
         payload_hash="payload",
     )
     with pytest.raises(TypeError):
@@ -56,8 +60,11 @@ def test_bypass_verification_is_rejected() -> None:
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        parent_flow_id=None,
+        child_flow_ids=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
+        verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
