@@ -105,6 +105,17 @@ def test_fabricated_artifact_rejected() -> None:
                 max_magnitude=EntropyMagnitude.LOW,
             )
         ),
+        execution_store=None,
+        run_id=None,
+        resume_from_step_index=-1,
+        starting_event_index=0,
+        starting_evidence_index=0,
+        starting_tool_invocation_index=0,
+        starting_entropy_index=0,
+        initial_claim_ids=(),
+        initial_artifacts=[],
+        initial_evidence=[],
+        initial_tool_invocations=[],
         _step_evidence={},
         _step_artifacts={},
     )

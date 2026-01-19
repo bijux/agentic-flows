@@ -11,7 +11,6 @@ class ReplayEnvelope:
     spec_version: str
     min_claim_overlap: float
     max_contradiction_delta: int
-    require_same_arbitration: bool
 
 
 __all__ = ["ReplayEnvelope"]

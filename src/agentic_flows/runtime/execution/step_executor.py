@@ -4,9 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, TypeVar
 
-from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
@@ -25,12 +23,4 @@ class ExecutionOutcome:
     verification_arbitrations: list[VerificationArbitration]
 
 
-TStep = TypeVar("TStep", contravariant=True)
-TResult = TypeVar("TResult", covariant=True)
-
-
-class StepExecutor(Protocol[TStep, TResult]):
-    def execute(self, step: TStep, context: ExecutionContext) -> TResult: ...
-
-
-__all__ = ["ExecutionOutcome", "StepExecutor"]
+__all__ = ["ExecutionOutcome"]

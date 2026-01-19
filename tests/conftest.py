@@ -13,7 +13,10 @@ from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
 from agentic_flows.runtime.observability.environment import (
     compute_environment_fingerprint,
 )
-from agentic_flows.runtime.observability.execution_store import DuckDBExecutionStore
+from agentic_flows.runtime.observability.execution_store import (
+    DuckDBExecutionReadStore,
+    DuckDBExecutionWriteStore,
+)
 from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
@@ -129,7 +132,6 @@ def replay_envelope() -> ReplayEnvelope:
         spec_version="v1",
         min_claim_overlap=0.8,
         max_contradiction_delta=0,
-        require_same_arbitration=True,
     )
 
 
@@ -172,8 +174,13 @@ def deterministic_environment(
 
 
 @pytest.fixture
-def execution_store(tmp_path: Path) -> DuckDBExecutionStore:
-    return DuckDBExecutionStore(tmp_path / "execution.duckdb")
+def execution_store(tmp_path: Path) -> DuckDBExecutionWriteStore:
+    return DuckDBExecutionWriteStore(tmp_path / "execution.duckdb")
+
+
+@pytest.fixture
+def execution_read_store(tmp_path: Path) -> DuckDBExecutionReadStore:
+    return DuckDBExecutionReadStore(tmp_path / "execution.duckdb")
 
 
 @pytest.fixture
@@ -205,7 +212,6 @@ def plan_hash_for():
             "replay_envelope": {
                 "min_claim_overlap": replay_envelope.min_claim_overlap,
                 "max_contradiction_delta": replay_envelope.max_contradiction_delta,
-                "require_same_arbitration": replay_envelope.require_same_arbitration,
             },
             "dataset": {
                 "dataset_id": getattr(dataset, "dataset_id", None),

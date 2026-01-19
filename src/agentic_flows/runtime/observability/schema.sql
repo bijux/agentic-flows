@@ -6,6 +6,20 @@ CREATE TABLE IF NOT EXISTS schema_contract (
     applied_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS dataset_state_transitions (
+    from_state TEXT NOT NULL CHECK (from_state IN ('experimental', 'frozen', 'deprecated')),
+    to_state TEXT NOT NULL CHECK (to_state IN ('experimental', 'frozen', 'deprecated')),
+    PRIMARY KEY (from_state, to_state)
+);
+
+INSERT OR IGNORE INTO dataset_state_transitions (from_state, to_state) VALUES
+    ('experimental', 'experimental'),
+    ('experimental', 'frozen'),
+    ('experimental', 'deprecated'),
+    ('frozen', 'frozen'),
+    ('frozen', 'deprecated'),
+    ('deprecated', 'deprecated');
+
 CREATE TABLE IF NOT EXISTS datasets (
     tenant_id TEXT NOT NULL,
     dataset_id TEXT NOT NULL,
@@ -20,7 +34,9 @@ CREATE TABLE IF NOT EXISTS datasets (
     ),
     fingerprint TEXT NOT NULL,
     storage_uri TEXT NOT NULL,
-    PRIMARY KEY (tenant_id, dataset_id, version)
+    PRIMARY KEY (tenant_id, dataset_id, version),
+    FOREIGN KEY (previous_state, state)
+        REFERENCES dataset_state_transitions (from_state, to_state)
 );
 
 CREATE TABLE IF NOT EXISTS runs (
@@ -38,7 +54,6 @@ CREATE TABLE IF NOT EXISTS runs (
     allow_deprecated_datasets BOOLEAN NOT NULL,
     replay_envelope_min_claim_overlap DOUBLE NOT NULL CHECK (replay_envelope_min_claim_overlap >= 0 AND replay_envelope_min_claim_overlap <= 1),
     replay_envelope_max_contradiction_delta INTEGER NOT NULL CHECK (replay_envelope_max_contradiction_delta >= 0),
-    replay_envelope_require_same_arbitration BOOLEAN NOT NULL,
     environment_fingerprint TEXT NOT NULL,
     plan_hash TEXT NOT NULL,
     verification_policy_fingerprint TEXT,
@@ -59,6 +74,32 @@ CREATE TABLE IF NOT EXISTS run_children (
     run_id TEXT NOT NULL,
     child_flow_id TEXT NOT NULL,
     PRIMARY KEY (tenant_id, run_id, child_flow_id),
+    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
+);
+
+CREATE TABLE IF NOT EXISTS run_checkpoints (
+    tenant_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    step_index INTEGER NOT NULL CHECK (step_index >= -1),
+    event_index INTEGER NOT NULL CHECK (event_index >= -1),
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (tenant_id, run_id),
+    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
+);
+
+CREATE TABLE IF NOT EXISTS entropy_budget_sources (
+    tenant_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    source TEXT NOT NULL CHECK (source IN ('seeded_rng', 'external_oracle', 'human_input', 'data')),
+    PRIMARY KEY (tenant_id, run_id, source),
+    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
+);
+
+CREATE TABLE IF NOT EXISTS entropy_budget_magnitudes (
+    tenant_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    magnitude TEXT NOT NULL CHECK (magnitude IN ('low', 'medium', 'high')),
+    PRIMARY KEY (tenant_id, run_id, magnitude),
     FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
 );
 
@@ -166,7 +207,11 @@ CREATE TABLE IF NOT EXISTS entropy_usage (
     description TEXT NOT NULL,
     step_index INTEGER,
     PRIMARY KEY (tenant_id, run_id, entry_index),
-    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
+    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id),
+    FOREIGN KEY (tenant_id, run_id, source)
+        REFERENCES entropy_budget_sources (tenant_id, run_id, source),
+    FOREIGN KEY (tenant_id, run_id, magnitude)
+        REFERENCES entropy_budget_magnitudes (tenant_id, run_id, magnitude)
 );
 
 CREATE TABLE IF NOT EXISTS tool_invocations (

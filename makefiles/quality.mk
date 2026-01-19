@@ -78,6 +78,9 @@ quality:
 	@echo "   - Documentation consistency"
 	@$(PYTHON) scripts/check_docs_consistency.py
 
+	@echo "   - No Toys policy"
+	@$(PYTHON) scripts/check_no_toys_policy.py
+
 	@echo "   - MkDocs build"
 	@$(PYTHON) -m mkdocs build --strict
 

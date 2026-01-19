@@ -48,7 +48,6 @@ def test_human_intervention_event_breaks_replay() -> None:
             spec_version="v1",
             min_claim_overlap=1.0,
             max_contradiction_delta=0,
-            require_same_arbitration=True,
         ),
         dataset=DatasetDescriptor(
             spec_version="v1",
@@ -99,7 +98,6 @@ def test_human_intervention_event_breaks_replay() -> None:
             spec_version="v1",
             min_claim_overlap=1.0,
             max_contradiction_delta=0,
-            require_same_arbitration=True,
         ),
         allow_deprecated_datasets=False,
         environment_fingerprint=EnvironmentFingerprint("env"),

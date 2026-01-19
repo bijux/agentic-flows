@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.runtime.artifact_store import ArtifactStore
@@ -16,9 +17,21 @@ from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.ontology.ids import EnvironmentFingerprint, FlowID, TenantID
+from agentic_flows.spec.ontology.ids import (
+    ClaimID,
+    EnvironmentFingerprint,
+    FlowID,
+    RunID,
+    TenantID,
+)
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
+
+if TYPE_CHECKING:
+    from agentic_flows.runtime.observability.execution_store_protocol import (
+        ExecutionWriteStoreProtocol,
+    )
 
 
 class RunMode(str, Enum):
@@ -44,6 +57,17 @@ class ExecutionContext:
     observers: tuple[RuntimeObserver, ...]
     budget: BudgetState
     entropy: EntropyLedger
+    execution_store: ExecutionWriteStoreProtocol | None
+    run_id: RunID | None
+    resume_from_step_index: int
+    starting_event_index: int
+    starting_evidence_index: int
+    starting_tool_invocation_index: int
+    starting_entropy_index: int
+    initial_claim_ids: tuple[ClaimID, ...]
+    initial_artifacts: list[Artifact]
+    initial_evidence: list[RetrievedEvidence]
+    initial_tool_invocations: list[ToolInvocation]
     _step_evidence: dict[int, tuple[RetrievedEvidence, ...]]
     _step_artifacts: dict[int, tuple[Artifact, ...]]
     observed_run: ObservedRun | None = None

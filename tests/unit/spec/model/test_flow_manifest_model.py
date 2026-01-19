@@ -46,7 +46,6 @@ def test_flow_manifest_model_allows_invalid_state() -> None:
             spec_version="v1",
             min_claim_overlap=0.0,
             max_contradiction_delta=0,
-            require_same_arbitration=False,
         ),
         dataset=DatasetDescriptor(
             spec_version="v1",

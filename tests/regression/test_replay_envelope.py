@@ -33,7 +33,6 @@ def test_statistical_envelope_rejects_low_claim_overlap() -> None:
         spec_version="v1",
         min_claim_overlap=0.8,
         max_contradiction_delta=0,
-        require_same_arbitration=True,
     )
     dataset = DatasetDescriptor(
         spec_version="v1",

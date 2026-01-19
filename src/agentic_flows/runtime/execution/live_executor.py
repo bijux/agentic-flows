@@ -5,11 +5,15 @@ from __future__ import annotations
 
 from contextlib import suppress
 from dataclasses import dataclass
+import os
 import signal
 
 from agentic_flows.core.authority import finalize_trace
 from agentic_flows.core.errors import ExecutionFailure
 from agentic_flows.runtime.context import ExecutionContext, RunMode
+from agentic_flows.runtime.execution.agent_executor import AgentExecutor
+from agentic_flows.runtime.execution.reasoning_executor import ReasoningExecutor
+from agentic_flows.runtime.execution.retrieval_executor import RetrievalExecutor
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
 from agentic_flows.runtime.observability.fingerprint import (
     fingerprint_inputs,
@@ -21,7 +25,6 @@ from agentic_flows.runtime.observability.retrieval_fingerprint import (
 )
 from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
-from agentic_flows.runtime.registry import build_step_registry
 from agentic_flows.runtime.verification_engine import VerificationOrchestrator
 from agentic_flows.spec.contracts.step_contract import validate_outputs
 from agentic_flows.spec.model.artifact import Artifact
@@ -35,6 +38,7 @@ from agentic_flows.spec.model.verification_arbitration import VerificationArbitr
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import (
     ArtifactID,
+    ClaimID,
     ContentHash,
     PolicyFingerprint,
     ResolverID,
@@ -65,38 +69,6 @@ class _PhaseState:
     interrupted: bool
 
 
-class _PipelineStage:
-    def __init__(self, name: str, handler) -> None:
-        self.name = name
-        self.handler = handler
-
-
-class LivePipeline:
-    def __init__(self, executor: LiveExecutor) -> None:
-        self._executor = executor
-        self._stages = (
-            _PipelineStage("planning", executor._planning_phase),
-            _PipelineStage("execution", executor._execution_phase),
-            _PipelineStage("finalization", executor._finalization_phase),
-        )
-
-    def run(self, plan: ExecutionPlan, context: ExecutionContext) -> ExecutionOutcome:
-        steps_plan = None
-        phase_state = None
-        for stage in self._stages:
-            _notify_stage(context, stage.name, "start")
-            if stage.name == "planning":
-                steps_plan = stage.handler(plan)
-            elif stage.name == "execution":
-                phase_state = stage.handler(steps_plan, context)
-            else:
-                result = stage.handler(steps_plan, context, phase_state)
-                _notify_stage(context, stage.name, "end")
-                return result
-            _notify_stage(context, stage.name, "end")
-        raise RuntimeError("live execution pipeline did not complete")
-
-
 def _notify_stage(context: ExecutionContext, stage: str, phase: str) -> None:
     hook_name = f"on_stage_{phase}"
     for observer in context.observers:
@@ -111,7 +83,16 @@ class LiveExecutor:
         plan: ExecutionPlan,
         context: ExecutionContext,
     ) -> ExecutionOutcome:
-        return LivePipeline(self).run(plan, context)
+        _notify_stage(context, "planning", "start")
+        steps_plan = self._planning_phase(plan)
+        _notify_stage(context, "planning", "end")
+        _notify_stage(context, "execution", "start")
+        phase_state = self._execution_phase(steps_plan, context)
+        _notify_stage(context, "execution", "end")
+        _notify_stage(context, "finalization", "start")
+        result = self._finalization_phase(steps_plan, context, phase_state)
+        _notify_stage(context, "finalization", "end")
+        return result
 
     @staticmethod
     def _planning_phase(plan: ExecutionPlan):
@@ -121,17 +102,16 @@ class LiveExecutor:
 
     def _execution_phase(self, steps_plan, context: ExecutionContext) -> _PhaseState:
         recorder = context.trace_recorder
-        event_index = 0
-        artifacts: list[Artifact] = []
-        evidence: list[RetrievedEvidence] = []
+        event_index = context.starting_event_index
+        artifacts: list[Artifact] = list(context.initial_artifacts)
+        evidence: list[RetrievedEvidence] = list(context.initial_evidence)
         reasoning_bundles: list[ReasoningBundle] = []
         verification_results: list[VerificationResult] = []
         verification_arbitrations: list[VerificationArbitration] = []
-        tool_invocations: list[ToolInvocation] = []
-        registry = build_step_registry()
-        agent_executor = registry[StepType.AGENT]
-        retrieval_executor = registry[StepType.RETRIEVAL]
-        reasoning_executor = registry[StepType.REASONING]
+        tool_invocations: list[ToolInvocation] = list(context.initial_tool_invocations)
+        agent_executor = AgentExecutor()
+        retrieval_executor = RetrievalExecutor()
+        reasoning_executor = ReasoningExecutor()
         verification_orchestrator = VerificationOrchestrator()
         policy = context.verification_policy
         tool_agent = ToolID("bijux-agent.run")
@@ -139,6 +119,10 @@ class LiveExecutor:
         tool_reasoning = ToolID("bijux-rar.reason")
         pending_invocations: dict[tuple[int, ToolID], ContentHash] = {}
         interrupted = False
+
+        evidence_index = context.starting_evidence_index
+        tool_invocation_index = context.starting_tool_invocation_index
+        entropy_index = context.starting_entropy_index
 
         def record_event(
             event_type: EventType, step_index: int, payload: dict[str, object]
@@ -158,11 +142,84 @@ class LiveExecutor:
                 event,
                 context.authority,
             )
+            if context.execution_store is not None and context.run_id is not None:
+                context.execution_store.save_events(
+                    run_id=context.run_id,
+                    tenant_id=context.tenant_id,
+                    events=(event,),
+                )
             for observer in context.observers:
                 observer.on_event(event)
             with suppress(Exception):
                 context.consume_budget(trace_events=1)
             event_index += 1
+
+        def record_tool_invocation(invocation: ToolInvocation) -> None:
+            nonlocal tool_invocation_index
+            tool_invocations.append(invocation)
+            if context.execution_store is not None and context.run_id is not None:
+                context.execution_store.append_tool_invocations(
+                    run_id=context.run_id,
+                    tenant_id=context.tenant_id,
+                    tool_invocations=(invocation,),
+                    starting_index=tool_invocation_index,
+                )
+            tool_invocation_index += 1
+
+        def record_evidence(items: list[RetrievedEvidence]) -> None:
+            nonlocal evidence_index
+            if not items:
+                return
+            if context.execution_store is not None and context.run_id is not None:
+                context.execution_store.append_evidence(
+                    run_id=context.run_id,
+                    evidence=items,
+                    starting_index=evidence_index,
+                )
+            evidence_index += len(items)
+
+        def record_artifacts(items: list[Artifact]) -> None:
+            if not items:
+                return
+            if context.execution_store is not None and context.run_id is not None:
+                context.execution_store.save_artifacts(
+                    run_id=context.run_id, artifacts=items
+                )
+
+        def record_claims(claims: tuple[ClaimID, ...]) -> None:
+            if not claims:
+                return
+            if context.execution_store is not None and context.run_id is not None:
+                context.execution_store.append_claim_ids(
+                    run_id=context.run_id,
+                    tenant_id=context.tenant_id,
+                    claim_ids=claims,
+                )
+
+        def flush_entropy_usage() -> None:
+            nonlocal entropy_index
+            if context.execution_store is None or context.run_id is None:
+                return
+            usage = context.entropy_usage()
+            if len(usage) <= entropy_index:
+                return
+            new_entries = usage[entropy_index:]
+            context.execution_store.append_entropy_usage(
+                run_id=context.run_id,
+                usage=new_entries,
+                starting_index=entropy_index,
+            )
+            entropy_index = len(usage)
+
+        def save_checkpoint(step_index: int) -> None:
+            if context.execution_store is None or context.run_id is None:
+                return
+            context.execution_store.save_checkpoint(
+                run_id=context.run_id,
+                tenant_id=context.tenant_id,
+                step_index=step_index,
+                event_index=event_index - 1,
+            )
 
         previous_handler = signal.getsignal(signal.SIGINT)
 
@@ -172,6 +229,8 @@ class LiveExecutor:
         signal.signal(signal.SIGINT, _handle_interrupt)
         try:
             for step in steps_plan.steps:
+                if step.step_index <= context.resume_from_step_index:
+                    continue
                 if context.is_cancelled():
                     record_event(
                         EventType.EXECUTION_INTERRUPTED,
@@ -191,6 +250,9 @@ class LiveExecutor:
                         "agent_id": step.agent_id,
                     },
                 )
+                crash_step = os.environ.get("AF_CRASH_AT_STEP")
+                if crash_step is not None and int(crash_step) == step.step_index:
+                    os.kill(os.getpid(), signal.SIGKILL)
                 try:
                     context.consume_budget(steps=1)
                 except Exception as exc:
@@ -242,7 +304,7 @@ class LiveExecutor:
                             (step.step_index, tool_retrieval),
                             ContentHash(fingerprint_inputs(tool_input)),
                         )
-                        tool_invocations.append(
+                        record_tool_invocation(
                             ToolInvocation(
                                 spec_version="v1",
                                 tool_id=tool_retrieval,
@@ -277,6 +339,7 @@ class LiveExecutor:
                     current_evidence = retrieved
                     evidence.extend(retrieved)
                     context.record_evidence(step.step_index, current_evidence)
+                    record_evidence(retrieved)
                     try:
                         context.consume_budget(artifacts=0)
                         context.consume_evidence_budget(len(retrieved))
@@ -332,7 +395,7 @@ class LiveExecutor:
                         (step.step_index, tool_retrieval),
                         ContentHash(fingerprint_inputs(tool_input)),
                     )
-                    tool_invocations.append(
+                    record_tool_invocation(
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_retrieval,
@@ -387,6 +450,7 @@ class LiveExecutor:
                 try:
                     step_artifacts = agent_executor.execute(step, context)
                     artifacts.extend(step_artifacts)
+                    record_artifacts(step_artifacts)
                     validate_outputs(StepType.AGENT, step_artifacts, current_evidence)
                     context.consume_budget(artifacts=len(step_artifacts))
                     context.consume_step_artifacts(len(step_artifacts))
@@ -395,7 +459,7 @@ class LiveExecutor:
                         (step.step_index, tool_agent),
                         ContentHash(fingerprint_inputs(tool_input)),
                     )
-                    tool_invocations.append(
+                    record_tool_invocation(
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_agent,
@@ -439,7 +503,7 @@ class LiveExecutor:
                     (step.step_index, tool_agent),
                     ContentHash(fingerprint_inputs(tool_input)),
                 )
-                tool_invocations.append(
+                record_tool_invocation(
                     ToolInvocation(
                         spec_version="v1",
                         tool_id=tool_agent,
@@ -566,7 +630,7 @@ class LiveExecutor:
                         (step.step_index, tool_reasoning),
                         ContentHash(fingerprint_inputs(tool_input)),
                     )
-                    tool_invocations.append(
+                    record_tool_invocation(
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_reasoning,
@@ -588,6 +652,7 @@ class LiveExecutor:
                             "claim_count": len(bundle.claims),
                         },
                     )
+                    record_claims(tuple(claim.claim_id for claim in bundle.claims))
 
                     artifacts.append(
                         context.artifact_store.create(
@@ -603,6 +668,7 @@ class LiveExecutor:
                             scope=ArtifactScope.AUDIT,
                         )
                     )
+                    record_artifacts([artifacts[-1]])
                     context.consume_budget(
                         artifacts=1,
                         tokens=sum(
@@ -620,7 +686,7 @@ class LiveExecutor:
                         (step.step_index, tool_reasoning),
                         ContentHash(fingerprint_inputs(tool_input)),
                     )
-                    tool_invocations.append(
+                    record_tool_invocation(
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_reasoning,
@@ -762,6 +828,8 @@ class LiveExecutor:
                         "agent_id": step.agent_id,
                     },
                 )
+                flush_entropy_usage()
+                save_checkpoint(step.step_index)
 
             if not interrupted and policy is not None and reasoning_bundles:
                 flow_results, flow_arbitration = verification_orchestrator.verify_flow(
@@ -811,7 +879,8 @@ class LiveExecutor:
         resolver_id = ResolverID(
             self._resolver_id_from_metadata(steps_plan.resolution_metadata)
         )
-        claim_ids = tuple(
+        claim_ids = list(context.initial_claim_ids)
+        claim_ids.extend(
             claim.claim_id
             for bundle in state.reasoning_bundles
             for claim in bundle.claims
@@ -849,7 +918,7 @@ class LiveExecutor:
             events=state.recorder.events(),
             tool_invocations=tuple(state.tool_invocations),
             entropy_usage=context.entropy_usage(),
-            claim_ids=claim_ids,
+            claim_ids=tuple(dict.fromkeys(claim_ids)),
             contradiction_count=contradiction_count,
             arbitration_decision=arbitration_decision,
             finalized=False,

@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+
+REQUIRED_PHRASES = (
+    "Mutable memory without provenance",
+    "Silent retries",
+    "Implicit tool calls",
+    "Non-audited randomness",
+    "In-memory execution",
+)
+
+
+def main() -> int:
+    repo_root = Path(__file__).resolve().parents[1]
+    policy_path = repo_root / "docs" / "guarantees" / "never_support.md"
+    if not policy_path.exists():
+        print("Policy doc missing: docs/guarantees/never_support.md")
+        return 1
+    contents = policy_path.read_text(encoding="utf-8")
+    missing = [phrase for phrase in REQUIRED_PHRASES if phrase not in contents]
+    if missing:
+        print("Policy doc missing required phrases:")
+        for phrase in missing:
+            print(f"- {phrase}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

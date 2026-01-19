@@ -3,9 +3,6 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.execution.step_executor import (
-    ExecutionOutcome,
-    StepExecutor,
-)
+from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
 
-__all__ = ["ExecutionOutcome", "StepExecutor"]
+__all__ = ["ExecutionOutcome"]

@@ -49,7 +49,6 @@ def test_trace_access_before_finalize_raises() -> None:
             spec_version="v1",
             min_claim_overlap=1.0,
             max_contradiction_delta=0,
-            require_same_arbitration=True,
         ),
         allow_deprecated_datasets=False,
         environment_fingerprint=EnvironmentFingerprint("env"),

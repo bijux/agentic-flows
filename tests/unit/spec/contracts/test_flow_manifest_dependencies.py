@@ -40,7 +40,6 @@ def test_ambiguous_dependencies_raise() -> None:
             spec_version="v1",
             min_claim_overlap=0.9,
             max_contradiction_delta=0,
-            require_same_arbitration=True,
         ),
         dataset=DatasetDescriptor(
             spec_version="v1",

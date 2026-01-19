@@ -72,7 +72,6 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
                 "replay_envelope": {
                     "min_claim_overlap": 1.0,
                     "max_contradiction_delta": 0,
-                    "require_same_arbitration": True,
                 },
                 "agents": ["agent-1"],
                 "dependencies": [],
@@ -99,7 +98,6 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             spec_version="v1",
             min_claim_overlap=1.0,
             max_contradiction_delta=0,
-            require_same_arbitration=True,
         ),
         dataset=DatasetDescriptor(
             spec_version="v1",
@@ -134,7 +132,6 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
                 spec_version="v1",
                 min_claim_overlap=1.0,
                 max_contradiction_delta=0,
-                require_same_arbitration=True,
             ),
             dataset=DatasetDescriptor(
                 spec_version="v1",
@@ -181,3 +178,44 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             config=ExecutionConfig(mode=RunMode.PLAN),
         )
     ]
+
+
+@pytest.mark.parametrize("missing_key", ["min_claim_overlap", "max_contradiction_delta"])
+def test_cli_replay_envelope_requires_fields(
+    tmp_path: Path, missing_key: str
+) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    payload = {
+        "flow_id": "flow-cli",
+        "tenant_id": "tenant-a",
+        "flow_state": "validated",
+        "determinism_level": "strict",
+        "replay_acceptability": "exact_match",
+        "entropy_budget": {
+            "allowed_sources": ["seeded_rng", "data"],
+            "max_magnitude": "low",
+        },
+        "dataset": {
+            "dataset_id": "dataset-cli",
+            "tenant_id": "tenant-a",
+            "dataset_version": "1.0.0",
+            "dataset_hash": "hash-cli",
+            "dataset_state": "frozen",
+            "storage_uri": "file://datasets/retrieval_corpus.jsonl",
+        },
+        "allow_deprecated_datasets": False,
+        "replay_envelope": {
+            "min_claim_overlap": 1.0,
+            "max_contradiction_delta": 0,
+        },
+        "agents": ["agent-1"],
+        "dependencies": [],
+        "retrieval_contracts": [],
+        "verification_gates": [],
+    }
+    payload["replay_envelope"].pop(missing_key)
+    manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    cli_main_module = importlib.import_module("agentic_flows.cli.main")
+    with pytest.raises(KeyError):
+        cli_main_module._load_manifest(manifest_path)

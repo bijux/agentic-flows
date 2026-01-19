@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright © 2025 Bijan Mousavi
+
+from __future__ import annotations
+
+import duckdb
+import pytest
+
+from agentic_flows.runtime.context import RunMode
+from agentic_flows.runtime.observability.execution_store import DuckDBExecutionWriteStore
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
+
+pytestmark = pytest.mark.unit
+
+
+def test_entropy_budget_rejects_disallowed_source(
+    execution_store: DuckDBExecutionWriteStore, resolved_flow
+) -> None:
+    execution_store.register_dataset(resolved_flow.plan.dataset)
+    run_id = execution_store.begin_run(plan=resolved_flow.plan, mode=RunMode.LIVE)
+    execution_store.save_steps(
+        run_id=run_id,
+        tenant_id=resolved_flow.plan.tenant_id,
+        plan=resolved_flow.plan,
+    )
+    usage = EntropyUsage(
+        spec_version="v1",
+        tenant_id=resolved_flow.plan.tenant_id,
+        source=EntropySource.EXTERNAL_ORACLE,
+        magnitude=EntropyMagnitude.LOW,
+        description="external",
+        step_index=0,
+    )
+    with pytest.raises(duckdb.ConstraintException):
+        execution_store.append_entropy_usage(
+            run_id=run_id,
+            usage=(usage,),
+            starting_index=0,
+        )
+
+
+def test_entropy_budget_rejects_excess_magnitude(
+    execution_store: DuckDBExecutionWriteStore, resolved_flow
+) -> None:
+    execution_store.register_dataset(resolved_flow.plan.dataset)
+    run_id = execution_store.begin_run(plan=resolved_flow.plan, mode=RunMode.LIVE)
+    execution_store.save_steps(
+        run_id=run_id,
+        tenant_id=resolved_flow.plan.tenant_id,
+        plan=resolved_flow.plan,
+    )
+    usage = EntropyUsage(
+        spec_version="v1",
+        tenant_id=resolved_flow.plan.tenant_id,
+        source=EntropySource.SEEDED_RNG,
+        magnitude=EntropyMagnitude.HIGH,
+        description="too_high",
+        step_index=0,
+    )
+    with pytest.raises(duckdb.ConstraintException):
+        execution_store.append_entropy_usage(
+            run_id=run_id,
+            usage=(usage,),
+            starting_index=0,
+        )

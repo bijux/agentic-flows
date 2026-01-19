@@ -13,7 +13,8 @@ import duckdb
 
 from agentic_flows.runtime.context import RunMode
 from agentic_flows.runtime.observability.execution_store_protocol import (
-    ExecutionStoreProtocol,
+    ExecutionReadStoreProtocol,
+    ExecutionWriteStoreProtocol,
 )
 from agentic_flows.spec.contracts.dataset_contract import (
     validate_dataset_descriptor,
@@ -29,10 +30,13 @@ from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology.ids import (
+    ArtifactID,
     ClaimID,
     ContentHash,
+    ContractID,
     DatasetID,
     EnvironmentFingerprint,
+    EvidenceID,
     FlowID,
     PlanHash,
     PolicyFingerprint,
@@ -42,11 +46,14 @@ from agentic_flows.spec.ontology.ids import (
     ToolID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    ArtifactScope,
+    ArtifactType,
     DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
     EventType,
+    EvidenceDeterminism,
     FlowState,
     ReplayAcceptability,
 )
@@ -56,24 +63,19 @@ MIGRATIONS_DIR = Path(__file__).with_name("migrations")
 SCHEMA_CONTRACT_PATH = Path(__file__).with_name("schema.sql")
 
 
-class DuckDBExecutionStore(ExecutionStoreProtocol):
+class DuckDBExecutionStore:
     def __init__(self, path: Path) -> None:
         self._connection = duckdb.connect(str(path))
         self._migrate()
 
-    def save_run(
+    def begin_run(
         self,
         *,
-        trace: ExecutionTrace | None,
         plan: ExecutionSteps,
         mode: RunMode,
     ) -> RunID:
         run_id = RunID(str(uuid4()))
         created_at = datetime.now(tz=UTC).isoformat()
-        finalized = bool(trace.finalized) if trace is not None else False
-        trace_created = created_at
-        if trace and trace.events:
-            trace_created = trace.events[0].timestamp_utc
         self._connection.execute(
             """
             INSERT INTO runs (
@@ -91,7 +93,6 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 allow_deprecated_datasets,
                 replay_envelope_min_claim_overlap,
                 replay_envelope_max_contradiction_delta,
-                replay_envelope_require_same_arbitration,
                 environment_fingerprint,
                 plan_hash,
                 verification_policy_fingerprint,
@@ -103,7 +104,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 run_mode,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 str(plan.tenant_id),
@@ -120,38 +121,73 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 plan.allow_deprecated_datasets,
                 plan.replay_envelope.min_claim_overlap,
                 plan.replay_envelope.max_contradiction_delta,
-                plan.replay_envelope.require_same_arbitration,
                 str(plan.environment_fingerprint),
                 str(plan.plan_hash),
-                str(trace.verification_policy_fingerprint)
-                if trace and trace.verification_policy_fingerprint is not None
-                else None,
-                str(trace.resolver_id) if trace else "unresolved",
-                str(trace.parent_flow_id) if trace and trace.parent_flow_id else None,
-                trace.contradiction_count if trace else 0,
-                trace.arbitration_decision if trace else "none",
-                finalized,
+                None,
+                "unresolved",
+                None,
+                0,
+                "none",
+                False,
                 mode.value,
-                trace_created or created_at,
+                created_at,
             ),
         )
-        for child_flow_id in trace.child_flow_ids if trace else ():
+        self._persist_entropy_budget(run_id, plan)
+        self._connection.commit()
+        return run_id
+
+    def finalize_run(self, *, run_id: RunID, trace: ExecutionTrace) -> None:
+        self._connection.execute(
+            """
+            UPDATE runs
+            SET verification_policy_fingerprint = ?,
+                resolver_id = ?,
+                parent_flow_id = ?,
+                contradiction_count = ?,
+                arbitration_decision = ?,
+                finalized = ?
+            WHERE tenant_id = ? AND run_id = ?
+            """,
+            (
+                str(trace.verification_policy_fingerprint)
+                if trace.verification_policy_fingerprint is not None
+                else None,
+                str(trace.resolver_id),
+                str(trace.parent_flow_id) if trace.parent_flow_id else None,
+                trace.contradiction_count,
+                trace.arbitration_decision,
+                bool(trace.finalized),
+                str(trace.tenant_id),
+                str(run_id),
+            ),
+        )
+        for child_flow_id in trace.child_flow_ids:
             self._connection.execute(
                 """
-                INSERT INTO run_children (tenant_id, run_id, child_flow_id)
+                INSERT OR IGNORE INTO run_children (tenant_id, run_id, child_flow_id)
                 VALUES (?, ?, ?)
                 """,
-                (str(plan.tenant_id), str(run_id), str(child_flow_id)),
+                (str(trace.tenant_id), str(run_id), str(child_flow_id)),
             )
-        for claim_id in trace.claim_ids if trace else ():
-            self._connection.execute(
-                """
-                INSERT INTO claims (tenant_id, run_id, claim_id)
-                VALUES (?, ?, ?)
-                """,
-                (str(plan.tenant_id), str(run_id), str(claim_id)),
+        if trace.claim_ids:
+            self.append_claim_ids(
+                run_id=run_id,
+                tenant_id=trace.tenant_id,
+                claim_ids=trace.claim_ids,
             )
         self._connection.commit()
+
+    def save_run(
+        self,
+        *,
+        trace: ExecutionTrace | None,
+        plan: ExecutionSteps,
+        mode: RunMode,
+    ) -> RunID:
+        run_id = self.begin_run(plan=plan, mode=mode)
+        if trace is not None:
+            self.finalize_run(run_id=run_id, trace=trace)
         return run_id
 
     def save_steps(
@@ -160,7 +196,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
         for step in plan.steps:
             self._connection.execute(
                 """
-                INSERT INTO steps (
+                INSERT OR IGNORE INTO steps (
                     tenant_id,
                     run_id,
                     step_index,
@@ -184,7 +220,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             for dependency in step.declared_dependencies:
                 self._connection.execute(
                     """
-                    INSERT INTO step_dependencies (
+                    INSERT OR IGNORE INTO step_dependencies (
                         tenant_id,
                         run_id,
                         step_index,
@@ -239,6 +275,35 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             )
         self._connection.commit()
 
+    def save_checkpoint(
+        self,
+        *,
+        run_id: RunID,
+        tenant_id: TenantID,
+        step_index: int,
+        event_index: int,
+    ) -> None:
+        self._connection.execute(
+            """
+            INSERT OR REPLACE INTO run_checkpoints (
+                tenant_id,
+                run_id,
+                step_index,
+                event_index,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                str(tenant_id),
+                str(run_id),
+                step_index,
+                event_index,
+                datetime.now(tz=UTC).isoformat(),
+            ),
+        )
+        self._connection.commit()
+
     def save_artifacts(self, *, run_id: RunID, artifacts: list[Artifact]) -> None:
         for artifact in artifacts:
             self._connection.execute(
@@ -284,10 +349,14 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 )
         self._connection.commit()
 
-    def save_evidence(
-        self, *, run_id: RunID, evidence: list[RetrievedEvidence]
+    def append_evidence(
+        self,
+        *,
+        run_id: RunID,
+        evidence: list[RetrievedEvidence],
+        starting_index: int,
     ) -> None:
-        for index, item in enumerate(evidence):
+        for offset, item in enumerate(evidence):
             self._connection.execute(
                 """
                 INSERT INTO evidence (
@@ -306,7 +375,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 (
                     str(item.tenant_id),
                     str(run_id),
-                    index,
+                    starting_index + offset,
                     str(item.evidence_id),
                     item.determinism.value,
                     item.source_uri,
@@ -317,10 +386,14 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             )
         self._connection.commit()
 
-    def save_entropy_usage(
-        self, *, run_id: RunID, usage: tuple[EntropyUsage, ...]
+    def append_entropy_usage(
+        self,
+        *,
+        run_id: RunID,
+        usage: tuple[EntropyUsage, ...],
+        starting_index: int,
     ) -> None:
-        for index, item in enumerate(usage):
+        for offset, item in enumerate(usage):
             self._connection.execute(
                 """
                 INSERT INTO entropy_usage (
@@ -337,7 +410,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 (
                     str(item.tenant_id),
                     str(run_id),
-                    index,
+                    starting_index + offset,
                     item.source.value,
                     item.magnitude.value,
                     item.description,
@@ -346,14 +419,15 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             )
         self._connection.commit()
 
-    def save_tool_invocations(
+    def append_tool_invocations(
         self,
         *,
         run_id: RunID,
         tenant_id: TenantID,
         tool_invocations: tuple[ToolInvocation, ...],
+        starting_index: int,
     ) -> None:
-        for index, item in enumerate(tool_invocations):
+        for offset, item in enumerate(tool_invocations):
             self._connection.execute(
                 """
                 INSERT INTO tool_invocations (
@@ -372,7 +446,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 (
                     str(tenant_id),
                     str(run_id),
-                    index,
+                    starting_index + offset,
                     str(item.tool_id),
                     item.determinism_level.value,
                     str(item.inputs_fingerprint),
@@ -382,6 +456,19 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                     item.duration,
                     item.outcome,
                 ),
+            )
+        self._connection.commit()
+
+    def append_claim_ids(
+        self, *, run_id: RunID, tenant_id: TenantID, claim_ids: tuple[ClaimID, ...]
+    ) -> None:
+        for claim_id in claim_ids:
+            self._connection.execute(
+                """
+                INSERT OR IGNORE INTO claims (tenant_id, run_id, claim_id)
+                VALUES (?, ?, ?)
+                """,
+                (str(tenant_id), str(run_id), str(claim_id)),
             )
         self._connection.commit()
 
@@ -396,30 +483,53 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             (str(dataset.tenant_id), str(dataset.dataset_id), dataset.dataset_version),
         ).fetchone()
         previous = DatasetState(existing[0]) if existing else None
+        if previous == dataset.dataset_state:
+            return
         validate_transition(previous, dataset.dataset_state)
-        self._connection.execute(
-            """
-            INSERT OR REPLACE INTO datasets (
-                tenant_id,
-                dataset_id,
-                version,
-                state,
-                previous_state,
-                fingerprint,
-                storage_uri
+        if existing:
+            self._connection.execute(
+                """
+                UPDATE datasets
+                SET state = ?,
+                    previous_state = ?,
+                    fingerprint = ?,
+                    storage_uri = ?
+                WHERE tenant_id = ? AND dataset_id = ? AND version = ?
+                """,
+                (
+                    dataset.dataset_state.value,
+                    previous.value if previous is not None else None,
+                    dataset.dataset_hash,
+                    dataset.storage_uri,
+                    str(dataset.tenant_id),
+                    str(dataset.dataset_id),
+                    dataset.dataset_version,
+                ),
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                str(dataset.tenant_id),
-                str(dataset.dataset_id),
-                dataset.dataset_version,
-                dataset.dataset_state.value,
-                previous.value if previous is not None else None,
-                dataset.dataset_hash,
-                dataset.storage_uri,
-            ),
-        )
+        else:
+            self._connection.execute(
+                """
+                INSERT INTO datasets (
+                    tenant_id,
+                    dataset_id,
+                    version,
+                    state,
+                    previous_state,
+                    fingerprint,
+                    storage_uri
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(dataset.tenant_id),
+                    str(dataset.dataset_id),
+                    dataset.dataset_version,
+                    dataset.dataset_state.value,
+                    previous.value if previous is not None else None,
+                    dataset.dataset_hash,
+                    dataset.storage_uri,
+                ),
+            )
         self._connection.commit()
 
     def load_trace(self, run_id: RunID, *, tenant_id: TenantID) -> ExecutionTrace:
@@ -438,7 +548,6 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 allow_deprecated_datasets,
                 replay_envelope_min_claim_overlap,
                 replay_envelope_max_contradiction_delta,
-                replay_envelope_require_same_arbitration,
                 environment_fingerprint,
                 plan_hash,
                 verification_policy_fingerprint,
@@ -472,13 +581,12 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             spec_version="v1",
             min_claim_overlap=float(run_row[10]),
             max_contradiction_delta=int(run_row[11]),
-            require_same_arbitration=bool(run_row[12]),
         )
         return ExecutionTrace(
             spec_version="v1",
             flow_id=FlowID(run_row[0]),
             tenant_id=tenant_id,
-            parent_flow_id=FlowID(run_row[17]) if run_row[17] else None,
+            parent_flow_id=FlowID(run_row[16]) if run_row[16] else None,
             child_flow_ids=child_flow_ids,
             flow_state=FlowState(run_row[1]),
             determinism_level=DeterminismLevel(run_row[2]),
@@ -486,19 +594,19 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             dataset=dataset,
             replay_envelope=replay_envelope,
             allow_deprecated_datasets=bool(run_row[9]),
-            environment_fingerprint=EnvironmentFingerprint(run_row[13]),
-            plan_hash=PlanHash(run_row[14]),
-            verification_policy_fingerprint=PolicyFingerprint(run_row[15])
-            if run_row[15] is not None
+            environment_fingerprint=EnvironmentFingerprint(run_row[12]),
+            plan_hash=PlanHash(run_row[13]),
+            verification_policy_fingerprint=PolicyFingerprint(run_row[14])
+            if run_row[14] is not None
             else None,
-            resolver_id=ResolverID(run_row[16]),
+            resolver_id=ResolverID(run_row[15]),
             events=events,
             tool_invocations=tool_invocations,
             entropy_usage=entropy_usage,
             claim_ids=claim_ids,
-            contradiction_count=int(run_row[18]),
-            arbitration_decision=run_row[19],
-            finalized=bool(run_row[20]),
+            contradiction_count=int(run_row[17]),
+            arbitration_decision=run_row[18],
+            finalized=bool(run_row[19]),
         )
 
     def load_replay_envelope(
@@ -507,8 +615,7 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
         row = self._connection.execute(
             """
             SELECT replay_envelope_min_claim_overlap,
-                   replay_envelope_max_contradiction_delta,
-                   replay_envelope_require_same_arbitration
+                   replay_envelope_max_contradiction_delta
             FROM runs
             WHERE tenant_id = ? AND run_id = ?
             """,
@@ -520,7 +627,6 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             spec_version="v1",
             min_claim_overlap=float(row[0]),
             max_contradiction_delta=int(row[1]),
-            require_same_arbitration=bool(row[2]),
         )
 
     def load_dataset_descriptor(
@@ -546,6 +652,51 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
             storage_uri=row[4],
         )
 
+    def load_events(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[ExecutionEvent, ...]:
+        return self._load_events(run_id, tenant_id=tenant_id)
+
+    def load_artifacts(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[Artifact, ...]:
+        return self._load_artifacts(run_id, tenant_id=tenant_id)
+
+    def load_evidence(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[RetrievedEvidence, ...]:
+        return self._load_evidence(run_id, tenant_id=tenant_id)
+
+    def load_tool_invocations(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[ToolInvocation, ...]:
+        return self._load_tool_invocations(run_id, tenant_id=tenant_id)
+
+    def load_entropy_usage(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[EntropyUsage, ...]:
+        return self._load_entropy_usage(run_id, tenant_id=tenant_id)
+
+    def load_claim_ids(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[ClaimID, ...]:
+        return self._load_claim_ids(run_id, tenant_id=tenant_id)
+
+    def load_checkpoint(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[int, int] | None:
+        row = self._connection.execute(
+            """
+            SELECT step_index, event_index
+            FROM run_checkpoints
+            WHERE tenant_id = ? AND run_id = ?
+            """,
+            (str(tenant_id), str(run_id)),
+        ).fetchone()
+        if row is None:
+            return None
+        return int(row[0]), int(row[1])
+
     def _load_events(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ExecutionEvent, ...]:
@@ -567,6 +718,68 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
                 timestamp_utc=row[3],
                 payload=json.loads(row[5]) if row[5] else {},
                 payload_hash=ContentHash(row[4]),
+            )
+            for row in rows
+        )
+
+    def _load_artifacts(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[Artifact, ...]:
+        parent_rows = self._connection.execute(
+            """
+            SELECT artifact_id, parent_artifact_id
+            FROM artifact_parents
+            WHERE tenant_id = ? AND run_id = ?
+            """,
+            (str(tenant_id), str(run_id)),
+        ).fetchall()
+        parent_map: dict[str, list[ArtifactID]] = {}
+        for artifact_id, parent_id in parent_rows:
+            parent_map.setdefault(artifact_id, []).append(ArtifactID(parent_id))
+        rows = self._connection.execute(
+            """
+            SELECT artifact_id, artifact_type, producer, content_hash, scope
+            FROM artifacts
+            WHERE tenant_id = ? AND run_id = ?
+            """,
+            (str(tenant_id), str(run_id)),
+        ).fetchall()
+        return tuple(
+            Artifact(
+                spec_version="v1",
+                artifact_id=ArtifactID(row[0]),
+                tenant_id=tenant_id,
+                artifact_type=ArtifactType(row[1]),
+                producer=row[2],
+                parent_artifacts=tuple(parent_map.get(row[0], [])),
+                content_hash=ContentHash(row[3]),
+                scope=ArtifactScope(row[4]),
+            )
+            for row in rows
+        )
+
+    def _load_evidence(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[RetrievedEvidence, ...]:
+        rows = self._connection.execute(
+            """
+            SELECT evidence_id, determinism, source_uri, content_hash, score, vector_contract_id
+            FROM evidence
+            WHERE tenant_id = ? AND run_id = ?
+            ORDER BY entry_index
+            """,
+            (str(tenant_id), str(run_id)),
+        ).fetchall()
+        return tuple(
+            RetrievedEvidence(
+                spec_version="v1",
+                evidence_id=EvidenceID(row[0]),
+                tenant_id=tenant_id,
+                determinism=EvidenceDeterminism(row[1]),
+                source_uri=row[2],
+                content_hash=ContentHash(row[3]),
+                score=float(row[4]),
+                vector_contract_id=ContractID(row[5]),
             )
             for row in rows
         )
@@ -660,6 +873,39 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
         if not dvc_path.exists():
             raise ValueError(
                 f"Frozen dataset requires DVC tracking: {dvc_path.as_posix()}"
+            )
+
+    def _persist_entropy_budget(self, run_id: RunID, plan: ExecutionSteps) -> None:
+        budget = plan.entropy_budget
+        for source in budget.allowed_sources:
+            self._connection.execute(
+                """
+                INSERT OR IGNORE INTO entropy_budget_sources (
+                    tenant_id,
+                    run_id,
+                    source
+                )
+                VALUES (?, ?, ?)
+                """,
+                (str(plan.tenant_id), str(run_id), source.value),
+            )
+        magnitude_order = (
+            EntropyMagnitude.LOW,
+            EntropyMagnitude.MEDIUM,
+            EntropyMagnitude.HIGH,
+        )
+        max_index = magnitude_order.index(budget.max_magnitude)
+        for magnitude in magnitude_order[: max_index + 1]:
+            self._connection.execute(
+                """
+                INSERT OR IGNORE INTO entropy_budget_magnitudes (
+                    tenant_id,
+                    run_id,
+                    magnitude
+                )
+                VALUES (?, ?, ?)
+                """,
+                (str(plan.tenant_id), str(run_id), magnitude.value),
             )
 
     def _migrate(self) -> None:
@@ -771,4 +1017,160 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
         return migrations
 
 
-__all__ = ["DuckDBExecutionStore", "SCHEMA_CONTRACT_PATH", "SCHEMA_VERSION"]
+class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self._store = DuckDBExecutionStore(path)
+        self._connection = self._store._connection
+
+    def begin_run(self, *, plan: ExecutionSteps, mode: RunMode) -> RunID:
+        return self._store.begin_run(plan=plan, mode=mode)
+
+    def finalize_run(self, *, run_id: RunID, trace: ExecutionTrace) -> None:
+        self._store.finalize_run(run_id=run_id, trace=trace)
+
+    def save_steps(
+        self, *, run_id: RunID, tenant_id: TenantID, plan: ExecutionSteps
+    ) -> None:
+        self._store.save_steps(run_id=run_id, tenant_id=tenant_id, plan=plan)
+
+    def save_checkpoint(
+        self,
+        *,
+        run_id: RunID,
+        tenant_id: TenantID,
+        step_index: int,
+        event_index: int,
+    ) -> None:
+        self._store.save_checkpoint(
+            run_id=run_id,
+            tenant_id=tenant_id,
+            step_index=step_index,
+            event_index=event_index,
+        )
+
+    def save_events(
+        self,
+        *,
+        run_id: RunID,
+        tenant_id: TenantID,
+        events: tuple[ExecutionEvent, ...],
+    ) -> None:
+        self._store.save_events(run_id=run_id, tenant_id=tenant_id, events=events)
+
+    def save_artifacts(self, *, run_id: RunID, artifacts: list[Artifact]) -> None:
+        self._store.save_artifacts(run_id=run_id, artifacts=artifacts)
+
+    def append_evidence(
+        self,
+        *,
+        run_id: RunID,
+        evidence: list[RetrievedEvidence],
+        starting_index: int,
+    ) -> None:
+        self._store.append_evidence(
+            run_id=run_id, evidence=evidence, starting_index=starting_index
+        )
+
+    def append_entropy_usage(
+        self,
+        *,
+        run_id: RunID,
+        usage: tuple[EntropyUsage, ...],
+        starting_index: int,
+    ) -> None:
+        self._store.append_entropy_usage(
+            run_id=run_id, usage=usage, starting_index=starting_index
+        )
+
+    def append_tool_invocations(
+        self,
+        *,
+        run_id: RunID,
+        tenant_id: TenantID,
+        tool_invocations: tuple[ToolInvocation, ...],
+        starting_index: int,
+    ) -> None:
+        self._store.append_tool_invocations(
+            run_id=run_id,
+            tenant_id=tenant_id,
+            tool_invocations=tool_invocations,
+            starting_index=starting_index,
+        )
+
+    def append_claim_ids(
+        self, *, run_id: RunID, tenant_id: TenantID, claim_ids: tuple[ClaimID, ...]
+    ) -> None:
+        self._store.append_claim_ids(
+            run_id=run_id, tenant_id=tenant_id, claim_ids=claim_ids
+        )
+
+    def register_dataset(self, dataset: DatasetDescriptor) -> None:
+        self._store.register_dataset(dataset)
+
+    @staticmethod
+    def _hash_payload(payload: str) -> str:
+        return DuckDBExecutionStore._hash_payload(payload)
+
+
+class DuckDBExecutionReadStore(ExecutionReadStoreProtocol):
+    def __init__(self, path: Path) -> None:
+        self._store = DuckDBExecutionStore(path)
+        self._connection = self._store._connection
+
+    def load_trace(self, run_id: RunID, *, tenant_id: TenantID) -> ExecutionTrace:
+        return self._store.load_trace(run_id, tenant_id=tenant_id)
+
+    def load_events(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[ExecutionEvent, ...]:
+        return self._store.load_events(run_id, tenant_id=tenant_id)
+
+    def load_artifacts(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[Artifact, ...]:
+        return self._store.load_artifacts(run_id, tenant_id=tenant_id)
+
+    def load_evidence(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[RetrievedEvidence, ...]:
+        return self._store.load_evidence(run_id, tenant_id=tenant_id)
+
+    def load_tool_invocations(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[ToolInvocation, ...]:
+        return self._store.load_tool_invocations(run_id, tenant_id=tenant_id)
+
+    def load_entropy_usage(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[EntropyUsage, ...]:
+        return self._store.load_entropy_usage(run_id, tenant_id=tenant_id)
+
+    def load_claim_ids(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[ClaimID, ...]:
+        return self._store.load_claim_ids(run_id, tenant_id=tenant_id)
+
+    def load_checkpoint(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> tuple[int, int] | None:
+        return self._store.load_checkpoint(run_id, tenant_id=tenant_id)
+
+    def load_replay_envelope(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> ReplayEnvelope:
+        return self._store.load_replay_envelope(run_id, tenant_id=tenant_id)
+
+    def load_dataset_descriptor(
+        self, run_id: RunID, *, tenant_id: TenantID
+    ) -> DatasetDescriptor:
+        return self._store.load_dataset_descriptor(run_id, tenant_id=tenant_id)
+
+
+__all__ = [
+    "DuckDBExecutionReadStore",
+    "DuckDBExecutionStore",
+    "DuckDBExecutionWriteStore",
+    "SCHEMA_CONTRACT_PATH",
+    "SCHEMA_VERSION",
+]

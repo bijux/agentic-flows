@@ -78,7 +78,6 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
         spec_version="v1",
         min_claim_overlap=1.0,
         max_contradiction_delta=0,
-        require_same_arbitration=True,
     )
     plan = ExecutionSteps(
         spec_version="v1",

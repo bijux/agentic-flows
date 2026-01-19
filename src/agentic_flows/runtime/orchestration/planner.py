@@ -176,9 +176,6 @@ class ExecutionPlanner:
                 "max_contradiction_delta": (
                     manifest.replay_envelope.max_contradiction_delta
                 ),
-                "require_same_arbitration": (
-                    manifest.replay_envelope.require_same_arbitration
-                ),
             },
             "dataset": {
                 "dataset_id": manifest.dataset.dataset_id,

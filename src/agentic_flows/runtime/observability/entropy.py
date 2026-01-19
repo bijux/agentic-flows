@@ -46,6 +46,9 @@ class EntropyLedger:
             )
         )
 
+    def seed(self, records: tuple[EntropyUsage, ...]) -> None:
+        self._records.extend(records)
+
     def usage(self) -> tuple[EntropyUsage, ...]:
         return tuple(self._records)
 

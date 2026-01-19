@@ -277,7 +277,6 @@ def _envelope_payload(envelope) -> dict[str, object]:
     return {
         "min_claim_overlap": envelope.min_claim_overlap,
         "max_contradiction_delta": envelope.max_contradiction_delta,
-        "require_same_arbitration": envelope.require_same_arbitration,
     }
 
 

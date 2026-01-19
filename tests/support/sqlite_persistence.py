@@ -405,7 +405,6 @@ def _encode_envelope(envelope: ReplayEnvelope) -> dict[str, Any]:
         "spec_version": envelope.spec_version,
         "min_claim_overlap": envelope.min_claim_overlap,
         "max_contradiction_delta": envelope.max_contradiction_delta,
-        "require_same_arbitration": envelope.require_same_arbitration,
     }
 
 
@@ -414,7 +413,6 @@ def _decode_envelope(payload: dict[str, Any]) -> ReplayEnvelope:
         spec_version=payload["spec_version"],
         min_claim_overlap=float(payload["min_claim_overlap"]),
         max_contradiction_delta=int(payload["max_contradiction_delta"]),
-        require_same_arbitration=bool(payload["require_same_arbitration"]),
     )
 
 

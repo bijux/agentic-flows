@@ -88,6 +88,14 @@ class DeterminismLevel(str, Enum):
     UNCONSTRAINED = "unconstrained"
 
 
+class DeterminismClass(str, Enum):
+    STRUCTURAL = "structural"
+    ENVIRONMENTAL = "environmental"
+    STOCHASTIC = "stochastic"
+    HUMAN = "human"
+    EXTERNAL = "external"
+
+
 class FlowState(str, Enum):
     DRAFT = "draft"
     VALIDATED = "validated"
@@ -147,6 +155,7 @@ __all__ = [
     "VerificationPhase",
     "ArbitrationRule",
     "DeterminismLevel",
+    "DeterminismClass",
     "FlowState",
     "DatasetState",
     "ReplayAcceptability",

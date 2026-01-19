@@ -5,7 +5,14 @@ from __future__ import annotations
 
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ontology import EntropyMagnitude, ReplayAcceptability
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismClass,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    EventType,
+    ReplayAcceptability,
+)
 
 _MAGNITUDE_ORDER = {
     EntropyMagnitude.LOW: 0,
@@ -125,7 +132,6 @@ def _envelope_payload(envelope) -> dict[str, object]:
     return {
         "min_claim_overlap": envelope.min_claim_overlap,
         "max_contradiction_delta": envelope.max_contradiction_delta,
-        "require_same_arbitration": envelope.require_same_arbitration,
     }
 
 
@@ -152,10 +158,7 @@ def _statistical_envelope_diff(
             "allowed": expected.replay_envelope.max_contradiction_delta,
             "observed": contradiction_delta,
         }
-    if (
-        expected.replay_envelope.require_same_arbitration
-        and expected.arbitration_decision != observed.arbitration_decision
-    ):
+    if expected.arbitration_decision != observed.arbitration_decision:
         diffs["arbitration_decision"] = {
             "expected": expected.arbitration_decision,
             "observed": observed.arbitration_decision,
@@ -168,6 +171,7 @@ def non_determinism_report(
 ) -> dict[str, object]:
     expected_summary = entropy_summary(expected.entropy_usage)
     observed_summary = entropy_summary(observed.entropy_usage)
+    class_report = determinism_class_report(expected, observed)
     return {
         "expected_entropy": expected_summary,
         "observed_entropy": observed_summary,
@@ -181,6 +185,7 @@ def non_determinism_report(
             "expected": expected_summary["max_magnitude"],
             "observed": observed_summary["max_magnitude"],
         },
+        "determinism_classes": class_report,
     }
 
 
@@ -197,8 +202,48 @@ def entropy_summary(usage: tuple[EntropyUsage, ...]) -> dict[str, object]:
     }
 
 
+def determinism_class_report(
+    expected: ExecutionTrace, observed: ExecutionTrace
+) -> dict[str, object]:
+    expected_classes = _determinism_classes(expected)
+    observed_classes = _determinism_classes(observed)
+    return {
+        "expected": expected_classes,
+        "observed": observed_classes,
+        "added": sorted(set(observed_classes) - set(expected_classes)),
+        "missing": sorted(set(expected_classes) - set(observed_classes)),
+    }
+
+
+def _determinism_classes(trace: ExecutionTrace) -> list[str]:
+    classes: set[DeterminismClass] = set()
+    if trace.events:
+        classes.add(DeterminismClass.STRUCTURAL)
+    if trace.environment_fingerprint:
+        classes.add(DeterminismClass.ENVIRONMENTAL)
+    if trace.determinism_level in {
+        DeterminismLevel.PROBABILISTIC,
+        DeterminismLevel.UNCONSTRAINED,
+    }:
+        classes.add(DeterminismClass.STOCHASTIC)
+    if any(event.event_type == EventType.HUMAN_INTERVENTION for event in trace.events):
+        classes.add(DeterminismClass.HUMAN)
+    if trace.tool_invocations:
+        classes.add(DeterminismClass.EXTERNAL)
+    for entry in trace.entropy_usage:
+        if entry.source in {EntropySource.EXTERNAL_ORACLE}:
+            classes.add(DeterminismClass.EXTERNAL)
+        if entry.source in {EntropySource.HUMAN_INPUT}:
+            classes.add(DeterminismClass.HUMAN)
+        if entry.source in {EntropySource.EXTERNAL_ORACLE, EntropySource.HUMAN_INPUT}:
+            continue
+        classes.add(DeterminismClass.STOCHASTIC)
+    return sorted(item.value for item in classes)
+
+
 __all__ = [
     "entropy_summary",
+    "determinism_class_report",
     "non_determinism_report",
     "render_semantic_diff",
     "semantic_trace_diff",

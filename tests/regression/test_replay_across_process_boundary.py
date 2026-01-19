@@ -53,6 +53,7 @@ def test_replay_across_process_boundary(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_read_store,
     execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
@@ -165,7 +166,7 @@ def test_replay_across_process_boundary(
         ),
     )
 
-    reloaded_trace = execution_store.load_trace(
+    reloaded_trace = execution_read_store.load_trace(
         result.run_id, tenant_id=result.trace.tenant_id
     )
     validate_replay(

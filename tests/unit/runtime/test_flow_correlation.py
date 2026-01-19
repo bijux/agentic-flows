@@ -41,7 +41,6 @@ def test_flow_correlation_requires_parent() -> None:
         spec_version="v1",
         min_claim_overlap=1.0,
         max_contradiction_delta=0,
-        require_same_arbitration=True,
     )
     parent = ExecutionTrace(
         spec_version="v1",
@@ -108,7 +107,6 @@ def test_flow_correlation_rejects_missing_parent() -> None:
         spec_version="v1",
         min_claim_overlap=1.0,
         max_contradiction_delta=0,
-        require_same_arbitration=True,
     )
     trace = ExecutionTrace(
         spec_version="v1",

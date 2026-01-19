@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from agentic_flows.runtime.observability.execution_store_protocol import (
-    ExecutionStoreProtocol,
+    ExecutionReadStoreProtocol,
 )
 from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
@@ -19,7 +19,7 @@ from agentic_flows.spec.ontology.ids import RunID, TenantID
 
 def replay_with_store(
     *,
-    store: ExecutionStoreProtocol,
+    store: ExecutionReadStoreProtocol,
     run_id: RunID,
     tenant_id: TenantID,
     resolved_flow: ExecutionPlan,

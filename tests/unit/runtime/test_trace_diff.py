@@ -7,14 +7,18 @@ from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
+    ContentHash,
     DatasetID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
     ResolverID,
     TenantID,
+    ToolID,
 )
 from agentic_flows.spec.ontology.ontology import (
     DatasetState,
@@ -22,6 +26,8 @@ from agentic_flows.spec.ontology.ontology import (
     EventType,
     FlowState,
     ReplayAcceptability,
+    EntropyMagnitude,
+    EntropySource,
 )
 
 
@@ -39,7 +45,6 @@ def test_semantic_trace_diff_ignores_timestamps() -> None:
         spec_version="v1",
         min_claim_overlap=1.0,
         max_contradiction_delta=0,
-        require_same_arbitration=True,
     )
     event_payload = {"event_type": EventType.STEP_START.value}
     event_one = ExecutionEvent(
@@ -109,3 +114,79 @@ def test_semantic_trace_diff_ignores_timestamps() -> None:
         finalized=True,
     )
     assert semantic_trace_diff(trace_one, trace_two) == {}
+
+
+def test_non_determinism_report_includes_class_taxonomy() -> None:
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("dataset"),
+        tenant_id=TenantID("tenant-a"),
+        dataset_version="1.0.0",
+        dataset_hash="hash",
+        dataset_state=DatasetState.FROZEN,
+        storage_uri="file://datasets/retrieval_corpus.jsonl",
+    )
+    replay_envelope = ReplayEnvelope(
+        spec_version="v1",
+        min_claim_overlap=1.0,
+        max_contradiction_delta=0,
+    )
+    event_payload = {"event_type": EventType.HUMAN_INTERVENTION.value}
+    event = ExecutionEvent(
+        spec_version="v1",
+        event_index=0,
+        step_index=0,
+        event_type=EventType.HUMAN_INTERVENTION,
+        timestamp_utc="1970-01-01T00:00:00Z",
+        payload=event_payload,
+        payload_hash="hash",
+    )
+    tool_invocation = ToolInvocation(
+        spec_version="v1",
+        tool_id=ToolID("tool-x"),
+        determinism_level=DeterminismLevel.BOUNDED,
+        inputs_fingerprint=ContentHash("input-hash"),
+        outputs_fingerprint=None,
+        duration=0.1,
+        outcome="ok",
+    )
+    entropy = EntropyUsage(
+        spec_version="v1",
+        tenant_id=TenantID("tenant-a"),
+        source=EntropySource.SEEDED_RNG,
+        magnitude=EntropyMagnitude.LOW,
+        description="seeded",
+        step_index=0,
+    )
+    trace = ExecutionTrace(
+        spec_version="v1",
+        flow_id=FlowID("flow-a"),
+        tenant_id=TenantID("tenant-a"),
+        parent_flow_id=None,
+        child_flow_ids=(),
+        flow_state=FlowState.VALIDATED,
+        determinism_level=DeterminismLevel.PROBABILISTIC,
+        replay_acceptability=ReplayAcceptability.STATISTICALLY_BOUNDED,
+        dataset=dataset,
+        replay_envelope=replay_envelope,
+        allow_deprecated_datasets=False,
+        environment_fingerprint=EnvironmentFingerprint("env"),
+        plan_hash=PlanHash("plan"),
+        verification_policy_fingerprint=None,
+        resolver_id=ResolverID("resolver"),
+        events=(event,),
+        tool_invocations=(tool_invocation,),
+        entropy_usage=(entropy,),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
+        finalized=True,
+    )
+    diff = semantic_trace_diff(
+        trace,
+        trace,
+        acceptability=ReplayAcceptability.STATISTICALLY_BOUNDED,
+    )
+    report = diff["non_determinism_report"]["determinism_classes"]
+    for label in ("structural", "environmental", "stochastic", "human", "external"):
+        assert label in report["expected"]

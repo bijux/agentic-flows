@@ -39,8 +39,8 @@ class AppendOnlyList(list[ExecutionEvent]):
 
 
 class TraceRecorder:
-    def __init__(self) -> None:
-        self._events: AppendOnlyList = AppendOnlyList()
+    def __init__(self, events: Iterable[ExecutionEvent] | None = None) -> None:
+        self._events: AppendOnlyList = AppendOnlyList(list(events or ()))
 
     def record(self, event: ExecutionEvent, authority: AuthorityToken) -> None:
         if not isinstance(authority, AuthorityToken):
