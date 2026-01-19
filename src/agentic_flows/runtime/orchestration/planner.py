@@ -92,6 +92,8 @@ class ExecutionPlanner:
             determinism_level=manifest.determinism_level,
             replay_acceptability=manifest.replay_acceptability,
             entropy_budget=manifest.entropy_budget,
+            replay_envelope=manifest.replay_envelope,
+            dataset=manifest.dataset,
             steps=tuple(steps),
             environment_fingerprint=EnvironmentFingerprint(
                 compute_environment_fingerprint()
@@ -114,7 +116,7 @@ class ExecutionPlanner:
         """Deterministic topological sort using lexical tie-breaking for stability."""
         dependencies = self._parse_dependencies(manifest)
         agents = set(manifest.agents)
-        indegree = {agent: 0 for agent in agents}
+        indegree = dict.fromkeys(agents, 0)
         forward = {agent: [] for agent in agents}
 
         for agent, deps in dependencies.items():
@@ -163,6 +165,20 @@ class ExecutionPlanner:
             "entropy_budget": {
                 "allowed_sources": list(manifest.entropy_budget.allowed_sources),
                 "max_magnitude": manifest.entropy_budget.max_magnitude,
+            },
+            "replay_envelope": {
+                "min_claim_overlap": manifest.replay_envelope.min_claim_overlap,
+                "max_contradiction_delta": (
+                    manifest.replay_envelope.max_contradiction_delta
+                ),
+                "require_same_arbitration": (
+                    manifest.replay_envelope.require_same_arbitration
+                ),
+            },
+            "dataset": {
+                "dataset_id": manifest.dataset.dataset_id,
+                "dataset_version": manifest.dataset.dataset_version,
+                "dataset_hash": manifest.dataset.dataset_hash,
             },
             "steps": [
                 {

@@ -37,13 +37,17 @@ def _normalize_for_json(value):
     return value
 
 
-def test_golden_execution_plan(deterministic_environment, entropy_budget) -> None:
+def test_golden_execution_plan(
+    deterministic_environment, entropy_budget, replay_envelope, dataset_descriptor
+) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-golden"),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("alpha"), AgentID("bravo"), AgentID("charlie")),
         dependencies=("bravo:alpha", "charlie:alpha"),
         retrieval_contracts=(ContractID("contract-a"),),

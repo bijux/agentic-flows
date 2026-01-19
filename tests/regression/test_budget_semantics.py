@@ -8,6 +8,7 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
+from tests.helpers import build_claim_statement
 
 from agentic_flows.runtime.budget import ExecutionBudget
 from agentic_flows.runtime.orchestration.execute_flow import (
@@ -38,17 +39,18 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.ontology import (
     ArtifactType,
     DeterminismLevel,
-    EvidenceDeterminism,
     EventType,
+    EvidenceDeterminism,
     ReplayAcceptability,
     StepType,
 )
-from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
 
-def _resolved_flow_for_budget(resolved_flow_factory, entropy_budget):
+def _resolved_flow_for_budget(
+    resolved_flow_factory, entropy_budget, replay_envelope, dataset_descriptor
+):
     request = RetrievalRequest(
         spec_version="v1",
         request_id=RequestID("req-1"),
@@ -82,6 +84,8 @@ def _resolved_flow_for_budget(resolved_flow_factory, entropy_budget):
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -91,7 +95,11 @@ def _resolved_flow_for_budget(resolved_flow_factory, entropy_budget):
 
 
 def test_step_budget_halts_flow(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -121,7 +129,9 @@ def test_step_budget_halts_flow(
         producer_agent_id=AgentID("agent-a"),
     )
 
-    resolved_flow = _resolved_flow_for_budget(resolved_flow_factory, entropy_budget)
+    resolved_flow = _resolved_flow_for_budget(
+        resolved_flow_factory, entropy_budget, replay_envelope, dataset_descriptor
+    )
 
     result = execute_flow(
         resolved_flow=resolved_flow,
@@ -143,7 +153,11 @@ def test_step_budget_halts_flow(
 
 
 def test_token_budget_failure_is_deterministic(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -194,7 +208,9 @@ def test_token_budget_failure_is_deterministic(
 
     bijux_rar.reason = _reason
 
-    resolved_flow = _resolved_flow_for_budget(resolved_flow_factory, entropy_budget)
+    resolved_flow = _resolved_flow_for_budget(
+        resolved_flow_factory, entropy_budget, replay_envelope, dataset_descriptor
+    )
 
     result = execute_flow(
         resolved_flow=resolved_flow,
@@ -222,7 +238,11 @@ def test_token_budget_failure_is_deterministic(
 
 
 def test_artifact_step_budget_halts_flow(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -252,7 +272,9 @@ def test_artifact_step_budget_halts_flow(
         producer_agent_id=AgentID("agent-a"),
     )
 
-    resolved_flow = _resolved_flow_for_budget(resolved_flow_factory, entropy_budget)
+    resolved_flow = _resolved_flow_for_budget(
+        resolved_flow_factory, entropy_budget, replay_envelope, dataset_descriptor
+    )
 
     result = execute_flow(
         resolved_flow=resolved_flow,
@@ -274,7 +296,11 @@ def test_artifact_step_budget_halts_flow(
 
 
 def test_evidence_budget_halts_flow(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -304,7 +330,9 @@ def test_evidence_budget_halts_flow(
         producer_agent_id=AgentID("agent-a"),
     )
 
-    resolved_flow = _resolved_flow_for_budget(resolved_flow_factory, entropy_budget)
+    resolved_flow = _resolved_flow_for_budget(
+        resolved_flow_factory, entropy_budget, replay_envelope, dataset_descriptor
+    )
 
     result = execute_flow(
         resolved_flow=resolved_flow,

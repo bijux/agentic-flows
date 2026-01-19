@@ -8,8 +8,11 @@ import pytest
 from agentic_flows.runtime.observability.flow_correlation import (
     validate_flow_correlation,
 )
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
@@ -22,6 +25,18 @@ from agentic_flows.spec.ontology.ontology import (
 
 
 def test_flow_correlation_requires_parent() -> None:
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("dataset"),
+        dataset_version="1.0.0",
+        dataset_hash="hash",
+    )
+    replay_envelope = ReplayEnvelope(
+        spec_version="v1",
+        min_claim_overlap=1.0,
+        max_contradiction_delta=0,
+        require_same_arbitration=True,
+    )
     parent = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("parent"),
@@ -29,6 +44,8 @@ def test_flow_correlation_requires_parent() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=dataset,
+        replay_envelope=replay_envelope,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -36,6 +53,9 @@ def test_flow_correlation_requires_parent() -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
     child = ExecutionTrace(
@@ -45,6 +65,8 @@ def test_flow_correlation_requires_parent() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=dataset,
+        replay_envelope=replay_envelope,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -52,12 +74,27 @@ def test_flow_correlation_requires_parent() -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
     validate_flow_correlation(child, [parent])
 
 
 def test_flow_correlation_rejects_missing_parent() -> None:
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("dataset"),
+        dataset_version="1.0.0",
+        dataset_hash="hash",
+    )
+    replay_envelope = ReplayEnvelope(
+        spec_version="v1",
+        min_claim_overlap=1.0,
+        max_contradiction_delta=0,
+        require_same_arbitration=True,
+    )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("child"),
@@ -65,6 +102,8 @@ def test_flow_correlation_rejects_missing_parent() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=dataset,
+        replay_envelope=replay_envelope,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -72,6 +111,9 @@ def test_flow_correlation_rejects_missing_parent() -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
     with pytest.raises(ValueError, match="parent_flow_id"):

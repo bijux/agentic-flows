@@ -97,10 +97,20 @@ def replay_diff(
             "expected": plan.replay_acceptability,
             "observed": trace.replay_acceptability,
         }
+    if trace.replay_envelope != plan.replay_envelope:
+        diffs["replay_envelope"] = {
+            "expected": _envelope_payload(plan.replay_envelope),
+            "observed": _envelope_payload(trace.replay_envelope),
+        }
     if trace.environment_fingerprint != plan.environment_fingerprint:
         diffs["environment_fingerprint"] = {
             "expected": plan.environment_fingerprint,
             "observed": trace.environment_fingerprint,
+        }
+    if trace.dataset != plan.dataset:
+        diffs["dataset"] = {
+            "expected": _dataset_payload(plan.dataset),
+            "observed": _dataset_payload(trace.dataset),
         }
 
     if trace.verification_policy_fingerprint is not None:
@@ -219,6 +229,22 @@ def _partition_diffs(
     blocking = {key: value for key, value in diffs.items() if key not in allowed}
     acceptable = {key: value for key, value in diffs.items() if key in allowed}
     return blocking, acceptable
+
+
+def _dataset_payload(dataset) -> dict[str, object]:
+    return {
+        "dataset_id": dataset.dataset_id,
+        "dataset_version": dataset.dataset_version,
+        "dataset_hash": dataset.dataset_hash,
+    }
+
+
+def _envelope_payload(envelope) -> dict[str, object]:
+    return {
+        "min_claim_overlap": envelope.min_claim_overlap,
+        "max_contradiction_delta": envelope.max_contradiction_delta,
+        "require_same_arbitration": envelope.require_same_arbitration,
+    }
 
 
 __all__ = [

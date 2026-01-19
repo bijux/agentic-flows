@@ -6,6 +6,7 @@ This document elaborates on determinism; ../guarantees/system_guarantees.md defi
 - Flow manifest identifier and content.
 - Declared determinism level and replay acceptability policy.
 - Declared external inputs, including initial artifacts.
+- Dataset identity (dataset_id, dataset_version, dataset_hash).
 - Environment fingerprint.
 - Resolver identity and resolution metadata.
 - Agent configuration and version identifiers.
@@ -23,9 +24,11 @@ This document elaborates on determinism; ../guarantees/system_guarantees.md defi
 - For STRICT: artifact identities and contents.
 - For STRICT: evidence set and ordering.
 - For STRICT: verification rules and results.
+- For STRICT: dataset hash and replay envelope.
 
 ## Allowed entropy
 - Only entropy declared by determinism level and entropy budget.
+- Data-dependent entropy (sampling, ranking variance, truncation) must be recorded.
 - Non-semantic diagnostics may vary if explicitly marked and recorded.
 - Undeclared randomness is a semantic violation.
 

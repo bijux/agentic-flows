@@ -13,7 +13,11 @@ from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
-from agentic_flows.spec.ontology.ontology import EvidenceDeterminism
+from agentic_flows.spec.ontology.ontology import (
+    EntropyMagnitude,
+    EntropySource,
+    EvidenceDeterminism,
+)
 
 
 class RetrievalExecutor:
@@ -48,6 +52,20 @@ class RetrievalExecutor:
         if not bijux_vex.enforce_contract(request.vector_contract_id, evidence):
             raise ValueError("retrieval evidence failed vector contract enforcement")
 
+        if any(
+            item.determinism != EvidenceDeterminism.DETERMINISTIC for item in evidence
+        ):
+            magnitude = EntropyMagnitude.MEDIUM
+            if any(
+                item.determinism == EvidenceDeterminism.EXTERNAL for item in evidence
+            ):
+                magnitude = EntropyMagnitude.HIGH
+            context.record_entropy(
+                source=EntropySource.DATA,
+                magnitude=magnitude,
+                description="retrieval evidence determinism",
+                step_index=step.step_index,
+            )
         context.record_evidence(step.step_index, evidence)
         return evidence
 

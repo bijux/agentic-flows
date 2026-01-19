@@ -64,6 +64,10 @@ class VersionID(str):
     pass
 
 
+class DatasetID(str):
+    pass
+
+
 class InputsFingerprint(str):
     pass
 
@@ -100,6 +104,7 @@ __all__ = [
     "GateID",
     "ResolverID",
     "VersionID",
+    "DatasetID",
     "InputsFingerprint",
     "ContentHash",
     "EnvironmentFingerprint",

@@ -6,9 +6,12 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
@@ -24,6 +27,12 @@ pytestmark = pytest.mark.regression
 
 
 def test_probabilistic_replay_accepts_reordered_events() -> None:
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("dataset-prob"),
+        dataset_version="1.0.0",
+        dataset_hash="hash-prob",
+    )
     event_one = ExecutionEvent(
         spec_version="v1",
         event_index=0,
@@ -50,6 +59,13 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.PROBABILISTIC,
         replay_acceptability=ReplayAcceptability.STATISTICALLY_BOUNDED,
+        dataset=dataset,
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=0.5,
+            max_contradiction_delta=1,
+            require_same_arbitration=False,
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -57,6 +73,9 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         events=(event_one, event_two),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
     trace_two = ExecutionTrace(
@@ -66,6 +85,13 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.PROBABILISTIC,
         replay_acceptability=ReplayAcceptability.STATISTICALLY_BOUNDED,
+        dataset=dataset,
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=0.5,
+            max_contradiction_delta=1,
+            require_same_arbitration=False,
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -73,6 +99,9 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         events=(event_two, event_one),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
 
@@ -81,9 +110,8 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         trace_two,
         acceptability=ReplayAcceptability.STATISTICALLY_BOUNDED,
     )
-    assert diff_prob == {
-        "acceptable_events": "different but acceptable under policy"
-    }
+    assert diff_prob["acceptable_events"] == "different but acceptable under policy"
+    assert diff_prob["non_determinism_report"]["expected_entropy"]["count"] == 0
 
     diff_strict = semantic_trace_diff(
         trace_one,

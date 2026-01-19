@@ -3,8 +3,15 @@
 
 from __future__ import annotations
 
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ontology import ReplayAcceptability
+from agentic_flows.spec.ontology.ontology import EntropyMagnitude, ReplayAcceptability
+
+_MAGNITUDE_ORDER = {
+    EntropyMagnitude.LOW: 0,
+    EntropyMagnitude.MEDIUM: 1,
+    EntropyMagnitude.HIGH: 2,
+}
 
 
 def semantic_trace_diff(
@@ -20,6 +27,16 @@ def semantic_trace_diff(
         diffs["plan_hash"] = {
             "expected": expected.plan_hash,
             "observed": observed.plan_hash,
+        }
+    if expected.replay_envelope != observed.replay_envelope:
+        diffs["replay_envelope"] = {
+            "expected": _envelope_payload(expected.replay_envelope),
+            "observed": _envelope_payload(observed.replay_envelope),
+        }
+    if expected.dataset != observed.dataset:
+        diffs["dataset"] = {
+            "expected": _dataset_payload(expected.dataset),
+            "observed": _dataset_payload(observed.dataset),
         }
     if expected.environment_fingerprint != observed.environment_fingerprint:
         diffs["environment_fingerprint"] = {
@@ -45,6 +62,10 @@ def semantic_trace_diff(
         expected, ReplayAcceptability.EXACT_MATCH
     ) != _event_signature(observed, ReplayAcceptability.EXACT_MATCH):
         diffs["acceptable_events"] = "different but acceptable under policy"
+    if acceptability == ReplayAcceptability.STATISTICALLY_BOUNDED:
+        diffs.update(_statistical_envelope_diff(expected, observed))
+    if acceptability != ReplayAcceptability.EXACT_MATCH:
+        diffs["non_determinism_report"] = non_determinism_report(expected, observed)
     return diffs
 
 
@@ -75,4 +96,93 @@ def _event_signature(
     ]
 
 
-__all__ = ["render_semantic_diff", "semantic_trace_diff"]
+def _dataset_payload(dataset) -> dict[str, object]:
+    return {
+        "dataset_id": dataset.dataset_id,
+        "dataset_version": dataset.dataset_version,
+        "dataset_hash": dataset.dataset_hash,
+    }
+
+
+def _envelope_payload(envelope) -> dict[str, object]:
+    return {
+        "min_claim_overlap": envelope.min_claim_overlap,
+        "max_contradiction_delta": envelope.max_contradiction_delta,
+        "require_same_arbitration": envelope.require_same_arbitration,
+    }
+
+
+def _statistical_envelope_diff(
+    expected: ExecutionTrace,
+    observed: ExecutionTrace,
+) -> dict[str, object]:
+    diffs: dict[str, object] = {}
+    expected_claims = set(expected.claim_ids)
+    observed_claims = set(observed.claim_ids)
+    overlap = 1.0
+    if expected_claims:
+        overlap = len(expected_claims & observed_claims) / len(expected_claims)
+    if overlap < expected.replay_envelope.min_claim_overlap:
+        diffs["claim_overlap"] = {
+            "expected_min": expected.replay_envelope.min_claim_overlap,
+            "observed": overlap,
+        }
+    contradiction_delta = abs(
+        expected.contradiction_count - observed.contradiction_count
+    )
+    if contradiction_delta > expected.replay_envelope.max_contradiction_delta:
+        diffs["contradiction_delta"] = {
+            "allowed": expected.replay_envelope.max_contradiction_delta,
+            "observed": contradiction_delta,
+        }
+    if (
+        expected.replay_envelope.require_same_arbitration
+        and expected.arbitration_decision != observed.arbitration_decision
+    ):
+        diffs["arbitration_decision"] = {
+            "expected": expected.arbitration_decision,
+            "observed": observed.arbitration_decision,
+        }
+    return diffs
+
+
+def non_determinism_report(
+    expected: ExecutionTrace, observed: ExecutionTrace
+) -> dict[str, object]:
+    expected_summary = entropy_summary(expected.entropy_usage)
+    observed_summary = entropy_summary(observed.entropy_usage)
+    return {
+        "expected_entropy": expected_summary,
+        "observed_entropy": observed_summary,
+        "entropy_sources_added": sorted(
+            set(observed_summary["sources"]) - set(expected_summary["sources"])
+        ),
+        "entropy_sources_missing": sorted(
+            set(expected_summary["sources"]) - set(observed_summary["sources"])
+        ),
+        "entropy_magnitude_delta": {
+            "expected": expected_summary["max_magnitude"],
+            "observed": observed_summary["max_magnitude"],
+        },
+    }
+
+
+def entropy_summary(usage: tuple[EntropyUsage, ...]) -> dict[str, object]:
+    sources = sorted({entry.source.value for entry in usage})
+    max_magnitude = None
+    if usage:
+        max_entry = max(usage, key=lambda entry: _MAGNITUDE_ORDER[entry.magnitude])
+        max_magnitude = max_entry.magnitude.value
+    return {
+        "sources": sources,
+        "count": len(usage),
+        "max_magnitude": max_magnitude,
+    }
+
+
+__all__ = [
+    "entropy_summary",
+    "non_determinism_report",
+    "render_semantic_diff",
+    "semantic_trace_diff",
+]

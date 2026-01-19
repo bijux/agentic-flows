@@ -8,9 +8,12 @@ import pytest
 from agentic_flows.core.authority import enforce_runtime_semantics, finalize_trace
 from agentic_flows.core.errors import SemanticViolationError
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
@@ -26,6 +29,12 @@ pytestmark = pytest.mark.unit
 
 
 def test_finalize_trace_twice_rejected() -> None:
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("dataset"),
+        dataset_version="1.0.0",
+        dataset_hash="hash",
+    )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
@@ -33,6 +42,13 @@ def test_finalize_trace_twice_rejected() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=dataset,
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -40,6 +56,9 @@ def test_finalize_trace_twice_rejected() -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=False,
     )
 
@@ -64,6 +83,12 @@ def test_emit_event_without_authority_fails() -> None:
 
 
 def test_bypass_verification_is_rejected() -> None:
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("dataset"),
+        dataset_version="1.0.0",
+        dataset_hash="hash",
+    )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
@@ -71,6 +96,13 @@ def test_bypass_verification_is_rejected() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=dataset,
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -78,6 +110,9 @@ def test_bypass_verification_is_rejected() -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
 

@@ -47,7 +47,11 @@ pytestmark = pytest.mark.e2e
 
 
 def test_reasoning_content_verification_catches_bad_claim(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -126,6 +130,8 @@ def test_reasoning_content_verification_catches_bad_claim(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

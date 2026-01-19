@@ -6,7 +6,13 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    RunMode,
+    execute_flow,
+)
 from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
@@ -25,22 +31,18 @@ from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
     DeterminismLevel,
-    EvidenceDeterminism,
     EntropyMagnitude,
     EntropySource,
+    EvidenceDeterminism,
     ReplayAcceptability,
-)
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
-from agentic_flows.runtime.orchestration.execute_flow import (
-    ExecutionConfig,
-    RunMode,
-    execute_flow,
 )
 
 pytestmark = pytest.mark.regression
 
 
-def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) -> None:
+def test_replay_diff_includes_artifacts_and_evidence(
+    deterministic_environment, replay_envelope, dataset_descriptor
+) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-replay-diff"),
@@ -48,9 +50,11 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
             spec_version="v1",
-            allowed_sources=(EntropySource.SEEDED_RNG,),
+            allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
             max_magnitude=EntropyMagnitude.LOW,
         ),
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("alpha"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -66,6 +70,8 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
         child_flow_ids=(),
         determinism_level=plan.determinism_level,
         replay_acceptability=plan.replay_acceptability,
+        dataset=plan.dataset,
+        replay_envelope=plan.replay_envelope,
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=PlanHash("mismatch"),
         verification_policy_fingerprint=None,
@@ -73,6 +79,9 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=False,
     )
     trace.finalize()

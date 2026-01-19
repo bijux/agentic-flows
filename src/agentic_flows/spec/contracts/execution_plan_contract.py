@@ -9,6 +9,10 @@ from agentic_flows.spec.ontology.ontology import DeterminismLevel, StepType
 
 def validate(plan: ExecutionPlan) -> None:
     manifest_agents = set(plan.manifest.agents)
+    if plan.plan.dataset != plan.manifest.dataset:
+        raise ValueError("execution plan dataset must match manifest")
+    if plan.plan.replay_envelope != plan.manifest.replay_envelope:
+        raise ValueError("execution plan replay_envelope must match manifest")
     steps = plan.plan.steps
     step_agents = [step.agent_id for step in steps]
     if len(set(step_agents)) != len(step_agents):

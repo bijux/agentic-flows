@@ -5,13 +5,23 @@ from __future__ import annotations
 
 import pytest
 
+from agentic_flows.spec.contracts.execution_plan_contract import (
+    validate as validate_execution_plan,
+)
+from agentic_flows.spec.contracts.flow_contract import (
+    validate as validate_flow_manifest,
+)
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology.ids import (
     AgentID,
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     InputsFingerprint,
@@ -26,13 +36,6 @@ from agentic_flows.spec.ontology.ontology import (
     ReplayAcceptability,
     StepType,
 )
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.contracts.flow_contract import (
-    validate as validate_flow_manifest,
-)
-from agentic_flows.spec.contracts.execution_plan_contract import (
-    validate as validate_execution_plan,
-)
 
 pytestmark = pytest.mark.unit
 
@@ -45,8 +48,20 @@ def test_semantic_gate_rejects_invalid_dag() -> None:
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
             spec_version="v1",
-            allowed_sources=(EntropySource.SEEDED_RNG,),
+            allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
             max_magnitude=EntropyMagnitude.LOW,
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID("dataset-invalid"),
+            dataset_version="1.0.0",
+            dataset_hash="hash-invalid",
         ),
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=("agent-a:agent-b", "agent-b:agent-a"),
@@ -66,8 +81,20 @@ def test_semantic_gate_accepts_minimal_valid_flow() -> None:
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
             spec_version="v1",
-            allowed_sources=(EntropySource.SEEDED_RNG,),
+            allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
             max_magnitude=EntropyMagnitude.LOW,
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID("dataset-minimal"),
+            dataset_version="1.0.0",
+            dataset_hash="hash-minimal",
         ),
         agents=(AgentID("agent-a"),),
         dependencies=(),
@@ -99,6 +126,13 @@ def test_semantic_gate_accepts_minimal_valid_flow() -> None:
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=manifest.entropy_budget,
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
+        dataset=manifest.dataset,
         steps=(step,),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),

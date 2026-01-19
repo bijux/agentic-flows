@@ -8,6 +8,7 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
+from tests.helpers import build_claim_statement
 
 from agentic_flows.runtime.artifact_store import HostileArtifactStore
 from agentic_flows.runtime.orchestration.execute_flow import (
@@ -38,18 +39,21 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.ontology import (
     ArtifactType,
     DeterminismLevel,
-    EvidenceDeterminism,
     EventType,
+    EvidenceDeterminism,
     ReplayAcceptability,
     StepType,
 )
-from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
 
 def test_hostile_artifact_store_triggers_verification_failure(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -133,6 +137,8 @@ def test_hostile_artifact_store_triggers_verification_failure(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

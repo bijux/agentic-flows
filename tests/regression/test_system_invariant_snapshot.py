@@ -9,8 +9,8 @@ from agentic_flows import api
 from agentic_flows.core import authority
 from agentic_flows.spec.contracts import compatibility_contract
 from agentic_flows.spec.ontology.ontology import (
-    ArtifactScope,
     ArbitrationRule,
+    ArtifactScope,
     StepType,
     VerificationPhase,
 )

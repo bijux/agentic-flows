@@ -769,6 +769,21 @@ class LiveExecutor:
         resolver_id = ResolverID(
             self._resolver_id_from_metadata(steps_plan.resolution_metadata)
         )
+        claim_ids = tuple(
+            claim.claim_id
+            for bundle in state.reasoning_bundles
+            for claim in bundle.claims
+        )
+        contradiction_count = sum(
+            1
+            for result in state.verification_results
+            if result.engine_id == "contradiction" and result.status == "FAIL"
+        )
+        arbitration_decision = (
+            state.verification_arbitrations[-1].decision
+            if state.verification_arbitrations
+            else "none"
+        )
         trace = ExecutionTrace(
             spec_version="v1",
             flow_id=steps_plan.flow_id,
@@ -776,6 +791,8 @@ class LiveExecutor:
             child_flow_ids=context.child_flow_ids,
             determinism_level=steps_plan.determinism_level,
             replay_acceptability=steps_plan.replay_acceptability,
+            dataset=steps_plan.dataset,
+            replay_envelope=steps_plan.replay_envelope,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
             verification_policy_fingerprint=(
@@ -787,6 +804,9 @@ class LiveExecutor:
             events=state.recorder.events(),
             tool_invocations=tuple(state.tool_invocations),
             entropy_usage=context.entropy_usage(),
+            claim_ids=claim_ids,
+            contradiction_count=contradiction_count,
+            arbitration_decision=arbitration_decision,
             finalized=False,
         )
         finalize_trace(trace)

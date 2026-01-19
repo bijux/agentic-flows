@@ -5,7 +5,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology.ids import EnvironmentFingerprint, FlowID, PlanHash
 from agentic_flows.spec.ontology.ontology import (
@@ -21,6 +23,8 @@ class ExecutionSteps:
     determinism_level: DeterminismLevel
     replay_acceptability: ReplayAcceptability
     entropy_budget: EntropyBudget
+    replay_envelope: ReplayEnvelope
+    dataset: DatasetDescriptor
     steps: tuple[ResolvedStep, ...]
     environment_fingerprint: EnvironmentFingerprint
     plan_hash: PlanHash

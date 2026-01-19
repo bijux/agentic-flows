@@ -8,6 +8,7 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
+from tests.helpers import build_claim_statement
 
 from agentic_flows.core.authority import authority_token
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
@@ -17,29 +18,22 @@ from agentic_flows.runtime.observability.entropy import EntropyLedger
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
-    RunMode as FlowRunMode,
     execute_flow,
 )
+from agentic_flows.runtime.orchestration.execute_flow import (
+    RunMode as FlowRunMode,
+)
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
-from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.ontology.ontology import (
-    ArbitrationRule,
-    DeterminismLevel,
-    EntropyMagnitude,
-    EntropySource,
-    EvidenceDeterminism,
-    ReplayAcceptability,
-    VerificationRandomness,
-)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ArtifactID,
@@ -47,8 +41,8 @@ from agentic_flows.spec.ontology.ids import (
     ClaimID,
     ContentHash,
     ContractID,
-    EvidenceID,
     EnvironmentFingerprint,
+    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
@@ -57,12 +51,18 @@ from agentic_flows.spec.ontology.ids import (
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    ArbitrationRule,
     ArtifactScope,
     ArtifactType,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
     EventType,
+    EvidenceDeterminism,
+    ReplayAcceptability,
     StepType,
+    VerificationRandomness,
 )
-from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
@@ -119,7 +119,11 @@ def test_fabricated_artifact_rejected() -> None:
 
 
 def test_reused_artifact_id_rejected(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -221,6 +225,8 @@ def test_reused_artifact_id_rejected(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -243,7 +249,11 @@ def test_reused_artifact_id_rejected(
 
 
 def test_fake_evidence_id_rejected(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -322,6 +332,8 @@ def test_fake_evidence_id_rejected(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

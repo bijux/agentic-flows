@@ -35,7 +35,11 @@ pytestmark = pytest.mark.regression
 
 
 def test_forced_partial_failure_records_incomplete_trace(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -71,6 +75,8 @@ def test_forced_partial_failure_records_incomplete_trace(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("force-partial-failure"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

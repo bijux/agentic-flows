@@ -37,6 +37,16 @@ def validate(manifest: FlowManifest) -> None:
         manifest.entropy_budget.max_magnitude,
         EntropyMagnitude,
     )
+    if not 0.0 <= manifest.replay_envelope.min_claim_overlap <= 1.0:
+        raise ValueError("replay_envelope.min_claim_overlap must be between 0 and 1")
+    if manifest.replay_envelope.max_contradiction_delta < 0:
+        raise ValueError("replay_envelope.max_contradiction_delta must be >= 0")
+    if not manifest.dataset.dataset_id:
+        raise ValueError("dataset.dataset_id must be declared")
+    if not manifest.dataset.dataset_version:
+        raise ValueError("dataset.dataset_version must be declared")
+    if not manifest.dataset.dataset_hash:
+        raise ValueError("dataset.dataset_hash must be declared")
 
     if not isinstance(manifest.flow_id, str) or not manifest.flow_id.strip():
         raise ValueError("flow_id must be a non-empty string")
@@ -48,7 +58,7 @@ def validate(manifest: FlowManifest) -> None:
         raise ValueError("flow must declare at least one agent")
 
     forward: dict[str, set[str]] = defaultdict(set)
-    indegree: dict[str, int] = {agent: 0 for agent in agents}
+    indegree: dict[str, int] = dict.fromkeys(agents, 0)
 
     for entry in manifest.dependencies:
         parts = [part.strip() for part in entry.split(":")]

@@ -90,6 +90,7 @@ nav:
       - architecture: guarantees/architecture/architecture.md
       - invariants: guarantees/architecture/invariants.md
       - spec_law: guarantees/architecture/spec-law.md
+      - non_determinism_contract: guarantees/architecture/non_determinism_contract.md
       - abstraction_removal: guarantees/architecture/abstraction_removal.md
       - experimental: guarantees/architecture/experimental.md
       - llm_authority: guarantees/architecture/llm_authority.md

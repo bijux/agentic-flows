@@ -8,6 +8,7 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
+from tests.helpers import build_claim_statement
 
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -37,18 +38,21 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.ontology import (
     ArtifactType,
     DeterminismLevel,
-    EvidenceDeterminism,
     EventType,
+    EvidenceDeterminism,
     ReplayAcceptability,
     StepType,
 )
-from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
 
 def test_real_world_stress_flow(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     counter = {"value": 0}
 
@@ -80,10 +84,7 @@ def test_real_world_stress_flow(
 
     def _reason(agent_outputs, evidence, seed):
         base_statement = build_claim_statement(agent_outputs, evidence)
-        if not statements:
-            statement = base_statement
-        else:
-            statement = f"not {base_statement}"
+        statement = base_statement if not statements else f"not {base_statement}"
         statements.append(statement)
         return ReasoningBundle(
             spec_version="v1",
@@ -185,6 +186,8 @@ def test_real_world_stress_flow(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"), AgentID("force-partial-failure")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

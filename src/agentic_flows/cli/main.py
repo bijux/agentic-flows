@@ -9,9 +9,18 @@ import json
 from pathlib import Path
 
 from agentic_flows.api import ExecutionConfig, execute_flow
+from agentic_flows.runtime.observability.trace_diff import entropy_summary
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology.ids import (
+    AgentID,
+    ContractID,
+    DatasetID,
+    FlowID,
+    GateID,
+)
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
     EntropyMagnitude,
@@ -35,6 +44,22 @@ def _load_manifest(path: Path) -> FlowManifest:
                 for source in payload["entropy_budget"]["allowed_sources"]
             ),
             max_magnitude=EntropyMagnitude(payload["entropy_budget"]["max_magnitude"]),
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=float(payload["replay_envelope"]["min_claim_overlap"]),
+            max_contradiction_delta=int(
+                payload["replay_envelope"]["max_contradiction_delta"]
+            ),
+            require_same_arbitration=bool(
+                payload["replay_envelope"]["require_same_arbitration"]
+            ),
+        ),
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID(payload["dataset"]["dataset_id"]),
+            dataset_version=payload["dataset"]["dataset_version"],
+            dataset_hash=payload["dataset"]["dataset_hash"],
         ),
         agents=tuple(AgentID(agent_id) for agent_id in payload["agents"]),
         dependencies=tuple(payload["dependencies"]),
@@ -126,6 +151,12 @@ def _render_result(command: str, result) -> None:
             "trace": payload,
             "determinism_level": result.resolved_flow.plan.determinism_level,
             "replay_acceptability": result.resolved_flow.plan.replay_acceptability,
+            "dataset": {
+                "dataset_id": result.resolved_flow.plan.dataset.dataset_id,
+                "dataset_version": result.resolved_flow.plan.dataset.dataset_version,
+                "dataset_hash": result.resolved_flow.plan.dataset.dataset_hash,
+            },
+            "non_determinism_summary": entropy_summary(result.trace.entropy_usage),
             "entropy_used": [
                 {
                     "source": usage.source,

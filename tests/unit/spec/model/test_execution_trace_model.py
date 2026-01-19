@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import pytest
 
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
@@ -28,6 +31,18 @@ def test_trace_access_before_finalize_raises() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID("dataset-trace"),
+            dataset_version="1.0.0",
+            dataset_hash="hash-trace",
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan-hash"),
         verification_policy_fingerprint=None,
@@ -35,6 +50,9 @@ def test_trace_access_before_finalize_raises() -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=False,
     )
 

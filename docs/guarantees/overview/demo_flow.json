@@ -3,8 +3,18 @@
   "determinism_level": "strict",
   "replay_acceptability": "exact_match",
   "entropy_budget": {
-    "allowed_sources": ["seeded_rng"],
+    "allowed_sources": ["seeded_rng", "data"],
     "max_magnitude": "low"
+  },
+  "replay_envelope": {
+    "min_claim_overlap": 0.8,
+    "max_contradiction_delta": 0,
+    "require_same_arbitration": true
+  },
+  "dataset": {
+    "dataset_id": "retrieval_corpus",
+    "dataset_version": "1.0.0",
+    "dataset_hash": "136275faf776ff9aae3823d7d6f928e9"
   },
   "agents": ["agent-a", "force-partial-failure", "agent-b"],
   "dependencies": [

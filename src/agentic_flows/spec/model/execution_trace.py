@@ -5,10 +5,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology.ids import (
+    ClaimID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
@@ -29,6 +32,8 @@ class ExecutionTrace:
     child_flow_ids: tuple[FlowID, ...]
     determinism_level: DeterminismLevel
     replay_acceptability: ReplayAcceptability
+    dataset: DatasetDescriptor
+    replay_envelope: ReplayEnvelope
     environment_fingerprint: EnvironmentFingerprint
     plan_hash: PlanHash
     verification_policy_fingerprint: PolicyFingerprint | None
@@ -36,6 +41,9 @@ class ExecutionTrace:
     events: tuple[ExecutionEvent, ...]
     tool_invocations: tuple[ToolInvocation, ...]
     entropy_usage: tuple[EntropyUsage, ...]
+    claim_ids: tuple[ClaimID, ...]
+    contradiction_count: int
+    arbitration_decision: str
     finalized: bool
 
     def finalize(self) -> ExecutionTrace:

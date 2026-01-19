@@ -6,11 +6,14 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
@@ -33,8 +36,20 @@ def test_human_intervention_event_breaks_replay() -> None:
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
             spec_version="v1",
-            allowed_sources=(EntropySource.SEEDED_RNG,),
+            allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
             max_magnitude=EntropyMagnitude.LOW,
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID("dataset"),
+            dataset_version="1.0.0",
+            dataset_hash="hash",
         ),
         steps=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
@@ -57,6 +72,18 @@ def test_human_intervention_event_breaks_replay() -> None:
         child_flow_ids=(),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID("dataset"),
+            dataset_version="1.0.0",
+            dataset_hash="hash",
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=1.0,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -64,6 +91,9 @@ def test_human_intervention_event_breaks_replay() -> None:
         events=(event,),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=True,
     )
     with pytest.raises(ValueError, match="human_intervention_events"):

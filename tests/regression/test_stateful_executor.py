@@ -8,6 +8,7 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
+from tests.helpers import build_claim_statement
 
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -26,7 +27,6 @@ from agentic_flows.spec.ontology.ids import (
     BundleID,
     ClaimID,
     ContractID,
-    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
@@ -41,13 +41,16 @@ from agentic_flows.spec.ontology.ontology import (
     ReplayAcceptability,
     StepType,
 )
-from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
 
 def test_stateful_executor_replays_and_dry_run_match(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda agent_id, **_kwargs: [
         {
@@ -158,6 +161,8 @@ def test_stateful_executor_replays_and_dry_run_match(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

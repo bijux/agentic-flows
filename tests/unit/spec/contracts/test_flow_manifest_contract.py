@@ -6,9 +6,17 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.spec.contracts.flow_contract import validate
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology.ids import (
+    AgentID,
+    ContractID,
+    DatasetID,
+    FlowID,
+    GateID,
+)
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
     EntropyMagnitude,
@@ -27,8 +35,20 @@ def test_invalid_manifest_rejected() -> None:
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
             spec_version="v1",
-            allowed_sources=(EntropySource.SEEDED_RNG,),
+            allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
             max_magnitude=EntropyMagnitude.LOW,
+        ),
+        replay_envelope=ReplayEnvelope(
+            spec_version="v1",
+            min_claim_overlap=0.9,
+            max_contradiction_delta=0,
+            require_same_arbitration=True,
+        ),
+        dataset=DatasetDescriptor(
+            spec_version="v1",
+            dataset_id=DatasetID("dataset"),
+            dataset_version="1.0.0",
+            dataset_hash="hash",
         ),
         agents=(AgentID("agent-a"),),
         dependencies=("dep-a",),

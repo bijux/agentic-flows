@@ -20,13 +20,17 @@ from agentic_flows.spec.ontology.ontology import (
 pytestmark = pytest.mark.regression
 
 
-def test_agent_determinism(deterministic_environment, entropy_budget) -> None:
+def test_agent_determinism(
+    deterministic_environment, entropy_budget, replay_envelope, dataset_descriptor
+) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-live"),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(),

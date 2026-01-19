@@ -28,13 +28,20 @@ from agentic_flows.spec.ontology.ontology import (
 pytestmark = pytest.mark.regression
 
 
-def test_replay_equivalence(deterministic_environment, entropy_budget) -> None:
+def test_replay_equivalence(
+    deterministic_environment,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
+) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-replay"),
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("alpha"), AgentID("bravo")),
         dependencies=("bravo:alpha",),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -50,6 +57,8 @@ def test_replay_equivalence(deterministic_environment, entropy_budget) -> None:
         child_flow_ids=(),
         determinism_level=plan.determinism_level,
         replay_acceptability=plan.replay_acceptability,
+        dataset=plan.dataset,
+        replay_envelope=plan.replay_envelope,
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=plan.plan_hash,
         verification_policy_fingerprint=None,
@@ -57,6 +66,9 @@ def test_replay_equivalence(deterministic_environment, entropy_budget) -> None:
         events=(),
         tool_invocations=(),
         entropy_usage=(),
+        claim_ids=(),
+        contradiction_count=0,
+        arbitration_decision="none",
         finalized=False,
     )
     trace.finalize()

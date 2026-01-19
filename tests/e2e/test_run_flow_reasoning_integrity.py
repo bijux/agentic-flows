@@ -14,6 +14,10 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 )
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
+from agentic_flows.spec.model.reasoning_step import ReasoningStep
+from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     BundleID,
@@ -33,16 +37,16 @@ from agentic_flows.spec.ontology.ontology import (
     ReplayAcceptability,
     StepType,
 )
-from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
-from agentic_flows.spec.model.reasoning_step import ReasoningStep
-from agentic_flows.spec.model.resolved_step import ResolvedStep
 
 pytestmark = pytest.mark.e2e
 
 
 def test_reasoning_references_missing_evidence(
-    baseline_policy, resolved_flow_factory, entropy_budget
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -106,6 +110,8 @@ def test_reasoning_references_missing_evidence(
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset_descriptor,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

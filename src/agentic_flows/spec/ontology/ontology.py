@@ -104,6 +104,7 @@ class EntropySource(str, Enum):
     SEEDED_RNG = "seeded_rng"
     EXTERNAL_ORACLE = "external_oracle"
     HUMAN_INPUT = "human_input"
+    DATA = "data"
 
 
 class EntropyMagnitude(str, Enum):

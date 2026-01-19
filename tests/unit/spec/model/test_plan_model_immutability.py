@@ -8,10 +8,14 @@ import dataclasses
 import pytest
 
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology.ids import (
     AgentID,
+    DatasetID,
     EnvironmentFingerprint,
     FlowID,
     InputsFingerprint,
@@ -25,7 +29,6 @@ from agentic_flows.spec.ontology.ontology import (
     ReplayAcceptability,
     StepType,
 )
-from agentic_flows.spec.model.resolved_step import ResolvedStep
 
 pytestmark = pytest.mark.unit
 
@@ -56,8 +59,20 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
     step = _make_step(0)
     entropy_budget = EntropyBudget(
         spec_version="v1",
-        allowed_sources=(EntropySource.SEEDED_RNG,),
+        allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
         max_magnitude=EntropyMagnitude.LOW,
+    )
+    dataset = DatasetDescriptor(
+        spec_version="v1",
+        dataset_id=DatasetID("test-dataset"),
+        dataset_version="1.0.0",
+        dataset_hash="dataset-hash",
+    )
+    replay_envelope = ReplayEnvelope(
+        spec_version="v1",
+        min_claim_overlap=1.0,
+        max_contradiction_delta=0,
+        require_same_arbitration=True,
     )
     plan = ExecutionSteps(
         spec_version="v1",
@@ -65,6 +80,8 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
+        replay_envelope=replay_envelope,
+        dataset=dataset,
         steps=(step,),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=plan_hash_for(
@@ -74,6 +91,8 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
             determinism_level=DeterminismLevel.STRICT,
             replay_acceptability=ReplayAcceptability.EXACT_MATCH,
             entropy_budget=entropy_budget,
+            replay_envelope=replay_envelope,
+            dataset=dataset,
         ),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
