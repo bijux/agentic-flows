@@ -5,12 +5,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.ontology.ids import TenantID
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
 
 @dataclass(frozen=True)
 class EntropyUsage:
     spec_version: str
+    tenant_id: TenantID
     source: EntropySource
     magnitude: EntropyMagnitude
     description: str

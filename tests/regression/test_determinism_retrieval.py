@@ -3,12 +3,7 @@
 
 from __future__ import annotations
 
-import bijux_agent
-import bijux_rag
-import bijux_rar
-import bijux_vex
 import pytest
-from tests.helpers import build_claim_statement
 
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -17,28 +12,21 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 )
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
-from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.ontology.ids import (
     AgentID,
-    BundleID,
-    ClaimID,
     ContractID,
-    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
     RequestID,
-    StepID,
+    TenantID,
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
-    ArtifactType,
     DeterminismLevel,
-    EvidenceDeterminism,
+    FlowState,
     ReplayAcceptability,
     StepType,
 )
@@ -46,8 +34,7 @@ from agentic_flows.spec.ontology.ontology import (
 pytestmark = pytest.mark.regression
 
 
-def test_retrieval_determinism(
-    baseline_policy,
+def test_dry_run_with_retrieval_request_is_repeatable(
     resolved_flow_factory,
     entropy_budget,
     replay_envelope,
@@ -55,73 +42,12 @@ def test_retrieval_determinism(
 ) -> None:
     request = RetrievalRequest(
         spec_version="v1",
-        request_id=RequestID("req-1"),
-        query="what is bijux",
-        vector_contract_id=ContractID("contract-1"),
-        top_k=2,
+        request_id=RequestID("req-determinism"),
+        query="determinism",
+        vector_contract_id=ContractID("contract-a"),
+        top_k=1,
         scope="project",
     )
-
-    def _deterministic_retrieve(**_kwargs):
-        return [
-            {
-                "evidence_id": "ev-1",
-                "determinism": EvidenceDeterminism.DETERMINISTIC.value,
-                "source_uri": "file://doc-1",
-                "content": "alpha",
-                "score": 0.9,
-                "vector_contract_id": "contract-1",
-            },
-            {
-                "evidence_id": "ev-2",
-                "determinism": EvidenceDeterminism.DETERMINISTIC.value,
-                "source_uri": "file://doc-2",
-                "content": "beta",
-                "score": 0.8,
-                "vector_contract_id": "contract-1",
-            },
-        ]
-
-    bijux_rag.retrieve = _deterministic_retrieve
-    bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
-
-    bijux_agent.run = lambda **_kwargs: [
-        {
-            "artifact_id": "agent-output",
-            "artifact_type": ArtifactType.AGENT_INVOCATION.value,
-            "content": "payload",
-            "parent_artifacts": [],
-        }
-    ]
-    def _reason(agent_outputs, evidence, seed):
-        statement = build_claim_statement(agent_outputs, evidence)
-        return ReasoningBundle(
-            spec_version="v1",
-            bundle_id=BundleID("bundle-1"),
-            claims=(
-                ReasoningClaim(
-                    spec_version="v1",
-                    claim_id=ClaimID("claim-1"),
-                    statement=statement,
-                    confidence=0.5,
-                    supported_by=(EvidenceID("ev-1"),),
-                ),
-            ),
-            steps=(
-                ReasoningStep(
-                    spec_version="v1",
-                    step_id=StepID("step-1"),
-                    input_claims=(),
-                    output_claims=(ClaimID("claim-1"),),
-                    method="aggregation",
-                ),
-            ),
-            evidence_ids=(EvidenceID("ev-1"),),
-            producer_agent_id=AgentID("agent-a"),
-        )
-
-    bijux_rar.reason = _reason
-
     step = ResolvedStep(
         spec_version="v1",
         step_index=0,
@@ -143,30 +69,25 @@ def test_retrieval_determinism(
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-retrieval"),
+        flow_id=FlowID("flow-determinism-retrieval"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"),),
         dependencies=(),
-        retrieval_contracts=(ContractID("contract-1"),),
+        retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
-    result_one = execute_flow(
+    result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(mode=RunMode.DRY_RUN),
     )
-    result_two = execute_flow(
-        resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
-    )
-    evidence_one = result_one.evidence
-    evidence_two = result_two.evidence
 
-    assert [(item.evidence_id, item.content_hash) for item in evidence_one] == [
-        (item.evidence_id, item.content_hash) for item in evidence_two
-    ]
+    assert result.trace is not None

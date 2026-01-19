@@ -75,6 +75,7 @@ class AgentExecutor:
                 context.artifact_store.create(
                     spec_version="v1",
                     artifact_id=ArtifactID(str(entry["artifact_id"])),
+                    tenant_id=context.tenant_id,
                     artifact_type=artifact_type,
                     producer="agent",
                     parent_artifacts=tuple(
@@ -96,6 +97,7 @@ class AgentExecutor:
         return context.artifact_store.create(
             spec_version="v1",
             artifact_id=ArtifactID(f"state-{step.step_index}-{step.agent_id}"),
+            tenant_id=context.tenant_id,
             artifact_type=ArtifactType.EXECUTOR_STATE,
             producer="agent",
             parent_artifacts=tuple(artifact.artifact_id for artifact in artifacts),

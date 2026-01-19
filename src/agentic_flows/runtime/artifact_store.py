@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import hashlib
 
 from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
+from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
 from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
@@ -18,6 +18,7 @@ class ArtifactStore(ABC):
         *,
         spec_version: str,
         artifact_id: ArtifactID,
+        tenant_id: TenantID,
         artifact_type: ArtifactType,
         producer: str,
         parent_artifacts: tuple[ArtifactID, ...],
@@ -31,19 +32,20 @@ class ArtifactStore(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def load(self, artifact_id: ArtifactID) -> Artifact:
+    def load(self, artifact_id: ArtifactID, *, tenant_id: TenantID) -> Artifact:
         raise NotImplementedError
 
 
 class InMemoryArtifactStore(ArtifactStore):
     def __init__(self) -> None:
-        self._items: dict[ArtifactID, Artifact] = {}
+        self._items: dict[tuple[TenantID, ArtifactID], Artifact] = {}
 
     def create(
         self,
         *,
         spec_version: str,
         artifact_id: ArtifactID,
+        tenant_id: TenantID,
         artifact_type: ArtifactType,
         producer: str,
         parent_artifacts: tuple[ArtifactID, ...],
@@ -53,6 +55,7 @@ class InMemoryArtifactStore(ArtifactStore):
         artifact = Artifact(
             spec_version=spec_version,
             artifact_id=artifact_id,
+            tenant_id=tenant_id,
             artifact_type=artifact_type,
             producer=producer,
             parent_artifacts=parent_artifacts,
@@ -63,15 +66,17 @@ class InMemoryArtifactStore(ArtifactStore):
         return artifact
 
     def save(self, artifact: Artifact) -> None:
-        existing = self._items.get(artifact.artifact_id)
+        key = (artifact.tenant_id, artifact.artifact_id)
+        existing = self._items.get(key)
         if existing is not None:
             raise ValueError("Artifact IDs must be unique per run")
-        self._items[artifact.artifact_id] = artifact
+        self._items[key] = artifact
 
-    def load(self, artifact_id: ArtifactID) -> Artifact:
-        if artifact_id not in self._items:
+    def load(self, artifact_id: ArtifactID, *, tenant_id: TenantID) -> Artifact:
+        key = (tenant_id, artifact_id)
+        if key not in self._items:
             raise KeyError(f"Artifact not found: {artifact_id}")
-        return self._items[artifact_id]
+        return self._items[key]
 
 
 class HostileArtifactStore(ArtifactStore):
@@ -87,14 +92,15 @@ class HostileArtifactStore(ArtifactStore):
         self._max_delay = max_delay
         self._drop_rate = drop_rate
         self._corruption_rate = corruption_rate
-        self._items: dict[ArtifactID, Artifact] = {}
-        self._pending: dict[ArtifactID, tuple[Artifact, int]] = {}
+        self._items: dict[tuple[TenantID, ArtifactID], Artifact] = {}
+        self._pending: dict[tuple[TenantID, ArtifactID], tuple[Artifact, int]] = {}
 
     def create(
         self,
         *,
         spec_version: str,
         artifact_id: ArtifactID,
+        tenant_id: TenantID,
         artifact_type: ArtifactType,
         producer: str,
         parent_artifacts: tuple[ArtifactID, ...],
@@ -104,6 +110,7 @@ class HostileArtifactStore(ArtifactStore):
         artifact = Artifact(
             spec_version=spec_version,
             artifact_id=artifact_id,
+            tenant_id=tenant_id,
             artifact_type=artifact_type,
             producer=producer,
             parent_artifacts=parent_artifacts,
@@ -114,7 +121,8 @@ class HostileArtifactStore(ArtifactStore):
         return artifact
 
     def save(self, artifact: Artifact) -> None:
-        existing = self._items.get(artifact.artifact_id)
+        key = (artifact.tenant_id, artifact.artifact_id)
+        existing = self._items.get(key)
         if existing is not None:
             raise ValueError("Artifact IDs must be unique per run")
         decision = self._decision(artifact.artifact_id)
@@ -125,6 +133,7 @@ class HostileArtifactStore(ArtifactStore):
             stored = Artifact(
                 spec_version=artifact.spec_version,
                 artifact_id=artifact.artifact_id,
+                tenant_id=artifact.tenant_id,
                 artifact_type=artifact.artifact_type,
                 producer=artifact.producer,
                 parent_artifacts=artifact.parent_artifacts,
@@ -134,28 +143,29 @@ class HostileArtifactStore(ArtifactStore):
                 scope=artifact.scope,
             )
         if decision["delay"] > 0:
-            self._pending[artifact.artifact_id] = (stored, decision["delay"])
+            self._pending[key] = (stored, decision["delay"])
             return
-        self._items[artifact.artifact_id] = stored
+        self._items[key] = stored
 
-    def load(self, artifact_id: ArtifactID) -> Artifact:
+    def load(self, artifact_id: ArtifactID, *, tenant_id: TenantID) -> Artifact:
         self._tick()
-        if artifact_id in self._pending:
-            artifact, delay = self._pending[artifact_id]
+        key = (tenant_id, artifact_id)
+        if key in self._pending:
+            artifact, delay = self._pending[key]
             if delay > 0:
-                self._pending[artifact_id] = (artifact, delay - 1)
+                self._pending[key] = (artifact, delay - 1)
                 raise KeyError(f"Artifact not yet visible: {artifact_id}")
-            self._items[artifact_id] = artifact
-            self._pending.pop(artifact_id, None)
-        if artifact_id not in self._items:
+            self._items[key] = artifact
+            self._pending.pop(key, None)
+        if key not in self._items:
             raise KeyError(f"Artifact not found: {artifact_id}")
-        return self._items[artifact_id]
+        return self._items[key]
 
     def _tick(self) -> None:
-        for artifact_id, (artifact, delay) in list(self._pending.items()):
+        for key, (artifact, delay) in list(self._pending.items()):
             if delay <= 0:
-                self._items[artifact_id] = artifact
-                self._pending.pop(artifact_id, None)
+                self._items[key] = artifact
+                self._pending.pop(key, None)
 
     def _decision(self, artifact_id: ArtifactID) -> dict[str, object]:
         payload = f"{self._seed}:{artifact_id}"

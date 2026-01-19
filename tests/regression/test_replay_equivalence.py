@@ -19,9 +19,11 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     GateID,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -37,11 +39,14 @@ def test_replay_equivalence(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-replay"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("alpha"), AgentID("bravo")),
         dependencies=("bravo:alpha",),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -53,12 +58,15 @@ def test_replay_equivalence(
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=plan.flow_id,
+        tenant_id=plan.tenant_id,
         parent_flow_id=None,
         child_flow_ids=(),
+        flow_state=plan.flow_state,
         determinism_level=plan.determinism_level,
         replay_acceptability=plan.replay_acceptability,
         dataset=plan.dataset,
         replay_envelope=plan.replay_envelope,
+        allow_deprecated_datasets=plan.allow_deprecated_datasets,
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=plan.plan_hash,
         verification_policy_fingerprint=None,

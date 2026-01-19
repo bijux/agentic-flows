@@ -19,6 +19,7 @@ class VerificationPolicy:
     randomness_tolerance: VerificationRandomness
     arbitration_policy: ArbitrationPolicy
     required_evidence: tuple[EvidenceID, ...]
+    max_rule_cost: int
     rules: tuple[VerificationRule, ...]
     fail_on: tuple[RuleID, ...]
     escalate_on: tuple[RuleID, ...]

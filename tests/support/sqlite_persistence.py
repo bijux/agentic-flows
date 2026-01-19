@@ -27,6 +27,7 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     PolicyFingerprint,
     ResolverID,
+    TenantID,
     ToolID,
 )
 from agentic_flows.spec.ontology.ontology import (
@@ -37,6 +38,7 @@ from agentic_flows.spec.ontology.ontology import (
     EntropySource,
     EventType,
     ReplayAcceptability,
+    DatasetState,
 )
 
 
@@ -64,9 +66,7 @@ class SqliteMigrator:
         self._connection.commit()
 
     def _current_version(self) -> int:
-        cursor = self._connection.execute(
-            "SELECT MAX(version) FROM schema_migrations"
-        )
+        cursor = self._connection.execute("SELECT MAX(version) FROM schema_migrations")
         row = cursor.fetchone()
         return int(row[0] or 0)
 
@@ -175,9 +175,7 @@ class SqliteArtifactStore(ArtifactStore):
         row = cursor.fetchone()
         if row is None:
             raise KeyError(f"Artifact not found: {artifact_id}")
-        parent_artifacts = tuple(
-            ArtifactID(item) for item in json.loads(row[3])
-        )
+        parent_artifacts = tuple(ArtifactID(item) for item in json.loads(row[3]))
         return Artifact(
             spec_version=row[0],
             artifact_id=artifact_id,
@@ -336,57 +334,22 @@ def _decode_trace(payload: dict[str, Any]) -> ExecutionTrace:
     )
 
 
-def _encode_dataset(dataset: DatasetDescriptor) -> dict[str, str]:
-    return {
-        "spec_version": dataset.spec_version,
-        "dataset_id": str(dataset.dataset_id),
-        "dataset_version": dataset.dataset_version,
-        "dataset_hash": dataset.dataset_hash,
-    }
-
-
-def _decode_dataset(payload: dict[str, str]) -> DatasetDescriptor:
-    return DatasetDescriptor(
-        spec_version=payload["spec_version"],
-        dataset_id=DatasetID(payload["dataset_id"]),
-        dataset_version=payload["dataset_version"],
-        dataset_hash=payload["dataset_hash"],
-    )
-
-
-def _encode_envelope(envelope) -> dict[str, object]:
-    return {
-        "spec_version": envelope.spec_version,
-        "min_claim_overlap": envelope.min_claim_overlap,
-        "max_contradiction_delta": envelope.max_contradiction_delta,
-        "require_same_arbitration": envelope.require_same_arbitration,
-    }
-
-
-def _decode_envelope(payload: dict[str, object]):
-    return ReplayEnvelope(
-        spec_version=payload["spec_version"],
-        min_claim_overlap=float(payload["min_claim_overlap"]),
-        max_contradiction_delta=int(payload["max_contradiction_delta"]),
-        require_same_arbitration=bool(payload["require_same_arbitration"]),
-    )
-
-
 def _encode_event(event: ExecutionEvent) -> dict[str, Any]:
     payload = asdict(event)
     payload["event_type"] = event.event_type.value
+    payload["payload_hash"] = str(event.payload_hash)
     return payload
 
 
 def _decode_event(payload: dict[str, Any]) -> ExecutionEvent:
     return ExecutionEvent(
         spec_version=payload["spec_version"],
-        event_index=payload["event_index"],
-        step_index=payload["step_index"],
+        event_index=int(payload["event_index"]),
+        step_index=int(payload["step_index"]),
         event_type=EventType(payload["event_type"]),
         timestamp_utc=payload["timestamp_utc"],
         payload=payload["payload"],
-        payload_hash=payload["payload_hash"],
+        payload_hash=ContentHash(payload["payload_hash"]),
     )
 
 
@@ -410,21 +373,26 @@ def _decode_tool_invocation(payload: dict[str, Any]) -> ToolInvocation:
         outputs_fingerprint=ContentHash(payload["outputs_fingerprint"])
         if payload["outputs_fingerprint"] is not None
         else None,
-        duration=payload["duration"],
+        duration=float(payload["duration"]),
         outcome=payload["outcome"],
     )
 
 
-def _encode_entropy_usage(entry: EntropyUsage) -> dict[str, Any]:
-    payload = asdict(entry)
-    payload["source"] = entry.source.value
-    payload["magnitude"] = entry.magnitude.value
-    return payload
+def _encode_entropy_usage(item: EntropyUsage) -> dict[str, Any]:
+    return {
+        "spec_version": item.spec_version,
+        "tenant_id": str(item.tenant_id),
+        "source": item.source.value,
+        "magnitude": item.magnitude.value,
+        "description": item.description,
+        "step_index": item.step_index,
+    }
 
 
 def _decode_entropy_usage(payload: dict[str, Any]) -> EntropyUsage:
     return EntropyUsage(
         spec_version=payload["spec_version"],
+        tenant_id=TenantID(payload["tenant_id"]),
         source=EntropySource(payload["source"]),
         magnitude=EntropyMagnitude(payload["magnitude"]),
         description=payload["description"],
@@ -432,9 +400,41 @@ def _decode_entropy_usage(payload: dict[str, Any]) -> EntropyUsage:
     )
 
 
-__all__ = [
-    "SqliteArtifactStore",
-    "SqliteEntropyStore",
-    "SqliteMigrator",
-    "SqliteTraceStore",
-]
+def _encode_envelope(envelope: ReplayEnvelope) -> dict[str, Any]:
+    return {
+        "spec_version": envelope.spec_version,
+        "min_claim_overlap": envelope.min_claim_overlap,
+        "max_contradiction_delta": envelope.max_contradiction_delta,
+        "require_same_arbitration": envelope.require_same_arbitration,
+    }
+
+
+def _decode_envelope(payload: dict[str, Any]) -> ReplayEnvelope:
+    return ReplayEnvelope(
+        spec_version=payload["spec_version"],
+        min_claim_overlap=float(payload["min_claim_overlap"]),
+        max_contradiction_delta=int(payload["max_contradiction_delta"]),
+        require_same_arbitration=bool(payload["require_same_arbitration"]),
+    )
+
+
+def _encode_dataset(dataset: DatasetDescriptor) -> dict[str, str]:
+    return {
+        "spec_version": dataset.spec_version,
+        "dataset_id": str(dataset.dataset_id),
+        "tenant_id": str(dataset.tenant_id),
+        "dataset_version": dataset.dataset_version,
+        "dataset_hash": dataset.dataset_hash,
+        "dataset_state": dataset.dataset_state.value,
+    }
+
+
+def _decode_dataset(payload: dict[str, str]) -> DatasetDescriptor:
+    return DatasetDescriptor(
+        spec_version=payload["spec_version"],
+        dataset_id=DatasetID(payload["dataset_id"]),
+        tenant_id=TenantID(payload["tenant_id"]),
+        dataset_version=payload["dataset_version"],
+        dataset_hash=payload["dataset_hash"],
+        dataset_state=DatasetState(payload["dataset_state"]),
+    )

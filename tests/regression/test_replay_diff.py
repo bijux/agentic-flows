@@ -26,10 +26,12 @@ from agentic_flows.spec.ontology.ids import (
     GateID,
     PlanHash,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
+    FlowState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
@@ -46,6 +48,8 @@ def test_replay_diff_includes_artifacts_and_evidence(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-replay-diff"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -55,6 +59,7 @@ def test_replay_diff_includes_artifacts_and_evidence(
         ),
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("alpha"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -66,12 +71,15 @@ def test_replay_diff_includes_artifacts_and_evidence(
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=plan.flow_id,
+        tenant_id=plan.tenant_id,
         parent_flow_id=None,
         child_flow_ids=(),
+        flow_state=plan.flow_state,
         determinism_level=plan.determinism_level,
         replay_acceptability=plan.replay_acceptability,
         dataset=plan.dataset,
         replay_envelope=plan.replay_envelope,
+        allow_deprecated_datasets=plan.allow_deprecated_datasets,
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=PlanHash("mismatch"),
         verification_policy_fingerprint=None,
@@ -90,6 +98,7 @@ def test_replay_diff_includes_artifacts_and_evidence(
         Artifact(
             spec_version="v1",
             artifact_id=ArtifactID("artifact-1"),
+            tenant_id=TenantID("tenant-a"),
             artifact_type=ArtifactType.AGENT_INVOCATION,
             producer="agent",
             parent_artifacts=(),

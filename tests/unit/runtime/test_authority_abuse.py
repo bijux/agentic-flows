@@ -18,10 +18,13 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     PlanHash,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EventType,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -32,14 +35,18 @@ def test_finalize_trace_twice_rejected() -> None:
     dataset = DatasetDescriptor(
         spec_version="v1",
         dataset_id=DatasetID("dataset"),
+        tenant_id=TenantID("tenant-a"),
         dataset_version="1.0.0",
         dataset_hash="hash",
+        dataset_state=DatasetState.FROZEN,
     )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        tenant_id=TenantID("tenant-a"),
         parent_flow_id=None,
         child_flow_ids=(),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         dataset=dataset,
@@ -49,6 +56,7 @@ def test_finalize_trace_twice_rejected() -> None:
             max_contradiction_delta=0,
             require_same_arbitration=True,
         ),
+        allow_deprecated_datasets=False,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
@@ -86,14 +94,18 @@ def test_bypass_verification_is_rejected() -> None:
     dataset = DatasetDescriptor(
         spec_version="v1",
         dataset_id=DatasetID("dataset"),
+        tenant_id=TenantID("tenant-a"),
         dataset_version="1.0.0",
         dataset_hash="hash",
+        dataset_state=DatasetState.FROZEN,
     )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        tenant_id=TenantID("tenant-a"),
         parent_flow_id=None,
         child_flow_ids=(),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         dataset=dataset,
@@ -103,6 +115,7 @@ def test_bypass_verification_is_rejected() -> None:
             max_contradiction_delta=0,
             require_same_arbitration=True,
         ),
+        allow_deprecated_datasets=False,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,

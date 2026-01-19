@@ -17,11 +17,14 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     PlanHash,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -32,6 +35,8 @@ def test_dataset_mismatch_blocks_replay() -> None:
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-dataset"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -48,9 +53,12 @@ def test_dataset_mismatch_blocks_replay() -> None:
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID("dataset-a"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
             dataset_hash="hash-a",
+            dataset_state=DatasetState.FROZEN,
         ),
+        allow_deprecated_datasets=False,
         steps=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
@@ -59,17 +67,22 @@ def test_dataset_mismatch_blocks_replay() -> None:
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow-dataset"),
+        tenant_id=TenantID("tenant-a"),
         parent_flow_id=None,
         child_flow_ids=(),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID("dataset-b"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
             dataset_hash="hash-b",
+            dataset_state=DatasetState.FROZEN,
         ),
         replay_envelope=plan.replay_envelope,
+        allow_deprecated_datasets=False,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,

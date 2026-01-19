@@ -88,6 +88,19 @@ class DeterminismLevel(str, Enum):
     UNCONSTRAINED = "unconstrained"
 
 
+class FlowState(str, Enum):
+    DRAFT = "draft"
+    VALIDATED = "validated"
+    FROZEN = "frozen"
+    DEPRECATED = "deprecated"
+
+
+class DatasetState(str, Enum):
+    EXPERIMENTAL = "experimental"
+    FROZEN = "frozen"
+    DEPRECATED = "deprecated"
+
+
 class ReplayAcceptability(str, Enum):
     EXACT_MATCH = "exact_match"
     INVARIANT_PRESERVING = "invariant_preserving"
@@ -134,6 +147,8 @@ __all__ = [
     "VerificationPhase",
     "ArbitrationRule",
     "DeterminismLevel",
+    "FlowState",
+    "DatasetState",
     "ReplayAcceptability",
     "EvidenceDeterminism",
     "EntropySource",

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.ontology.ids import TenantID
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
 _MAGNITUDE_ORDER = {
@@ -22,6 +23,7 @@ class EntropyLedger:
     def record(
         self,
         *,
+        tenant_id: TenantID,
         source: EntropySource,
         magnitude: EntropyMagnitude,
         description: str,
@@ -36,6 +38,7 @@ class EntropyLedger:
         self._records.append(
             EntropyUsage(
                 spec_version="v1",
+                tenant_id=tenant_id,
                 source=source,
                 magnitude=magnitude,
                 description=description,

@@ -27,12 +27,15 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     PlanHash,
     ResolverID,
+    TenantID,
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
     StepType,
 )
@@ -40,10 +43,12 @@ from agentic_flows.spec.ontology.ontology import (
 pytestmark = pytest.mark.unit
 
 
-def test_semantic_gate_rejects_invalid_dag() -> None:
-    manifest = FlowManifest(
+def _manifest(*, dependencies: tuple[str, ...]) -> FlowManifest:
+    return FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-invalid-dag"),
+        flow_id=FlowID("flow-resolved"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -53,92 +58,94 @@ def test_semantic_gate_rejects_invalid_dag() -> None:
         ),
         replay_envelope=ReplayEnvelope(
             spec_version="v1",
-            min_claim_overlap=1.0,
+            min_claim_overlap=0.9,
             max_contradiction_delta=0,
             require_same_arbitration=True,
         ),
         dataset=DatasetDescriptor(
             spec_version="v1",
-            dataset_id=DatasetID("dataset-invalid"),
+            dataset_id=DatasetID("dataset"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
-            dataset_hash="hash-invalid",
+            dataset_hash="hash",
+            dataset_state=DatasetState.FROZEN,
         ),
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
-        dependencies=("agent-a:agent-b", "agent-b:agent-a"),
+        dependencies=dependencies,
         retrieval_contracts=(),
         verification_gates=(),
+    )
+
+
+def _resolved_step(
+    *,
+    agent_id: AgentID,
+    step_index: int,
+    declared_dependencies: tuple[AgentID, ...],
+) -> ResolvedStep:
+    inputs_fingerprint = InputsFingerprint(f"inputs-{agent_id}")
+    return ResolvedStep(
+        spec_version="v1",
+        step_index=step_index,
+        step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
+        agent_id=agent_id,
+        inputs_fingerprint=inputs_fingerprint,
+        declared_dependencies=declared_dependencies,
+        expected_artifacts=(),
+        agent_invocation=AgentInvocation(
+            spec_version="v1",
+            agent_id=agent_id,
+            agent_version=VersionID("v1"),
+            inputs_fingerprint=inputs_fingerprint,
+            declared_outputs=(),
+            execution_mode="default",
+        ),
+        retrieval_request=None,
+    )
+
+
+def test_manifest_rejects_dependency_cycle() -> None:
+    manifest = _manifest(
+        dependencies=("agent-a:agent-b", "agent-b:agent-a"),
     )
 
     with pytest.raises(ValueError, match="dependencies must form a reachable DAG"):
         validate_flow_manifest(manifest)
 
 
-def test_semantic_gate_accepts_minimal_valid_flow() -> None:
-    manifest = FlowManifest(
-        spec_version="v1",
-        flow_id=FlowID("flow-minimal"),
-        determinism_level=DeterminismLevel.STRICT,
-        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
-        entropy_budget=EntropyBudget(
-            spec_version="v1",
-            allowed_sources=(EntropySource.SEEDED_RNG, EntropySource.DATA),
-            max_magnitude=EntropyMagnitude.LOW,
-        ),
-        replay_envelope=ReplayEnvelope(
-            spec_version="v1",
-            min_claim_overlap=1.0,
-            max_contradiction_delta=0,
-            require_same_arbitration=True,
-        ),
-        dataset=DatasetDescriptor(
-            spec_version="v1",
-            dataset_id=DatasetID("dataset-minimal"),
-            dataset_version="1.0.0",
-            dataset_hash="hash-minimal",
-        ),
-        agents=(AgentID("agent-a"),),
-        dependencies=(),
-        retrieval_contracts=(),
-        verification_gates=(),
-    )
-    step = ResolvedStep(
-        spec_version="v1",
-        step_index=0,
-        step_type=StepType.AGENT,
-        determinism_level=DeterminismLevel.STRICT,
-        agent_id=AgentID("agent-a"),
-        inputs_fingerprint=InputsFingerprint("inputs"),
-        declared_dependencies=(),
-        expected_artifacts=(),
-        agent_invocation=AgentInvocation(
-            spec_version="v1",
-            agent_id=AgentID("agent-a"),
-            agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs"),
-            declared_outputs=(),
-            execution_mode="seeded",
-        ),
-        retrieval_request=None,
-    )
+def test_execution_plan_rejects_inverted_dependencies() -> None:
+    manifest = _manifest(dependencies=("agent-a:agent-b",))
     plan = ExecutionSteps(
         spec_version="v1",
-        flow_id=FlowID("flow-minimal"),
-        determinism_level=DeterminismLevel.STRICT,
-        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        flow_id=manifest.flow_id,
+        tenant_id=manifest.tenant_id,
+        flow_state=manifest.flow_state,
+        determinism_level=manifest.determinism_level,
+        replay_acceptability=manifest.replay_acceptability,
         entropy_budget=manifest.entropy_budget,
-        replay_envelope=ReplayEnvelope(
-            spec_version="v1",
-            min_claim_overlap=1.0,
-            max_contradiction_delta=0,
-            require_same_arbitration=True,
-        ),
+        replay_envelope=manifest.replay_envelope,
         dataset=manifest.dataset,
-        steps=(step,),
+        allow_deprecated_datasets=manifest.allow_deprecated_datasets,
+        steps=(
+            _resolved_step(
+                agent_id=AgentID("agent-b"),
+                step_index=0,
+                declared_dependencies=(AgentID("agent-a"),),
+            ),
+            _resolved_step(
+                agent_id=AgentID("agent-a"),
+                step_index=1,
+                declared_dependencies=(),
+            ),
+        ),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
-    resolved = ExecutionPlan(spec_version="v1", manifest=manifest, plan=plan)
 
-    validate_flow_manifest(manifest)
-    validate_execution_plan(resolved)
+    with pytest.raises(ValueError, match="dependencies must precede dependent steps"):
+        validate_execution_plan(
+            ExecutionPlan(spec_version="v1", manifest=manifest, plan=plan)
+        )

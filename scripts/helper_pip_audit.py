@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Summarize pip-audit results and enforce ignore list if strict."""
+
 from __future__ import annotations
 
 import json
@@ -17,7 +18,11 @@ def _load_json(path: Path) -> dict:
 def main() -> int:
     pipa_json = Path(os.environ.get("PIPA_JSON", ""))
     strict = os.environ.get("SECURITY_STRICT", "1") == "1"
-    ignore_ids = {item.strip() for item in os.environ.get("SECURITY_IGNORE_IDS", "").split() if item.strip()}
+    ignore_ids = {
+        item.strip()
+        for item in os.environ.get("SECURITY_IGNORE_IDS", "").split()
+        if item.strip()
+    }
 
     if not pipa_json.exists():
         print("pip-audit JSON not found; skipping")
@@ -29,7 +34,13 @@ def main() -> int:
         for vuln in entry.get("vulns", []):
             vuln_id = vuln.get("id", "")
             if vuln_id and vuln_id not in ignore_ids:
-                vulns.append((entry.get("name", "<unknown>"), vuln_id, vuln.get("description", "")))
+                vulns.append(
+                    (
+                        entry.get("name", "<unknown>"),
+                        vuln_id,
+                        vuln.get("description", ""),
+                    )
+                )
 
     if not vulns:
         print("✔ pip-audit: no actionable vulnerabilities")

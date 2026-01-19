@@ -28,6 +28,16 @@ def semantic_trace_diff(
             "expected": expected.plan_hash,
             "observed": observed.plan_hash,
         }
+    if expected.tenant_id != observed.tenant_id:
+        diffs["tenant_id"] = {
+            "expected": expected.tenant_id,
+            "observed": observed.tenant_id,
+        }
+    if expected.flow_state != observed.flow_state:
+        diffs["flow_state"] = {
+            "expected": expected.flow_state,
+            "observed": observed.flow_state,
+        }
     if expected.replay_envelope != observed.replay_envelope:
         diffs["replay_envelope"] = {
             "expected": _envelope_payload(expected.replay_envelope),
@@ -37,6 +47,11 @@ def semantic_trace_diff(
         diffs["dataset"] = {
             "expected": _dataset_payload(expected.dataset),
             "observed": _dataset_payload(observed.dataset),
+        }
+    if expected.allow_deprecated_datasets != observed.allow_deprecated_datasets:
+        diffs["allow_deprecated_datasets"] = {
+            "expected": expected.allow_deprecated_datasets,
+            "observed": observed.allow_deprecated_datasets,
         }
     if expected.environment_fingerprint != observed.environment_fingerprint:
         diffs["environment_fingerprint"] = {
@@ -99,8 +114,10 @@ def _event_signature(
 def _dataset_payload(dataset) -> dict[str, object]:
     return {
         "dataset_id": dataset.dataset_id,
+        "tenant_id": dataset.tenant_id,
         "dataset_version": dataset.dataset_version,
         "dataset_hash": dataset.dataset_hash,
+        "dataset_state": dataset.dataset_state,
     }
 
 

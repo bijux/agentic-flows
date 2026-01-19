@@ -18,12 +18,15 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     PlanHash,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
     EventType,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -32,6 +35,8 @@ def test_human_intervention_event_breaks_replay() -> None:
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -48,9 +53,12 @@ def test_human_intervention_event_breaks_replay() -> None:
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID("dataset"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
             dataset_hash="hash",
+            dataset_state=DatasetState.FROZEN,
         ),
+        allow_deprecated_datasets=False,
         steps=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
@@ -62,21 +70,28 @@ def test_human_intervention_event_breaks_replay() -> None:
         step_index=0,
         event_type=EventType.HUMAN_INTERVENTION,
         timestamp_utc="1970-01-01T00:00:00Z",
-        payload={"event_type": EventType.HUMAN_INTERVENTION.value, "justification": "override"},
+        payload={
+            "event_type": EventType.HUMAN_INTERVENTION.value,
+            "justification": "override",
+        },
         payload_hash="override",
     )
     trace = ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        tenant_id=TenantID("tenant-a"),
         parent_flow_id=None,
         child_flow_ids=(),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID("dataset"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
             dataset_hash="hash",
+            dataset_state=DatasetState.FROZEN,
         ),
         replay_envelope=ReplayEnvelope(
             spec_version="v1",
@@ -84,6 +99,7 @@ def test_human_intervention_event_breaks_replay() -> None:
             max_contradiction_delta=0,
             require_same_arbitration=True,
         ),
+        allow_deprecated_datasets=False,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,

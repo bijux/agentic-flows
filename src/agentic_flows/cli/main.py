@@ -20,11 +20,14 @@ from agentic_flows.spec.ontology.ids import (
     DatasetID,
     FlowID,
     GateID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -35,6 +38,8 @@ def _load_manifest(path: Path) -> FlowManifest:
     return FlowManifest(
         spec_version="v1",
         flow_id=FlowID(payload["flow_id"]),
+        tenant_id=TenantID(payload["tenant_id"]),
+        flow_state=FlowState(payload["flow_state"]),
         determinism_level=DeterminismLevel(payload["determinism_level"]),
         replay_acceptability=ReplayAcceptability(payload["replay_acceptability"]),
         entropy_budget=EntropyBudget(
@@ -58,9 +63,12 @@ def _load_manifest(path: Path) -> FlowManifest:
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID(payload["dataset"]["dataset_id"]),
+            tenant_id=TenantID(payload["dataset"]["tenant_id"]),
             dataset_version=payload["dataset"]["dataset_version"],
             dataset_hash=payload["dataset"]["dataset_hash"],
+            dataset_state=DatasetState(payload["dataset"]["dataset_state"]),
         ),
+        allow_deprecated_datasets=bool(payload["allow_deprecated_datasets"]),
         agents=tuple(AgentID(agent_id) for agent_id in payload["agents"]),
         dependencies=tuple(payload["dependencies"]),
         retrieval_contracts=tuple(
@@ -153,8 +161,10 @@ def _render_result(command: str, result) -> None:
             "replay_acceptability": result.resolved_flow.plan.replay_acceptability,
             "dataset": {
                 "dataset_id": result.resolved_flow.plan.dataset.dataset_id,
+                "tenant_id": result.resolved_flow.plan.dataset.tenant_id,
                 "dataset_version": result.resolved_flow.plan.dataset.dataset_version,
                 "dataset_hash": result.resolved_flow.plan.dataset.dataset_hash,
+                "dataset_state": result.resolved_flow.plan.dataset.dataset_state,
             },
             "non_determinism_summary": entropy_summary(result.trace.entropy_usage),
             "entropy_used": [

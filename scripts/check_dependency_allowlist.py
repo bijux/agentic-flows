@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Verify installed dependencies against an allowlist if present."""
+
 from __future__ import annotations
 
 import subprocess
@@ -7,7 +8,11 @@ from pathlib import Path
 
 
 def _read_allowlist(path: Path) -> set[str]:
-    return {line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()}
+    return {
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    }
 
 
 def main() -> int:
@@ -28,7 +33,9 @@ def main() -> int:
         capture_output=True,
         text=True,
     )
-    installed = {line.split("==")[0] for line in result.stdout.splitlines() if "==" in line}
+    installed = {
+        line.split("==")[0] for line in result.stdout.splitlines() if "==" in line
+    }
     extras = sorted(installed - allowlist)
     if extras:
         print("Dependencies not in allowlist:")

@@ -21,6 +21,7 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     ResolverID,
     VersionID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
@@ -28,6 +29,8 @@ from agentic_flows.spec.ontology.ontology import (
     EntropySource,
     ReplayAcceptability,
     StepType,
+    DatasetState,
+    FlowState,
 )
 
 pytestmark = pytest.mark.unit
@@ -65,8 +68,10 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
     dataset = DatasetDescriptor(
         spec_version="v1",
         dataset_id=DatasetID("test-dataset"),
+        tenant_id=TenantID("tenant-a"),
         dataset_version="1.0.0",
         dataset_hash="dataset-hash",
+        dataset_state=DatasetState.FROZEN,
     )
     replay_envelope = ReplayEnvelope(
         spec_version="v1",
@@ -77,15 +82,20 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-immutable"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset,
+        allow_deprecated_datasets=False,
         steps=(step,),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=plan_hash_for(
             "flow-immutable",
+            "tenant-a",
+            FlowState.VALIDATED,
             (step,),
             {},
             determinism_level=DeterminismLevel.STRICT,
@@ -93,6 +103,7 @@ def test_plan_is_structurally_immutable(plan_hash_for) -> None:
             entropy_budget=entropy_budget,
             replay_envelope=replay_envelope,
             dataset=dataset,
+            allow_deprecated_datasets=False,
         ),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )

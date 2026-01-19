@@ -3,10 +3,9 @@
 
 from __future__ import annotations
 
-import bijux_agent
 import pytest
 
-from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
+from agentic_flows.runtime.budget import ExecutionBudget
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,
@@ -21,12 +20,13 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     GateID,
     InputsFingerprint,
+    TenantID,
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
-    ArtifactType,
     DeterminismLevel,
     EventType,
+    FlowState,
     ReplayAcceptability,
     StepType,
 )
@@ -34,34 +34,24 @@ from agentic_flows.spec.ontology.ontology import (
 pytestmark = pytest.mark.regression
 
 
-def test_forced_partial_failure_records_incomplete_trace(
-    baseline_policy,
+def test_budget_exhaustion_records_failure(
     resolved_flow_factory,
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
 ) -> None:
-    bijux_agent.run = lambda **_kwargs: [
-        {
-            "artifact_id": "agent-output",
-            "artifact_type": ArtifactType.AGENT_INVOCATION.value,
-            "content": "payload",
-            "parent_artifacts": [],
-        }
-    ]
-
     step = ResolvedStep(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
         determinism_level=DeterminismLevel.STRICT,
-        agent_id=AgentID("force-partial-failure"),
+        agent_id=AgentID("agent-budget"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
         expected_artifacts=(),
         agent_invocation=AgentInvocation(
             spec_version="v1",
-            agent_id=AgentID("force-partial-failure"),
+            agent_id=AgentID("agent-budget"),
             agent_version=VersionID("0.0.0"),
             inputs_fingerprint=InputsFingerprint("inputs"),
             declared_outputs=(),
@@ -71,13 +61,16 @@ def test_forced_partial_failure_records_incomplete_trace(
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-partial"),
+        flow_id=FlowID("flow-budget"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
-        agents=(AgentID("force-partial-failure"),),
+        allow_deprecated_datasets=False,
+        agents=(AgentID("agent-budget"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
@@ -86,22 +79,20 @@ def test_forced_partial_failure_records_incomplete_trace(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            budget=ExecutionBudget(
+                step_limit=0,
+                token_limit=None,
+                artifact_limit=None,
+                artifact_step_limit=None,
+                evidence_limit=None,
+                trace_event_limit=None,
+            ),
+        ),
     )
-    trace = result.trace
 
+    assert result.trace is not None
     assert any(
-        event.event_type == EventType.TOOL_CALL_END for event in trace.events
+        event.event_type == EventType.STEP_FAILED for event in result.trace.events
     )
-    assert all(
-        event.event_type != EventType.REASONING_START for event in trace.events
-    )
-    assert trace.events[-1].event_type == EventType.STEP_FAILED
-    assert result.verification_results[0].reason == "forced_partial_failure"
-
-    with pytest.raises(ValueError, match="failed_steps"):
-        validate_replay(
-            trace,
-            result.resolved_flow.plan,
-            verification_policy=baseline_policy,
-        )

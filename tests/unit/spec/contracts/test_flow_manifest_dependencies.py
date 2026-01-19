@@ -10,11 +10,13 @@ from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.ontology.ids import AgentID, DatasetID, FlowID
+from agentic_flows.spec.ontology.ids import AgentID, DatasetID, FlowID, TenantID
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -25,6 +27,8 @@ def test_ambiguous_dependencies_raise() -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-ambiguous"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -41,9 +45,12 @@ def test_ambiguous_dependencies_raise() -> None:
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID("dataset"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
             dataset_hash="hash",
+            dataset_state=DatasetState.FROZEN,
         ),
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=("agent-a",),
         retrieval_contracts=(),

@@ -89,11 +89,14 @@ class ExecutionPlanner:
         plan = ExecutionSteps(
             spec_version="v1",
             flow_id=FlowID(manifest.flow_id),
+            tenant_id=manifest.tenant_id,
+            flow_state=manifest.flow_state,
             determinism_level=manifest.determinism_level,
             replay_acceptability=manifest.replay_acceptability,
             entropy_budget=manifest.entropy_budget,
             replay_envelope=manifest.replay_envelope,
             dataset=manifest.dataset,
+            allow_deprecated_datasets=manifest.allow_deprecated_datasets,
             steps=tuple(steps),
             environment_fingerprint=EnvironmentFingerprint(
                 compute_environment_fingerprint()
@@ -160,6 +163,8 @@ class ExecutionPlanner:
     ) -> PlanHash:
         payload = {
             "flow_id": manifest.flow_id,
+            "tenant_id": manifest.tenant_id,
+            "flow_state": manifest.flow_state,
             "determinism_level": manifest.determinism_level,
             "replay_acceptability": manifest.replay_acceptability,
             "entropy_budget": {
@@ -177,9 +182,12 @@ class ExecutionPlanner:
             },
             "dataset": {
                 "dataset_id": manifest.dataset.dataset_id,
+                "tenant_id": manifest.dataset.tenant_id,
                 "dataset_version": manifest.dataset.dataset_version,
                 "dataset_hash": manifest.dataset.dataset_hash,
+                "dataset_state": manifest.dataset.dataset_state,
             },
+            "allow_deprecated_datasets": manifest.allow_deprecated_datasets,
             "steps": [
                 {
                     "index": step.step_index,

@@ -26,11 +26,14 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     PlanHash,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -49,6 +52,8 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         json.dumps(
             {
                 "flow_id": "flow-cli",
+                "tenant_id": "tenant-a",
+                "flow_state": "validated",
                 "determinism_level": "strict",
                 "replay_acceptability": "exact_match",
                 "entropy_budget": {
@@ -57,9 +62,12 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
                 },
                 "dataset": {
                     "dataset_id": "dataset-cli",
+                    "tenant_id": "tenant-a",
                     "dataset_version": "1.0.0",
                     "dataset_hash": "hash-cli",
+                    "dataset_state": "frozen",
                 },
+                "allow_deprecated_datasets": False,
                 "replay_envelope": {
                     "min_claim_overlap": 1.0,
                     "max_contradiction_delta": 0,
@@ -77,6 +85,8 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-cli"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -93,9 +103,12 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID("dataset-cli"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
             dataset_hash="hash-cli",
+            dataset_state=DatasetState.FROZEN,
         ),
+        allow_deprecated_datasets=False,
         steps=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
@@ -106,6 +119,8 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         manifest=FlowManifest(
             spec_version="v1",
             flow_id=FlowID("flow-cli"),
+            tenant_id=TenantID("tenant-a"),
+            flow_state=FlowState.VALIDATED,
             determinism_level=DeterminismLevel.STRICT,
             replay_acceptability=ReplayAcceptability.EXACT_MATCH,
             entropy_budget=EntropyBudget(
@@ -122,9 +137,12 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             dataset=DatasetDescriptor(
                 spec_version="v1",
                 dataset_id=DatasetID("dataset-cli"),
+                tenant_id=TenantID("tenant-a"),
                 dataset_version="1.0.0",
                 dataset_hash="hash-cli",
+                dataset_state=DatasetState.FROZEN,
             ),
+            allow_deprecated_datasets=False,
             agents=(AgentID("agent-1"),),
             dependencies=(),
             retrieval_contracts=(),

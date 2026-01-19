@@ -8,14 +8,17 @@ from collections.abc import Iterable
 
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
 
 def validate(manifest: FlowManifest) -> None:
+    _require_enum("flow_state", manifest.flow_state, FlowState)
     _require_tuple_of_str("agents", manifest.agents)
     _require_tuple_of_str("dependencies", manifest.dependencies)
     _require_tuple_of_str("retrieval_contracts", manifest.retrieval_contracts)
@@ -43,13 +46,26 @@ def validate(manifest: FlowManifest) -> None:
         raise ValueError("replay_envelope.max_contradiction_delta must be >= 0")
     if not manifest.dataset.dataset_id:
         raise ValueError("dataset.dataset_id must be declared")
+    if not manifest.dataset.tenant_id:
+        raise ValueError("dataset.tenant_id must be declared")
     if not manifest.dataset.dataset_version:
         raise ValueError("dataset.dataset_version must be declared")
     if not manifest.dataset.dataset_hash:
         raise ValueError("dataset.dataset_hash must be declared")
+    _require_enum("dataset.dataset_state", manifest.dataset.dataset_state, DatasetState)
+    if (
+        manifest.dataset.dataset_state is DatasetState.DEPRECATED
+        and not manifest.allow_deprecated_datasets
+    ):
+        raise ValueError("deprecated datasets require allow_deprecated_datasets")
 
     if not isinstance(manifest.flow_id, str) or not manifest.flow_id.strip():
         raise ValueError("flow_id must be a non-empty string")
+    if not isinstance(manifest.tenant_id, str) or not manifest.tenant_id.strip():
+        raise ValueError("tenant_id must be a non-empty string")
+
+    if manifest.flow_state in {FlowState.DRAFT, FlowState.DEPRECATED}:
+        raise ValueError("flow_state must allow execution")
 
     agents = list(manifest.agents)
     if len(set(agents)) != len(agents):

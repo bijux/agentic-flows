@@ -26,17 +26,18 @@ from agentic_flows.spec.ontology.ids import (
     BundleID,
     ClaimID,
     ContractID,
-    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
     RequestID,
     StepID,
+    TenantID,
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
     EvidenceDeterminism,
+    FlowState,
     ReplayAcceptability,
     StepType,
 )
@@ -45,7 +46,11 @@ pytestmark = pytest.mark.regression
 
 
 def test_long_horizon_flow_is_stable(
-    baseline_policy, resolved_flow_factory, entropy_budget, replay_envelope, dataset_descriptor
+    baseline_policy,
+    resolved_flow_factory,
+    entropy_budget,
+    replay_envelope,
+    dataset_descriptor,
 ) -> None:
     bijux_agent.run = lambda agent_id, **_kwargs: [
         {
@@ -66,6 +71,7 @@ def test_long_horizon_flow_is_stable(
         }
     ]
     bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+
     def _reason(agent_outputs, evidence, seed):
         evidence_item = evidence[0]
         artifact_hash = agent_outputs[0].content_hash
@@ -140,13 +146,18 @@ def test_long_horizon_flow_is_stable(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-long"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=tuple(step.agent_id for step in steps),
-        dependencies=tuple(f"agent-{index}:agent-{index - 1}" for index in range(1, 50)),
+        dependencies=tuple(
+            f"agent-{index}:agent-{index - 1}" for index in range(1, 50)
+        ),
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
@@ -164,13 +175,18 @@ def test_long_horizon_flow_is_stable(
     manifest_two = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-long-2"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=tuple(step.agent_id for step in steps),
-        dependencies=tuple(f"agent-{index}:agent-{index - 1}" for index in range(1, 50)),
+        dependencies=tuple(
+            f"agent-{index}:agent-{index - 1}" for index in range(1, 50)
+        ),
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )

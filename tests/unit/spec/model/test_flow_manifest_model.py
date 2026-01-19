@@ -15,11 +15,14 @@ from agentic_flows.spec.ontology.ids import (
     DatasetID,
     FlowID,
     GateID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -30,6 +33,8 @@ def test_flow_manifest_model_allows_invalid_state() -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID(""),
+        tenant_id=TenantID(""),
+        flow_state=FlowState.DRAFT,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -46,9 +51,12 @@ def test_flow_manifest_model_allows_invalid_state() -> None:
         dataset=DatasetDescriptor(
             spec_version="v1",
             dataset_id=DatasetID(""),
+            tenant_id=TenantID(""),
             dataset_version="",
             dataset_hash="",
+            dataset_state=DatasetState.EXPERIMENTAL,
         ),
+        allow_deprecated_datasets=False,
         agents=(AgentID(""),),
         dependencies=("invalid",),
         retrieval_contracts=(ContractID(""),),

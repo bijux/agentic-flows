@@ -17,9 +17,11 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     PolicyFingerprint,
     ResolverID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -28,12 +30,15 @@ from agentic_flows.spec.ontology.ontology import (
 class ExecutionTrace:
     spec_version: str
     flow_id: FlowID
+    tenant_id: TenantID
     parent_flow_id: FlowID | None
     child_flow_ids: tuple[FlowID, ...]
+    flow_state: FlowState
     determinism_level: DeterminismLevel
     replay_acceptability: ReplayAcceptability
     dataset: DatasetDescriptor
     replay_envelope: ReplayEnvelope
+    allow_deprecated_datasets: bool
     environment_fingerprint: EnvironmentFingerprint
     plan_hash: PlanHash
     verification_policy_fingerprint: PolicyFingerprint | None

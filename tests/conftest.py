@@ -33,13 +33,16 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     PlanHash,
     ResolverID,
+    TenantID,
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArbitrationRule,
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
     StepType,
     VerificationRandomness,
@@ -97,6 +100,7 @@ def baseline_policy() -> VerificationPolicy:
             quorum_threshold=None,
         ),
         required_evidence=(),
+        max_rule_cost=100,
         rules=(),
         fail_on=(),
         escalate_on=(),
@@ -132,9 +136,16 @@ def dataset_descriptor() -> DatasetDescriptor:
     return DatasetDescriptor(
         spec_version="v1",
         dataset_id=DatasetID("retrieval_corpus"),
+        tenant_id=TenantID("tenant-a"),
         dataset_version="1.0.0",
         dataset_hash="136275faf776ff9aae3823d7d6f928e9",
+        dataset_state=DatasetState.FROZEN,
     )
+
+
+@pytest.fixture
+def tenant_id() -> TenantID:
+    return TenantID("tenant-a")
 
 
 @pytest.fixture
@@ -161,6 +172,8 @@ def deterministic_environment(
 def plan_hash_for():
     def _plan_hash_for(
         flow_id: str,
+        tenant_id: str,
+        flow_state: FlowState,
         steps: tuple[ResolvedStep, ...],
         dependencies: dict[str, list[str]],
         *,
@@ -169,9 +182,12 @@ def plan_hash_for():
         entropy_budget: EntropyBudget,
         replay_envelope: ReplayEnvelope,
         dataset,
+        allow_deprecated_datasets: bool,
     ) -> PlanHash:
         payload = {
             "flow_id": flow_id,
+            "tenant_id": tenant_id,
+            "flow_state": flow_state,
             "determinism_level": determinism_level,
             "replay_acceptability": replay_acceptability,
             "entropy_budget": {
@@ -185,9 +201,12 @@ def plan_hash_for():
             },
             "dataset": {
                 "dataset_id": getattr(dataset, "dataset_id", None),
+                "tenant_id": getattr(dataset, "tenant_id", None),
                 "dataset_version": getattr(dataset, "dataset_version", None),
                 "dataset_hash": getattr(dataset, "dataset_hash", None),
+                "dataset_state": getattr(dataset, "dataset_state", None),
             },
+            "allow_deprecated_datasets": allow_deprecated_datasets,
             "steps": [
                 {
                     "index": step.step_index,
@@ -215,6 +234,7 @@ def resolved_flow(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    tenant_id,
 ) -> ExecutionPlan:
     step = ResolvedStep(
         spec_version="v1",
@@ -238,11 +258,14 @@ def resolved_flow(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-fixture"),
+        tenant_id=tenant_id,
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -251,15 +274,20 @@ def resolved_flow(
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-fixture"),
+        tenant_id=tenant_id,
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         steps=(step,),
         environment_fingerprint=deterministic_environment,
         plan_hash=plan_hash_for(
             "flow-fixture",
+            str(tenant_id),
+            FlowState.VALIDATED,
             (step,),
             {},
             determinism_level=manifest.determinism_level,
@@ -267,6 +295,7 @@ def resolved_flow(
             entropy_budget=manifest.entropy_budget,
             replay_envelope=manifest.replay_envelope,
             dataset=manifest.dataset,
+            allow_deprecated_datasets=manifest.allow_deprecated_datasets,
         ),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
@@ -289,15 +318,20 @@ def resolved_flow_factory(plan_hash_for, entropy_budget):
         plan = ExecutionSteps(
             spec_version="v1",
             flow_id=FlowID(manifest.flow_id),
+            tenant_id=manifest.tenant_id,
+            flow_state=manifest.flow_state,
             determinism_level=manifest.determinism_level,
             replay_acceptability=manifest.replay_acceptability,
             entropy_budget=manifest.entropy_budget,
             replay_envelope=manifest.replay_envelope,
             dataset=manifest.dataset,
+            allow_deprecated_datasets=manifest.allow_deprecated_datasets,
             steps=steps,
             environment_fingerprint=fingerprint,
             plan_hash=plan_hash_for(
                 manifest.flow_id,
+                str(manifest.tenant_id),
+                manifest.flow_state,
                 steps,
                 deps,
                 determinism_level=manifest.determinism_level,
@@ -305,6 +339,7 @@ def resolved_flow_factory(plan_hash_for, entropy_budget):
                 entropy_budget=manifest.entropy_budget,
                 replay_envelope=manifest.replay_envelope,
                 dataset=manifest.dataset,
+                allow_deprecated_datasets=manifest.allow_deprecated_datasets,
             ),
             resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
         )

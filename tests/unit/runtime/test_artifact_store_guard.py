@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
-from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
+from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
 from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 pytestmark = pytest.mark.unit
@@ -17,6 +17,7 @@ def test_artifact_store_creates_and_saves_artifact() -> None:
     artifact = store.create(
         spec_version="v1",
         artifact_id=ArtifactID("artifact-1"),
+        tenant_id=TenantID("tenant-a"),
         artifact_type=ArtifactType.AGENT_INVOCATION,
         producer="agent",
         parent_artifacts=(),
@@ -24,7 +25,7 @@ def test_artifact_store_creates_and_saves_artifact() -> None:
         scope=ArtifactScope.WORKING,
     )
 
-    loaded = store.load(artifact.artifact_id)
+    loaded = store.load(artifact.artifact_id, tenant_id=TenantID("tenant-a"))
     assert loaded == artifact
 
 
@@ -33,6 +34,7 @@ def test_artifact_ids_are_unique() -> None:
     store.create(
         spec_version="v1",
         artifact_id=ArtifactID("artifact-audit"),
+        tenant_id=TenantID("tenant-a"),
         artifact_type=ArtifactType.REASONING_BUNDLE,
         producer="reasoning",
         parent_artifacts=(),
@@ -44,6 +46,7 @@ def test_artifact_ids_are_unique() -> None:
         store.create(
             spec_version="v1",
             artifact_id=ArtifactID("artifact-audit"),
+            tenant_id=TenantID("tenant-a"),
             artifact_type=ArtifactType.REASONING_BUNDLE,
             producer="reasoning",
             parent_artifacts=(),

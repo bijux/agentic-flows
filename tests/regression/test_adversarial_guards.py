@@ -49,6 +49,7 @@ from agentic_flows.spec.ontology.ids import (
     RequestID,
     StepID,
     VersionID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArbitrationRule,
@@ -62,6 +63,7 @@ from agentic_flows.spec.ontology.ontology import (
     ReplayAcceptability,
     StepType,
     VerificationRandomness,
+    FlowState,
 )
 
 pytestmark = pytest.mark.regression
@@ -74,6 +76,7 @@ def test_fabricated_artifact_rejected() -> None:
         environment_fingerprint=EnvironmentFingerprint("env"),
         parent_flow_id=None,
         child_flow_ids=(),
+        tenant_id=TenantID("tenant-a"),
         artifact_store=InMemoryArtifactStore(),
         trace_recorder=TraceRecorder(),
         mode=RunMode.LIVE,
@@ -88,6 +91,7 @@ def test_fabricated_artifact_rejected() -> None:
                 quorum_threshold=None,
             ),
             required_evidence=(),
+            max_rule_cost=100,
             rules=(),
             fail_on=(),
             escalate_on=(),
@@ -107,6 +111,7 @@ def test_fabricated_artifact_rejected() -> None:
     fabricated = Artifact(
         spec_version="v1",
         artifact_id=ArtifactID("fabricated"),
+        tenant_id=TenantID("tenant-a"),
         artifact_type=ArtifactType.AGENT_INVOCATION,
         producer="agent",
         parent_artifacts=(),
@@ -144,6 +149,7 @@ def test_reused_artifact_id_rejected(
         }
     ]
     bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+
     def _reason(agent_outputs, evidence, seed):
         statement = build_claim_statement(agent_outputs, evidence)
         return ReasoningBundle(
@@ -222,11 +228,14 @@ def test_reused_artifact_id_rejected(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-reuse"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -236,7 +245,9 @@ def test_reused_artifact_id_rejected(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=FlowRunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=FlowRunMode.LIVE, verification_policy=baseline_policy
+        ),
     )
 
     assert any(
@@ -329,11 +340,14 @@ def test_fake_evidence_id_rejected(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-fake-evidence"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -343,7 +357,9 @@ def test_fake_evidence_id_rejected(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=FlowRunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=FlowRunMode.LIVE, verification_policy=baseline_policy
+        ),
     )
 
     assert any(

@@ -17,7 +17,7 @@ from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.ontology.ids import EnvironmentFingerprint, FlowID
+from agentic_flows.spec.ontology.ids import EnvironmentFingerprint, FlowID, TenantID
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
 
@@ -36,6 +36,7 @@ class ExecutionContext:
     environment_fingerprint: EnvironmentFingerprint
     parent_flow_id: FlowID | None
     child_flow_ids: tuple[FlowID, ...]
+    tenant_id: TenantID
     artifact_store: ArtifactStore
     trace_recorder: TraceRecorder
     mode: RunMode
@@ -55,7 +56,7 @@ class ExecutionContext:
 
     def record_artifacts(self, step_index: int, artifacts: list[Artifact]) -> None:
         for artifact in artifacts:
-            self.artifact_store.load(artifact.artifact_id)
+            self.artifact_store.load(artifact.artifact_id, tenant_id=self.tenant_id)
         self._step_artifacts[step_index] = tuple(artifacts)
 
     def evidence_for_step(self, step_index: int) -> tuple[RetrievedEvidence, ...]:
@@ -97,6 +98,7 @@ class ExecutionContext:
         step_index: int | None,
     ) -> None:
         self.entropy.record(
+            tenant_id=self.tenant_id,
             source=source,
             magnitude=magnitude,
             description=description,

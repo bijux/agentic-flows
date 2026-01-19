@@ -1,5 +1,7 @@
 {
   "flow_id": "demo-flow",
+  "tenant_id": "tenant-a",
+  "flow_state": "validated",
   "determinism_level": "strict",
   "replay_acceptability": "exact_match",
   "entropy_budget": {
@@ -13,9 +15,12 @@
   },
   "dataset": {
     "dataset_id": "retrieval_corpus",
+    "tenant_id": "tenant-a",
     "dataset_version": "1.0.0",
-    "dataset_hash": "136275faf776ff9aae3823d7d6f928e9"
+    "dataset_hash": "136275faf776ff9aae3823d7d6f928e9",
+    "dataset_state": "frozen"
   },
+  "allow_deprecated_datasets": false,
   "agents": ["agent-a", "force-partial-failure", "agent-b"],
   "dependencies": [
     "force-partial-failure:agent-a",

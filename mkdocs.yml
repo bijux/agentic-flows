@@ -102,6 +102,7 @@ nav:
       - metrics: guarantees/architecture/metrics.md
       - negative_results: guarantees/architecture/negative_results.md
       - design_debt: guarantees/architecture/design_debt.md
+      - replay_breaks: guarantees/architecture/replay_breaks.md
   - Security:
       - dependencies: guarantees/security/dependencies.md
       - threat_model: guarantees/security/threat_model.md

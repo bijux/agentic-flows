@@ -10,12 +10,9 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
-from tests.support.sqlite_persistence import (
-    SqliteArtifactStore,
-    SqliteEntropyStore,
-    SqliteTraceStore,
-)
 
+from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
+from agentic_flows.runtime.observability.execution_store import DuckDBExecutionStore
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -34,17 +31,18 @@ from agentic_flows.spec.ontology.ids import (
     BundleID,
     ClaimID,
     ContractID,
-    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
     RequestID,
     StepID,
+    TenantID,
     VersionID,
 )
 from agentic_flows.spec.ontology.ontology import (
     DeterminismLevel,
     EvidenceDeterminism,
+    FlowState,
     ReplayAcceptability,
     StepType,
 )
@@ -79,6 +77,7 @@ def test_replay_across_process_boundary(
         }
     ]
     bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+
     def _reason(agent_outputs, evidence, seed):
         evidence_item = evidence[0]
         artifact_hash = agent_outputs[0].content_hash
@@ -142,11 +141,14 @@ def test_replay_across_process_boundary(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-sqlite"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -154,8 +156,8 @@ def test_replay_across_process_boundary(
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
-    db_path = tmp_path / "flow_state.sqlite"
-    artifact_store = SqliteArtifactStore(db_path)
+    db_path = tmp_path / "flow_state.duckdb"
+    artifact_store = InMemoryArtifactStore()
 
     result = execute_flow(
         resolved_flow=resolved_flow,
@@ -166,23 +168,27 @@ def test_replay_across_process_boundary(
         ),
     )
 
-    trace_store = SqliteTraceStore(db_path)
-    entropy_store = SqliteEntropyStore(db_path)
-    trace_store.save_trace(result.trace)
-    entropy_store.save_usage(result.trace.flow_id, result.trace.entropy_usage)
+    store = DuckDBExecutionStore(db_path)
+    store.save_trace(result.trace)
+    store.save_entropy_usage(
+        result.trace.flow_id, result.trace.tenant_id, result.trace.entropy_usage
+    )
+    store.save_replay_envelope(
+        result.trace.flow_id, result.trace.tenant_id, result.trace.replay_envelope
+    )
 
-    reloaded_trace = SqliteTraceStore(db_path).load_trace(result.trace.flow_id)
-    reloaded_entropy = SqliteEntropyStore(db_path).load_usage(result.trace.flow_id)
-    reloaded_artifacts = [
-        SqliteArtifactStore(db_path).load(artifact.artifact_id)
-        for artifact in result.artifacts
-    ]
+    reloaded_trace = store.load_trace(
+        result.trace.flow_id, tenant_id=result.trace.tenant_id
+    )
+    reloaded_entropy = store.load_entropy_usage(
+        result.trace.flow_id, tenant_id=result.trace.tenant_id
+    )
 
     assert reloaded_entropy == result.trace.entropy_usage
     validate_replay(
         reloaded_trace,
         result.resolved_flow.plan,
-        artifacts=reloaded_artifacts,
+        artifacts=result.artifacts,
         evidence=result.evidence,
         verification_policy=baseline_policy,
     )

@@ -88,6 +88,7 @@ class DryRunExecutor:
             state_artifact = context.artifact_store.create(
                 spec_version="v1",
                 artifact_id=ArtifactID(f"state-{step.step_index}-{step.agent_id}"),
+                tenant_id=context.tenant_id,
                 artifact_type=ArtifactType.EXECUTOR_STATE,
                 producer="agent",
                 parent_artifacts=(),
@@ -126,12 +127,15 @@ class DryRunExecutor:
         trace = ExecutionTrace(
             spec_version="v1",
             flow_id=steps_plan.flow_id,
+            tenant_id=steps_plan.tenant_id,
             parent_flow_id=context.parent_flow_id,
             child_flow_ids=context.child_flow_ids,
+            flow_state=steps_plan.flow_state,
             determinism_level=steps_plan.determinism_level,
             replay_acceptability=steps_plan.replay_acceptability,
             dataset=steps_plan.dataset,
             replay_envelope=steps_plan.replay_envelope,
+            allow_deprecated_datasets=steps_plan.allow_deprecated_datasets,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
             verification_policy_fingerprint=(

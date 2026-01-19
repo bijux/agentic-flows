@@ -111,6 +111,7 @@ def execute_flow(
         environment_fingerprint=resolved_flow.plan.environment_fingerprint,
         parent_flow_id=execution_config.parent_flow_id,
         child_flow_ids=execution_config.child_flow_ids or (),
+        tenant_id=resolved_flow.manifest.tenant_id,
         artifact_store=store,
         trace_recorder=TraceRecorder(),
         mode=execution_config.mode,

@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
+from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
 from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
@@ -14,6 +14,7 @@ from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 class Artifact:
     spec_version: str
     artifact_id: ArtifactID
+    tenant_id: TenantID
     artifact_type: ArtifactType
     producer: Literal["agent", "retrieval", "reasoning"]
     parent_artifacts: tuple[ArtifactID, ...]

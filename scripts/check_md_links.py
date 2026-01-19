@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Validate local markdown links resolve to files in the repo."""
+
 from __future__ import annotations
 
 import re
-import sys
 from pathlib import Path
 
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")

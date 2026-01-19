@@ -16,6 +16,7 @@ from agentic_flows.spec.ontology.ids import (
     ContentHash,
     ContractID,
     EvidenceID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
@@ -31,6 +32,7 @@ def test_semantic_fingerprints_ignore_order() -> None:
         Artifact(
             spec_version="v1",
             artifact_id=ArtifactID("a"),
+            tenant_id=TenantID("tenant-a"),
             artifact_type=ArtifactType.AGENT_INVOCATION,
             producer="agent",
             parent_artifacts=(),
@@ -40,6 +42,7 @@ def test_semantic_fingerprints_ignore_order() -> None:
         Artifact(
             spec_version="v1",
             artifact_id=ArtifactID("b"),
+            tenant_id=TenantID("tenant-a"),
             artifact_type=ArtifactType.AGENT_INVOCATION,
             producer="agent",
             parent_artifacts=(),

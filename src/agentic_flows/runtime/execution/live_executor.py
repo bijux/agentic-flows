@@ -65,15 +65,53 @@ class _PhaseState:
     interrupted: bool
 
 
+class _PipelineStage:
+    def __init__(self, name: str, handler) -> None:
+        self.name = name
+        self.handler = handler
+
+
+class LivePipeline:
+    def __init__(self, executor: LiveExecutor) -> None:
+        self._executor = executor
+        self._stages = (
+            _PipelineStage("planning", executor._planning_phase),
+            _PipelineStage("execution", executor._execution_phase),
+            _PipelineStage("finalization", executor._finalization_phase),
+        )
+
+    def run(self, plan: ExecutionPlan, context: ExecutionContext) -> ExecutionOutcome:
+        steps_plan = None
+        phase_state = None
+        for stage in self._stages:
+            _notify_stage(context, stage.name, "start")
+            if stage.name == "planning":
+                steps_plan = stage.handler(plan)
+            elif stage.name == "execution":
+                phase_state = stage.handler(steps_plan, context)
+            else:
+                result = stage.handler(steps_plan, context, phase_state)
+                _notify_stage(context, stage.name, "end")
+                return result
+            _notify_stage(context, stage.name, "end")
+        raise RuntimeError("live execution pipeline did not complete")
+
+
+def _notify_stage(context: ExecutionContext, stage: str, phase: str) -> None:
+    hook_name = f"on_stage_{phase}"
+    for observer in context.observers:
+        hook = getattr(observer, hook_name, None)
+        if callable(hook):
+            hook(stage)
+
+
 class LiveExecutor:
     def execute(
         self,
         plan: ExecutionPlan,
         context: ExecutionContext,
     ) -> ExecutionOutcome:
-        steps_plan = self._planning_phase(plan)
-        state = self._execution_phase(steps_plan, context)
-        return self._finalization_phase(steps_plan, context, state)
+        return LivePipeline(self).run(plan, context)
 
     @staticmethod
     def _planning_phase(plan: ExecutionPlan):
@@ -261,6 +299,7 @@ class LiveExecutor:
                                 artifact_id=ArtifactID(
                                     f"evidence-{step.step_index}-{item.evidence_id}"
                                 ),
+                                tenant_id=context.tenant_id,
                                 artifact_type=ArtifactType.RETRIEVED_EVIDENCE,
                                 producer="retrieval",
                                 parent_artifacts=(),
@@ -554,6 +593,7 @@ class LiveExecutor:
                         context.artifact_store.create(
                             spec_version="v1",
                             artifact_id=bundle.bundle_id,
+                            tenant_id=context.tenant_id,
                             artifact_type=ArtifactType.REASONING_BUNDLE,
                             producer="reasoning",
                             parent_artifacts=tuple(
@@ -619,7 +659,9 @@ class LiveExecutor:
 
                 try:
                     stored_artifacts = [
-                        context.artifact_store.load(item.artifact_id)
+                        context.artifact_store.load(
+                            item.artifact_id, tenant_id=context.tenant_id
+                        )
                         for item in step_artifacts
                     ]
                 except Exception as exc:
@@ -787,12 +829,15 @@ class LiveExecutor:
         trace = ExecutionTrace(
             spec_version="v1",
             flow_id=steps_plan.flow_id,
+            tenant_id=steps_plan.tenant_id,
             parent_flow_id=context.parent_flow_id,
             child_flow_ids=context.child_flow_ids,
+            flow_state=steps_plan.flow_state,
             determinism_level=steps_plan.determinism_level,
             replay_acceptability=steps_plan.replay_acceptability,
             dataset=steps_plan.dataset,
             replay_envelope=steps_plan.replay_envelope,
+            allow_deprecated_datasets=steps_plan.allow_deprecated_datasets,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
             verification_policy_fingerprint=(

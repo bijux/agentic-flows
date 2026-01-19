@@ -97,6 +97,16 @@ def replay_diff(
             "expected": plan.replay_acceptability,
             "observed": trace.replay_acceptability,
         }
+    if trace.tenant_id != plan.tenant_id:
+        diffs["tenant_id"] = {
+            "expected": plan.tenant_id,
+            "observed": trace.tenant_id,
+        }
+    if trace.flow_state != plan.flow_state:
+        diffs["flow_state"] = {
+            "expected": plan.flow_state,
+            "observed": trace.flow_state,
+        }
     if trace.replay_envelope != plan.replay_envelope:
         diffs["replay_envelope"] = {
             "expected": _envelope_payload(plan.replay_envelope),
@@ -111,6 +121,19 @@ def replay_diff(
         diffs["dataset"] = {
             "expected": _dataset_payload(plan.dataset),
             "observed": _dataset_payload(trace.dataset),
+        }
+    if trace.allow_deprecated_datasets != plan.allow_deprecated_datasets:
+        diffs["allow_deprecated_datasets"] = {
+            "expected": plan.allow_deprecated_datasets,
+            "observed": trace.allow_deprecated_datasets,
+        }
+    if (
+        plan.dataset.dataset_state.value == "deprecated"
+        and not plan.allow_deprecated_datasets
+    ):
+        diffs["deprecated_dataset"] = {
+            "expected": False,
+            "observed": True,
         }
 
     if trace.verification_policy_fingerprint is not None:
@@ -183,11 +206,20 @@ def _human_intervention_events(events: Iterable[ExecutionEvent]) -> list[int]:
 
 def semantic_artifact_fingerprint(artifacts: Iterable[Artifact]) -> str:
     normalized = sorted(
-        artifacts, key=lambda item: (str(item.artifact_id), str(item.content_hash))
+        artifacts,
+        key=lambda item: (
+            str(item.tenant_id),
+            str(item.artifact_id),
+            str(item.content_hash),
+        ),
     )
     return fingerprint_inputs(
         [
-            {"artifact_id": item.artifact_id, "content_hash": item.content_hash}
+            {
+                "tenant_id": item.tenant_id,
+                "artifact_id": item.artifact_id,
+                "content_hash": item.content_hash,
+            }
             for item in normalized
         ]
     )
@@ -234,8 +266,10 @@ def _partition_diffs(
 def _dataset_payload(dataset) -> dict[str, object]:
     return {
         "dataset_id": dataset.dataset_id,
+        "tenant_id": dataset.tenant_id,
         "dataset_version": dataset.dataset_version,
         "dataset_hash": dataset.dataset_hash,
+        "dataset_state": dataset.dataset_state,
     }
 
 

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import Literal, Protocol
 
 from agentic_flows.core.errors import SemanticViolationError
+from agentic_flows.core.verification_rules import default_rule_registry
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
@@ -78,7 +79,13 @@ def evaluate_verification(
     artifacts: Sequence[Artifact],
     policy: VerificationPolicy,
 ) -> VerificationResult:
-    violations = baseline_violations(reasoning, evidence, artifacts)
+    registry = default_rule_registry()
+    violations, total_cost, randomness_violations = registry.evaluate(
+        policy, reasoning, evidence, artifacts
+    )
+    if total_cost > policy.max_rule_cost:
+        violations.append(RuleID("verification_cost_budget"))
+    violations.extend(randomness_violations)
     status = "PASS"
     reason = "verification_passed"
 

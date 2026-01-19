@@ -17,6 +17,7 @@ class VerificationRule:
     severity: str
     target: str
     randomness_requirement: VerificationRandomness
+    cost: int
 
 
 __all__ = ["VerificationRule"]

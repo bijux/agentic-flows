@@ -68,6 +68,10 @@ class DatasetID(str):
     pass
 
 
+class TenantID(str):
+    pass
+
+
 class InputsFingerprint(str):
     pass
 
@@ -105,6 +109,7 @@ __all__ = [
     "ResolverID",
     "VersionID",
     "DatasetID",
+    "TenantID",
     "InputsFingerprint",
     "ContentHash",
     "EnvironmentFingerprint",

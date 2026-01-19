@@ -11,6 +11,12 @@ def validate(plan: ExecutionPlan) -> None:
     manifest_agents = set(plan.manifest.agents)
     if plan.plan.dataset != plan.manifest.dataset:
         raise ValueError("execution plan dataset must match manifest")
+    if plan.plan.tenant_id != plan.manifest.tenant_id:
+        raise ValueError("execution plan tenant_id must match manifest")
+    if plan.plan.flow_state != plan.manifest.flow_state:
+        raise ValueError("execution plan flow_state must match manifest")
+    if plan.plan.allow_deprecated_datasets != plan.manifest.allow_deprecated_datasets:
+        raise ValueError("execution plan allow_deprecated_datasets must match manifest")
     if plan.plan.replay_envelope != plan.manifest.replay_envelope:
         raise ValueError("execution plan replay_envelope must match manifest")
     steps = plan.plan.steps

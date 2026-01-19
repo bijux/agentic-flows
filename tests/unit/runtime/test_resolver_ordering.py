@@ -10,11 +10,13 @@ from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.ontology.ids import AgentID, DatasetID, FlowID
+from agentic_flows.spec.ontology.ids import AgentID, DatasetID, FlowID, TenantID
 from agentic_flows.spec.ontology.ontology import (
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
+    FlowState,
     ReplayAcceptability,
 )
 
@@ -25,6 +27,8 @@ def test_resolver_uses_lexical_tiebreak_for_ordering() -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-ordering"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=EntropyBudget(
@@ -40,17 +44,19 @@ def test_resolver_uses_lexical_tiebreak_for_ordering() -> None:
         ),
         dataset=DatasetDescriptor(
             spec_version="v1",
-            dataset_id=DatasetID("dataset-order"),
+            dataset_id=DatasetID("dataset"),
+            tenant_id=TenantID("tenant-a"),
             dataset_version="1.0.0",
-            dataset_hash="hash-order",
+            dataset_hash="hash",
+            dataset_state=DatasetState.FROZEN,
         ),
-        agents=(AgentID("bravo"), AgentID("alpha")),
+        allow_deprecated_datasets=False,
+        agents=(AgentID("bravo"), AgentID("alpha"), AgentID("charlie")),
         dependencies=(),
         retrieval_contracts=(),
         verification_gates=(),
     )
 
     resolved = ExecutionPlanner().resolve(manifest)
-    ordered = [step.agent_id for step in resolved.plan.steps]
-
-    assert ordered == [AgentID("alpha"), AgentID("bravo")]
+    step_agents = tuple(step.agent_id for step in resolved.plan.steps)
+    assert step_agents == (AgentID("alpha"), AgentID("bravo"), AgentID("charlie"))

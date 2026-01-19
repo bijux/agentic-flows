@@ -35,6 +35,7 @@ from agentic_flows.spec.ontology.ids import (
     RequestID,
     StepID,
     VersionID,
+    TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArtifactType,
@@ -43,6 +44,7 @@ from agentic_flows.spec.ontology.ontology import (
     EvidenceDeterminism,
     ReplayAcceptability,
     StepType,
+    FlowState,
 )
 
 pytestmark = pytest.mark.regression
@@ -81,11 +83,14 @@ def _resolved_flow_for_budget(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-budget"),
+        tenant_id=TenantID("tenant-a"),
+        flow_state=FlowState.VALIDATED,
         determinism_level=DeterminismLevel.STRICT,
         replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         entropy_budget=entropy_budget,
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
+        allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
