@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from agentic_flows.core.authority import evaluate_verification
+from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
@@ -16,6 +17,7 @@ class VerificationEngine:
         self,
         reasoning: ReasoningBundle,
         evidence: list[RetrievedEvidence],
+        artifacts: list[Artifact],
         policy: VerificationPolicy,
     ) -> VerificationResult:
-        return evaluate_verification(reasoning, policy)
+        return evaluate_verification(reasoning, evidence, artifacts, policy)

@@ -8,15 +8,17 @@ from __future__ import annotations
 
 from agentic_flows.core.authority import finalize_trace
 from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
 from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
+from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ids import ResolverID
-from agentic_flows.spec.ontology.ontology import EventType
+from agentic_flows.spec.ontology.ids import ArtifactID, ResolverID
+from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, EventType
 
 
 class DryRunExecutor:
@@ -27,6 +29,8 @@ class DryRunExecutor:
         enforce_flow_boundary(steps_plan)
         recorder = context.trace_recorder
         event_index = 0
+        artifacts: list[Artifact] = []
+        state_tracker = ExecutionStateTracker(context.seed)
 
         for step in steps_plan.steps:
             start_payload = {
@@ -46,6 +50,41 @@ class DryRunExecutor:
                 context.authority,
             )
             event_index += 1
+            try:
+                context.consume_budget(steps=1)
+            except Exception as exc:
+                fail_payload = {
+                    "event_type": EventType.STEP_FAILED.value,
+                    "step_index": step.step_index,
+                    "agent_id": step.agent_id,
+                    "error": str(exc),
+                }
+                recorder.record(
+                    ExecutionEvent(
+                        spec_version="v1",
+                        event_index=event_index,
+                        step_index=step.step_index,
+                        event_type=EventType.STEP_FAILED,
+                        timestamp_utc=utc_now_deterministic(event_index),
+                        payload_hash=fingerprint_inputs(fail_payload),
+                    ),
+                    context.authority,
+                )
+                event_index += 1
+                break
+            state_hash = state_tracker.advance(step)
+            state_artifact = context.artifact_store.create(
+                spec_version="v1",
+                artifact_id=ArtifactID(f"state-{step.step_index}-{step.agent_id}"),
+                artifact_type=ArtifactType.EXECUTOR_STATE,
+                producer="agent",
+                parent_artifacts=(),
+                content_hash=state_hash,
+                scope=ArtifactScope.AUDIT,
+            )
+            artifacts.append(state_artifact)
+            context.consume_budget(artifacts=1)
+            context.record_artifacts(step.step_index, [state_artifact])
 
             end_payload = {
                 "event_type": EventType.STEP_END.value,
@@ -81,7 +120,7 @@ class DryRunExecutor:
         finalize_trace(trace)
         return ExecutionOutcome(
             trace=trace,
-            artifacts=[],
+            artifacts=artifacts,
             evidence=[],
             reasoning_bundles=[],
             verification_results=[],

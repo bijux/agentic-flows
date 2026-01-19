@@ -49,6 +49,10 @@ _ALLOWED_PARENTS: dict[ArtifactType, set[ArtifactType]] = {
         ArtifactType.EXECUTION_PLAN,
         ArtifactType.EXECUTION_EVENT,
     },
+    ArtifactType.EXECUTOR_STATE: {
+        ArtifactType.AGENT_INVOCATION,
+        ArtifactType.RESOLVED_STEP,
+    },
 }
 
 

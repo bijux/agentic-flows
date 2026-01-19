@@ -28,6 +28,7 @@ class ArtifactType(str, Enum):
     VERIFICATION_RESULT = "verification_result"
     EXECUTION_EVENT = "execution_event"
     EXECUTION_TRACE = "execution_trace"
+    EXECUTOR_STATE = "executor_state"
 
 
 class ArtifactScope(str, Enum):

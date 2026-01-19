@@ -28,7 +28,7 @@ def test_artifact_store_creates_and_saves_artifact() -> None:
     assert loaded == artifact
 
 
-def test_audit_artifact_cannot_be_overwritten() -> None:
+def test_artifact_ids_are_unique() -> None:
     store = InMemoryArtifactStore()
     store.create(
         spec_version="v1",
@@ -40,7 +40,7 @@ def test_audit_artifact_cannot_be_overwritten() -> None:
         scope=ArtifactScope.AUDIT,
     )
 
-    with pytest.raises(ValueError, match="AUDIT artifacts cannot be overwritten"):
+    with pytest.raises(ValueError, match="Artifact IDs must be unique per run"):
         store.create(
             spec_version="v1",
             artifact_id=ArtifactID("artifact-audit"),

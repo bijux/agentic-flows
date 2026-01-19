@@ -9,14 +9,19 @@ import bijux_rar
 import bijux_vex
 import pytest
 
+from agentic_flows.runtime.artifact_store import HostileArtifactStore
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,
     execute_flow,
 )
-from tests.helpers import build_claim_statement
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
+from agentic_flows.spec.model.reasoning_step import ReasoningStep
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     BundleID,
@@ -30,47 +35,15 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, StepType
-from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
-from agentic_flows.spec.model.reasoning_step import ReasoningStep
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 
 
-def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
-    request = RetrievalRequest(
-        spec_version="v1",
-        request_id=RequestID("req-1"),
-        query="what is bijux",
-        vector_contract_id=ContractID("contract-1"),
-        top_k=2,
-        scope="project",
-    )
-
-    def _deterministic_retrieve(**_kwargs):
-        return [
-            {
-                "evidence_id": "ev-1",
-                "source_uri": "file://doc-1",
-                "content": "alpha",
-                "score": 0.9,
-                "vector_contract_id": "contract-1",
-            },
-            {
-                "evidence_id": "ev-2",
-                "source_uri": "file://doc-2",
-                "content": "beta",
-                "score": 0.8,
-                "vector_contract_id": "contract-1",
-            },
-        ]
-
-    bijux_rag.retrieve = _deterministic_retrieve
-    bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
-
+def test_hostile_artifact_store_triggers_verification_failure(
+    baseline_policy, resolved_flow_factory
+) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
             "artifact_id": "agent-output",
@@ -79,6 +52,17 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
             "parent_artifacts": [],
         }
     ]
+    bijux_rag.retrieve = lambda **_kwargs: [
+        {
+            "evidence_id": "ev-1",
+            "source_uri": "file://doc",
+            "content": "content",
+            "score": 0.9,
+            "vector_contract_id": "contract-1",
+        }
+    ]
+    bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+
     def _reason(agent_outputs, evidence, seed):
         statement = build_claim_statement(agent_outputs, evidence)
         return ReasoningBundle(
@@ -108,6 +92,14 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
 
     bijux_rar.reason = _reason
 
+    request = RetrievalRequest(
+        spec_version="v1",
+        request_id=RequestID("req-1"),
+        query="query",
+        vector_contract_id=ContractID("contract-1"),
+        top_k=1,
+        scope="project",
+    )
     step = ResolvedStep(
         spec_version="v1",
         step_index=0,
@@ -128,7 +120,7 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-retrieval"),
+        flow_id=FlowID("flow-hostile"),
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -136,17 +128,22 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
-    result_one = execute_flow(
-        resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+    hostile_store = HostileArtifactStore(
+        seed=7, max_delay=0, drop_rate=0.0, corruption_rate=1.0
     )
-    result_two = execute_flow(
-        resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
-    )
-    evidence_one = result_one.evidence
-    evidence_two = result_two.evidence
 
-    assert [(item.evidence_id, item.content_hash) for item in evidence_one] == [
-        (item.evidence_id, item.content_hash) for item in evidence_two
-    ]
+    result = execute_flow(
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            artifact_store=hostile_store,
+        ),
+    )
+    trace = result.trace
+
+    assert trace.events[-1].event_type == EventType.VERIFICATION_FAIL
+    assert any(
+        str(violation) == "claim_mentions_artifact_hash"
+        for violation in result.verification_results[0].violations
+    )

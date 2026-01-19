@@ -48,4 +48,5 @@ def test_replay_equivalence(deterministic_environment) -> None:
     )
     trace.finalize()
 
-    validate_replay(trace, plan)
+    with pytest.raises(ValueError, match="missing_step_end"):
+        validate_replay(trace, plan)

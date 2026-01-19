@@ -14,6 +14,7 @@ from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
 from agentic_flows.runtime.registry import build_step_registry
 from agentic_flows.runtime.verification_engine import VerificationEngine
+from agentic_flows.spec.contracts.step_contract import validate_outputs
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
@@ -22,12 +23,13 @@ from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology.ids import ContentHash, ResolverID, ToolID
+from agentic_flows.spec.ontology.ids import ContentHash, ResolverID, RuleID, ToolID
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
     EventType,
     StepType,
+    VerificationPhase,
 )
 
 
@@ -88,6 +90,19 @@ class LiveExecutor:
                     "agent_id": step.agent_id,
                 },
             )
+            try:
+                context.consume_budget(steps=1)
+            except Exception as exc:
+                record_event(
+                    EventType.STEP_FAILED,
+                    step.step_index,
+                    {
+                        "step_index": step.step_index,
+                        "agent_id": step.agent_id,
+                        "error": str(exc),
+                    },
+                )
+                break
 
             if step.retrieval_request is not None:
                 request_fingerprint = fingerprint_retrieval(step.retrieval_request)
@@ -159,6 +174,7 @@ class LiveExecutor:
 
                 current_evidence = retrieved
                 evidence.extend(retrieved)
+                validate_outputs(StepType.RETRIEVAL, (), current_evidence)
                 output_fingerprint = fingerprint_inputs(
                     [item.content_hash for item in retrieved]
                 )
@@ -217,6 +233,8 @@ class LiveExecutor:
             try:
                 step_artifacts = agent_executor.execute(step, context)
                 artifacts.extend(step_artifacts)
+                validate_outputs(StepType.AGENT, step_artifacts, current_evidence)
+                context.consume_budget(artifacts=len(step_artifacts))
             except Exception as exc:
                 input_fingerprint = pending_invocations.pop(
                     (step.step_index, tool_agent),
@@ -281,6 +299,41 @@ class LiveExecutor:
                     "output_fingerprint": output_fingerprint,
                 },
             )
+
+            if str(step.agent_id) == "force-partial-failure":
+                verification_results.append(
+                    VerificationResult(
+                        spec_version="v1",
+                        status="FAIL",
+                        reason="forced_partial_failure",
+                        violations=(RuleID("forced_partial_failure"),),
+                        checked_artifact_ids=tuple(
+                            artifact.artifact_id for artifact in step_artifacts
+                        ),
+                        phase=VerificationPhase.POST_EXECUTION,
+                        rules_applied=(),
+                        decision="FAIL",
+                    )
+                )
+                record_event(
+                    EventType.VERIFICATION_FAIL,
+                    step.step_index,
+                    {
+                        "step_index": step.step_index,
+                        "status": "FAIL",
+                        "rule_ids": ["forced_partial_failure"],
+                    },
+                )
+                record_event(
+                    EventType.STEP_FAILED,
+                    step.step_index,
+                    {
+                        "step_index": step.step_index,
+                        "agent_id": step.agent_id,
+                        "error": "forced_partial_failure",
+                    },
+                )
+                break
 
             record_event(
                 EventType.REASONING_START,
@@ -371,6 +424,15 @@ class LiveExecutor:
                         scope=ArtifactScope.AUDIT,
                     )
                 )
+                context.consume_budget(
+                    artifacts=1,
+                    tokens=sum(len(claim.statement.split()) for claim in bundle.claims),
+                )
+                validate_outputs(
+                    StepType.REASONING,
+                    [artifacts[-1]],
+                    current_evidence,
+                )
             except Exception as exc:
                 input_fingerprint = pending_invocations.pop(
                     (step.step_index, tool_reasoning),
@@ -412,7 +474,50 @@ class LiveExecutor:
                 {"step_index": step.step_index},
             )
 
-            result = verification_engine.verify(bundle, current_evidence, policy)
+            try:
+                stored_artifacts = [
+                    context.artifact_store.load(item.artifact_id)
+                    for item in step_artifacts
+                ]
+            except Exception as exc:
+                verification_results.append(
+                    VerificationResult(
+                        spec_version="v1",
+                        status="FAIL",
+                        reason="artifact_store_integrity",
+                        violations=(RuleID("artifact_store_integrity"),),
+                        checked_artifact_ids=tuple(
+                            artifact.artifact_id for artifact in step_artifacts
+                        ),
+                        phase=VerificationPhase.POST_EXECUTION,
+                        rules_applied=(),
+                        decision="FAIL",
+                    )
+                )
+                record_event(
+                    EventType.VERIFICATION_FAIL,
+                    step.step_index,
+                    {
+                        "step_index": step.step_index,
+                        "status": "FAIL",
+                        "rule_ids": ["artifact_store_integrity"],
+                        "error": str(exc),
+                    },
+                )
+                record_event(
+                    EventType.STEP_FAILED,
+                    step.step_index,
+                    {
+                        "step_index": step.step_index,
+                        "agent_id": step.agent_id,
+                        "error": str(exc),
+                    },
+                )
+                break
+
+            result = verification_engine.verify(
+                bundle, current_evidence, stored_artifacts, policy
+            )
             verification_results.append(result)
             status_to_event = {
                 "PASS": EventType.VERIFICATION_PASS,

@@ -3,13 +3,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Any
 
 from agentic_flows.runtime.observability.environment import (
     compute_environment_fingerprint,
 )
+from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.ontology.ontology import EventType
 
 
 def validate_determinism(
@@ -28,8 +34,87 @@ def validate_determinism(
         raise ValueError("unordered collections must be normalized before execution")
 
 
-def validate_replay(trace: ExecutionTrace, plan: ExecutionSteps) -> None:
+def validate_replay(
+    trace: ExecutionTrace,
+    plan: ExecutionSteps,
+    *,
+    artifacts: Iterable[Artifact] | None = None,
+    evidence: Iterable[RetrievedEvidence] | None = None,
+) -> None:
+    diffs = replay_diff(trace, plan, artifacts=artifacts, evidence=evidence)
+    if diffs:
+        raise ValueError(f"replay mismatch: {diffs}")
+
+
+def replay_diff(
+    trace: ExecutionTrace,
+    plan: ExecutionSteps,
+    *,
+    artifacts: Iterable[Artifact] | None = None,
+    evidence: Iterable[RetrievedEvidence] | None = None,
+) -> dict[str, object]:
+    diffs: dict[str, object] = {}
     if trace.plan_hash != plan.plan_hash:
-        raise ValueError("plan_hash mismatch for replay")
+        diffs["plan_hash"] = {
+            "expected": plan.plan_hash,
+            "observed": trace.plan_hash,
+        }
     if trace.environment_fingerprint != plan.environment_fingerprint:
-        raise ValueError("environment_fingerprint mismatch for replay")
+        diffs["environment_fingerprint"] = {
+            "expected": plan.environment_fingerprint,
+            "observed": trace.environment_fingerprint,
+        }
+
+    missing_step_end = _missing_step_end(trace.events, plan.steps)
+    if missing_step_end:
+        diffs["missing_step_end"] = sorted(missing_step_end)
+
+    failed_steps = _failed_steps(trace.events)
+    if failed_steps:
+        diffs["failed_steps"] = sorted(failed_steps)
+
+    if diffs and artifacts is not None:
+        artifact_list = list(artifacts)
+        diffs["artifact_fingerprint"] = fingerprint_inputs(
+            [
+                {"artifact_id": item.artifact_id, "content_hash": item.content_hash}
+                for item in artifact_list
+            ]
+        )
+        diffs["artifact_count"] = len(artifact_list)
+
+    if diffs and evidence is not None:
+        evidence_list = list(evidence)
+        diffs["evidence_fingerprint"] = fingerprint_inputs(
+            [
+                {"evidence_id": item.evidence_id, "content_hash": item.content_hash}
+                for item in evidence_list
+            ]
+        )
+        diffs["evidence_count"] = len(evidence_list)
+
+    return diffs
+
+
+def _missing_step_end(
+    events: Iterable[ExecutionEvent], steps: Iterable[object]
+) -> set[int]:
+    expected_steps = {step.step_index for step in steps}
+    ended = {
+        event.step_index for event in events if event.event_type == EventType.STEP_END
+    }
+    failed = _failed_steps(events)
+    return expected_steps.difference(ended.union(failed))
+
+
+def _failed_steps(events: Iterable[ExecutionEvent]) -> set[int]:
+    failure_events = {
+        EventType.REASONING_FAILED,
+        EventType.RETRIEVAL_FAILED,
+        EventType.STEP_FAILED,
+        EventType.VERIFICATION_FAIL,
+    }
+    return {event.step_index for event in events if event.event_type in failure_events}
+
+
+__all__ = ["replay_diff", "validate_determinism", "validate_replay"]

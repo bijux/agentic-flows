@@ -12,6 +12,7 @@ from typing import Any
 import bijux_agent
 
 from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
 from agentic_flows.runtime.observability.seed import deterministic_seed
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.resolved_step import ResolvedStep
@@ -20,7 +21,12 @@ from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
 class AgentExecutor:
+    def __init__(self) -> None:
+        self._state_tracker: ExecutionStateTracker | None = None
+
     def execute(self, step: ResolvedStep, context: ExecutionContext) -> list[Artifact]:
+        if self._state_tracker is None:
+            self._state_tracker = ExecutionStateTracker(context.seed)
         seed = deterministic_seed(step.step_index, step.inputs_fingerprint)
         if not hasattr(bijux_agent, "run"):
             raise RuntimeError("bijux_agent.run is required for agent execution")
@@ -34,6 +40,8 @@ class AgentExecutor:
             evidence=evidence,
         )
         artifacts = self._artifacts_from_outputs(step, outputs, context)
+        state_artifact = self._state_artifact(step, artifacts, context)
+        artifacts.append(state_artifact)
         context.record_artifacts(step.step_index, artifacts)
         return artifacts
 
@@ -77,6 +85,23 @@ class AgentExecutor:
                 )
             )
         return artifacts
+
+    def _state_artifact(
+        self,
+        step: ResolvedStep,
+        artifacts: list[Artifact],
+        context: ExecutionContext,
+    ) -> Artifact:
+        state_hash = self._state_tracker.advance(step)
+        return context.artifact_store.create(
+            spec_version="v1",
+            artifact_id=ArtifactID(f"state-{step.step_index}-{step.agent_id}"),
+            artifact_type=ArtifactType.EXECUTOR_STATE,
+            producer="agent",
+            parent_artifacts=tuple(artifact.artifact_id for artifact in artifacts),
+            content_hash=state_hash,
+            scope=ArtifactScope.AUDIT,
+        )
 
     @staticmethod
     def _hash_content(content: Any) -> str:

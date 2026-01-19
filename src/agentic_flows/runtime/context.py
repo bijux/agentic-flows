@@ -8,6 +8,7 @@ from enum import Enum
 
 from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.runtime.artifact_store import ArtifactStore
+from agentic_flows.runtime.budget import BudgetState
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
@@ -30,6 +31,7 @@ class ExecutionContext:
     trace_recorder: TraceRecorder
     mode: RunMode
     verification_policy: VerificationPolicy | None
+    budget: BudgetState
     _step_evidence: dict[int, tuple[RetrievedEvidence, ...]]
     _step_artifacts: dict[int, tuple[Artifact, ...]]
 
@@ -39,6 +41,8 @@ class ExecutionContext:
         self._step_evidence[step_index] = tuple(evidence)
 
     def record_artifacts(self, step_index: int, artifacts: list[Artifact]) -> None:
+        for artifact in artifacts:
+            self.artifact_store.load(artifact.artifact_id)
         self._step_artifacts[step_index] = tuple(artifacts)
 
     def evidence_for_step(self, step_index: int) -> tuple[RetrievedEvidence, ...]:
@@ -46,6 +50,11 @@ class ExecutionContext:
 
     def artifacts_for_step(self, step_index: int) -> tuple[Artifact, ...]:
         return self._step_artifacts.get(step_index, ())
+
+    def consume_budget(
+        self, *, steps: int = 0, tokens: int = 0, artifacts: int = 0
+    ) -> None:
+        self.budget.consume(steps=steps, tokens=tokens, artifacts=artifacts)
 
 
 __all__ = ["RunMode"]

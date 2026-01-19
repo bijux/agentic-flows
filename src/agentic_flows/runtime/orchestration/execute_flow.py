@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from agentic_flows.core.authority import authority_token, enforce_runtime_semantics
 from agentic_flows.runtime.artifact_store import ArtifactStore, InMemoryArtifactStore
+from agentic_flows.runtime.budget import BudgetState, ExecutionBudget
 from agentic_flows.runtime.context import ExecutionContext, RunMode
 from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
@@ -39,6 +40,7 @@ class ExecutionConfig:
     mode: RunMode
     verification_policy: VerificationPolicy | None = None
     artifact_store: ArtifactStore | None = None
+    budget: ExecutionBudget | None = None
 
     @classmethod
     def from_command(cls, command: str) -> ExecutionConfig:
@@ -93,6 +95,7 @@ def execute_flow(
         trace_recorder=TraceRecorder(),
         mode=execution_config.mode,
         verification_policy=execution_config.verification_policy,
+        budget=BudgetState(execution_config.budget),
         _step_evidence={},
         _step_artifacts={},
     )

@@ -8,7 +8,9 @@ from dataclasses import dataclass
 from typing import Literal, Protocol
 
 from agentic_flows.core.errors import SemanticViolationError
+from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import RuleID
@@ -63,9 +65,11 @@ def finalize_trace(trace) -> None:
 
 def evaluate_verification(
     reasoning: ReasoningBundle,
+    evidence: Sequence[RetrievedEvidence],
+    artifacts: Sequence[Artifact],
     policy: VerificationPolicy,
 ) -> VerificationResult:
-    violations = baseline_violations(reasoning)
+    violations = baseline_violations(reasoning, evidence, artifacts)
     status = "PASS"
     reason = "verification_passed"
 
@@ -93,8 +97,14 @@ def evaluate_verification(
     )
 
 
-def baseline_violations(reasoning: ReasoningBundle) -> tuple[RuleID, ...]:
+def baseline_violations(
+    reasoning: ReasoningBundle,
+    evidence: Sequence[RetrievedEvidence],
+    artifacts: Sequence[Artifact],
+) -> tuple[RuleID, ...]:
     violations: list[RuleID] = []
+    evidence_map = {item.evidence_id: item for item in evidence}
+    artifact_hashes = {artifact.content_hash for artifact in artifacts}
 
     if any(len(claim.supported_by) == 0 for claim in reasoning.claims):
         violations.append(RuleID("claim_requires_evidence"))
@@ -105,6 +115,25 @@ def baseline_violations(reasoning: ReasoningBundle) -> tuple[RuleID, ...]:
     claim_ids = [claim.claim_id for claim in reasoning.claims]
     if len(set(claim_ids)) != len(claim_ids):
         violations.append(RuleID("unique_claim_ids"))
+
+    if set(reasoning.evidence_ids) != set(evidence_map.keys()):
+        violations.append(RuleID("bundle_evidence_ids_match_inputs"))
+
+    for claim in reasoning.claims:
+        for evidence_id in claim.supported_by:
+            evidence_item = evidence_map.get(evidence_id)
+            if evidence_item is None:
+                violations.append(RuleID("claim_supports_known_evidence"))
+                continue
+            if str(evidence_id) not in claim.statement:
+                violations.append(RuleID("claim_mentions_evidence_id"))
+            if str(evidence_item.content_hash) not in claim.statement:
+                violations.append(RuleID("claim_mentions_evidence_hash"))
+
+        if artifact_hashes and not any(
+            str(artifact_hash) in claim.statement for artifact_hash in artifact_hashes
+        ):
+            violations.append(RuleID("claim_mentions_artifact_hash"))
 
     return tuple(violations)
 

@@ -3,14 +3,11 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict
-import json
-import pytest
-
 import bijux_agent
 import bijux_rag
 import bijux_rar
 import bijux_vex
+import pytest
 
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -19,11 +16,17 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 )
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
+from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
+from agentic_flows.spec.model.reasoning_step import ReasoningStep
+from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     BundleID,
     ClaimID,
     ContractID,
+    EvidenceID,
     FlowID,
     GateID,
     InputsFingerprint,
@@ -31,45 +34,14 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, StepType
-from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
-from agentic_flows.spec.model.reasoning_step import ReasoningStep
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
 
-pytestmark = pytest.mark.regression
+pytestmark = pytest.mark.e2e
 
 
-def test_reasoning_determinism(baseline_policy, resolved_flow_factory) -> None:
-    def _deterministic_reason(agent_outputs, evidence, seed):
-        return ReasoningBundle(
-            spec_version="v1",
-            bundle_id=BundleID(f"bundle-{seed}"),
-            claims=(
-                ReasoningClaim(
-                    spec_version="v1",
-                    claim_id=ClaimID("claim-1"),
-                    statement="statement",
-                    confidence=0.5,
-                    supported_by=(evidence[0].evidence_id,),
-                ),
-            ),
-            steps=(
-                ReasoningStep(
-                    spec_version="v1",
-                    step_id=StepID("step-1"),
-                    input_claims=(),
-                    output_claims=(ClaimID("claim-1"),),
-                    method="aggregation",
-                ),
-            ),
-            evidence_ids=(evidence[0].evidence_id,),
-            producer_agent_id=AgentID("agent-a"),
-        )
-
-    bijux_rar.reason = _deterministic_reason
-
+def test_reasoning_content_verification_catches_bad_claim(
+    baseline_policy, resolved_flow_factory
+) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
             "artifact_id": "agent-output",
@@ -81,13 +53,37 @@ def test_reasoning_determinism(baseline_policy, resolved_flow_factory) -> None:
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-1",
-            "source_uri": "file://doc-1",
+            "source_uri": "file://doc",
             "content": "content",
             "score": 0.9,
             "vector_contract_id": "contract-1",
         }
     ]
     bijux_vex.enforce_contract = lambda *_args, **_kwargs: True
+    bijux_rar.reason = lambda **_kwargs: ReasoningBundle(
+        spec_version="v1",
+        bundle_id=BundleID("bundle-1"),
+        claims=(
+            ReasoningClaim(
+                spec_version="v1",
+                claim_id=ClaimID("claim-1"),
+                statement="evidence_id=ev-1 artifact_hash=missing",
+                confidence=0.5,
+                supported_by=(EvidenceID("ev-1"),),
+            ),
+        ),
+        steps=(
+            ReasoningStep(
+                spec_version="v1",
+                step_id=StepID("step-1"),
+                input_claims=(),
+                output_claims=(ClaimID("claim-1"),),
+                method="aggregation",
+            ),
+        ),
+        evidence_ids=(EvidenceID("ev-1"),),
+        producer_agent_id=AgentID("agent-a"),
+    )
 
     request = RetrievalRequest(
         spec_version="v1",
@@ -117,7 +113,7 @@ def test_reasoning_determinism(baseline_policy, resolved_flow_factory) -> None:
     )
     manifest = FlowManifest(
         spec_version="v1",
-        flow_id=FlowID("flow-reasoning"),
+        flow_id=FlowID("flow-bad-claim"),
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -125,19 +121,9 @@ def test_reasoning_determinism(baseline_policy, resolved_flow_factory) -> None:
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
-    result_one = execute_flow(
-        resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
-    )
-    result_two = execute_flow(
+    result = execute_flow(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
     )
 
-    bundle_one = result_one.reasoning_bundles[0]
-    bundle_two = result_two.reasoning_bundles[0]
-
-    payload_one = json.dumps(asdict(bundle_one), sort_keys=True)
-    payload_two = json.dumps(asdict(bundle_two), sort_keys=True)
-
-    assert payload_one == payload_two
+    assert result.trace.events[-1].event_type == EventType.VERIFICATION_FAIL
