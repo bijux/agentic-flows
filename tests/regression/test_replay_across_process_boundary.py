@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import bijux_agent
 import bijux_rag
 import bijux_rar
@@ -12,7 +10,6 @@ import bijux_vex
 import pytest
 
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
-from agentic_flows.runtime.observability.execution_store import DuckDBExecutionStore
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -51,12 +48,12 @@ pytestmark = pytest.mark.regression
 
 
 def test_replay_across_process_boundary(
-    tmp_path: Path,
     baseline_policy,
     resolved_flow_factory,
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -156,7 +153,6 @@ def test_replay_across_process_boundary(
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
-    db_path = tmp_path / "flow_state.duckdb"
     artifact_store = InMemoryArtifactStore()
 
     result = execute_flow(
@@ -165,26 +161,13 @@ def test_replay_across_process_boundary(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
             artifact_store=artifact_store,
+            execution_store=execution_store,
         ),
     )
 
-    store = DuckDBExecutionStore(db_path)
-    store.save_trace(result.trace)
-    store.save_entropy_usage(
-        result.trace.flow_id, result.trace.tenant_id, result.trace.entropy_usage
+    reloaded_trace = execution_store.load_trace(
+        result.run_id, tenant_id=result.trace.tenant_id
     )
-    store.save_replay_envelope(
-        result.trace.flow_id, result.trace.tenant_id, result.trace.replay_envelope
-    )
-
-    reloaded_trace = store.load_trace(
-        result.trace.flow_id, tenant_id=result.trace.tenant_id
-    )
-    reloaded_entropy = store.load_entropy_usage(
-        result.trace.flow_id, tenant_id=result.trace.tenant_id
-    )
-
-    assert reloaded_entropy == result.trace.entropy_usage
     validate_replay(
         reloaded_trace,
         result.resolved_flow.plan,

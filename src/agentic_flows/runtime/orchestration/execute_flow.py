@@ -14,6 +14,9 @@ from agentic_flows.runtime.execution.live_executor import LiveExecutor
 from agentic_flows.runtime.execution.observer_executor import ObserverExecutor
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome, StepExecutor
 from agentic_flows.runtime.observability.entropy import EntropyLedger
+from agentic_flows.runtime.observability.execution_store_protocol import (
+    ExecutionStoreProtocol,
+)
 from agentic_flows.runtime.observability.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
@@ -28,7 +31,7 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology.ids import FlowID
+from agentic_flows.spec.ontology.ids import FlowID, RunID
 
 
 @dataclass(frozen=True)
@@ -40,6 +43,7 @@ class FlowRunResult:
     reasoning_bundles: list[ReasoningBundle]
     verification_results: list[VerificationResult]
     verification_arbitrations: list[VerificationArbitration]
+    run_id: RunID | None = None
 
 
 @dataclass(frozen=True)
@@ -47,6 +51,7 @@ class ExecutionConfig:
     mode: RunMode
     verification_policy: VerificationPolicy | None = None
     artifact_store: ArtifactStore | None = None
+    execution_store: ExecutionStoreProtocol | None = None
     budget: ExecutionBudget | None = None
     observed_run: ObservedRun | None = None
     parent_flow_id: FlowID | None = None
@@ -89,7 +94,10 @@ def execute_flow(
             reasoning_bundles=[],
             verification_results=[],
             verification_arbitrations=[],
+            run_id=None,
         )
+    if execution_config.execution_store is None:
+        raise ValueError("execution_store is required before execution")
 
     if (
         execution_config.mode in {RunMode.LIVE, RunMode.OBSERVE, RunMode.UNSAFE}
@@ -133,8 +141,10 @@ def execute_flow(
         reasoning_bundles=outcome.reasoning_bundles,
         verification_results=outcome.verification_results,
         verification_arbitrations=outcome.verification_arbitrations,
+        run_id=None,
     )
     enforce_runtime_semantics(result, mode=execution_config.mode.value)
+    result = _persist_run(result, execution_config)
     return result
 
 
@@ -145,6 +155,38 @@ def _derive_seed_token(plan: ExecutionSteps) -> str | None:
         if not step.inputs_fingerprint:
             return None
     return plan.steps[0].inputs_fingerprint
+
+
+def _persist_run(result: FlowRunResult, config: ExecutionConfig) -> FlowRunResult:
+    store = config.execution_store
+    if store is None:
+        raise ValueError("execution_store is required for persisted runs")
+    plan = result.resolved_flow.plan
+    store.register_dataset(plan.dataset)
+    run_id = store.save_run(trace=result.trace, plan=plan, mode=config.mode)
+    store.save_steps(run_id=run_id, tenant_id=plan.tenant_id, plan=plan)
+    if result.trace is not None:
+        store.save_events(
+            run_id=run_id, tenant_id=plan.tenant_id, events=result.trace.events
+        )
+        store.save_tool_invocations(
+            run_id=run_id,
+            tenant_id=plan.tenant_id,
+            tool_invocations=result.trace.tool_invocations,
+        )
+        store.save_entropy_usage(run_id=run_id, usage=result.trace.entropy_usage)
+    store.save_artifacts(run_id=run_id, artifacts=result.artifacts)
+    store.save_evidence(run_id=run_id, evidence=result.evidence)
+    return FlowRunResult(
+        resolved_flow=result.resolved_flow,
+        trace=result.trace,
+        artifacts=result.artifacts,
+        evidence=result.evidence,
+        reasoning_bundles=result.reasoning_bundles,
+        verification_results=result.verification_results,
+        verification_arbitrations=result.verification_arbitrations,
+        run_id=run_id,
+    )
 
 
 __all__ = ["ExecutionConfig", "FlowRunResult", "RunMode", "execute_flow"]

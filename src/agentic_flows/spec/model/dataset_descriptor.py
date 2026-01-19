@@ -17,6 +17,7 @@ class DatasetDescriptor:
     dataset_version: str
     dataset_hash: str
     dataset_state: DatasetState
+    storage_uri: str
 
 
 __all__ = ["DatasetDescriptor"]

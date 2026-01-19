@@ -20,6 +20,8 @@ _ALLOWED_TRANSITIONS: dict[DatasetState, set[DatasetState]] = {
 def validate_dataset_descriptor(dataset: DatasetDescriptor) -> None:
     if not isinstance(dataset.dataset_state, DatasetState):
         raise ValueError("dataset_state must be a DatasetState")
+    if not isinstance(dataset.storage_uri, str) or not dataset.storage_uri.strip():
+        raise ValueError("dataset.storage_uri must be a non-empty string")
 
 
 def validate_transition(

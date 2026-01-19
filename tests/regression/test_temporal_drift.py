@@ -3,12 +3,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 from agentic_flows.runtime.observability.drift import entropy_drift, outcome_drift
-from agentic_flows.runtime.observability.execution_store import DuckDBExecutionStore
 from agentic_flows.runtime.observability.trace_diff import entropy_summary
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -19,11 +16,10 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 pytestmark = pytest.mark.regression
 
 
-def test_temporal_drift_is_within_bounds(tmp_path: Path, resolved_flow) -> None:
-    db_path = tmp_path / "drift.duckdb"
-    store = DuckDBExecutionStore(db_path)
+def test_temporal_drift_is_within_bounds(resolved_flow, execution_store) -> None:
     first = execute_flow(
-        resolved_flow=resolved_flow, config=ExecutionConfig(mode=RunMode.DRY_RUN)
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     first_summary = entropy_summary(first.trace.entropy_usage)
     first_outcome = {
@@ -31,28 +27,18 @@ def test_temporal_drift_is_within_bounds(tmp_path: Path, resolved_flow) -> None:
         "contradiction_count": first.trace.contradiction_count,
         "arbitration_decision": first.trace.arbitration_decision,
     }
-    store.save_entropy_snapshot(
-        first.trace.flow_id, first.trace.tenant_id, first_summary
-    )
-    store.save_outcome_snapshot(
-        first.trace.flow_id, first.trace.tenant_id, first_outcome
-    )
-
     second = execute_flow(
-        resolved_flow=resolved_flow, config=ExecutionConfig(mode=RunMode.DRY_RUN)
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     drift = entropy_drift(
-        store.load_entropy_snapshot(
-            first.trace.flow_id, tenant_id=first.trace.tenant_id
-        ),
+        first_summary,
         entropy_summary(second.trace.entropy_usage),
         max_count_delta=0,
         allow_new_sources=False,
     )
     outcome = outcome_drift(
-        store.load_outcome_snapshot(
-            first.trace.flow_id, tenant_id=first.trace.tenant_id
-        ),
+        first_outcome,
         {
             "claim_count": len(second.trace.claim_ids),
             "contradiction_count": second.trace.contradiction_count,

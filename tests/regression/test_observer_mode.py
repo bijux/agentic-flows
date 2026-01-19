@@ -16,14 +16,16 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 pytestmark = pytest.mark.regression
 
 
-def test_observer_mode_does_not_execute(resolved_flow, baseline_policy) -> None:
+def test_observer_mode_does_not_execute(
+    resolved_flow, baseline_policy, execution_store
+) -> None:
     bijux_agent.run = lambda **_kwargs: (_ for _ in ()).throw(
         AssertionError("observer mode must not execute agents")
     )
 
     recorded = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN),
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     observed = ObservedRun(
         trace=recorded.trace,
@@ -38,6 +40,7 @@ def test_observer_mode_does_not_execute(resolved_flow, baseline_policy) -> None:
             mode=RunMode.OBSERVE,
             verification_policy=baseline_policy,
             observed_run=observed,
+            execution_store=execution_store,
         ),
     )
 

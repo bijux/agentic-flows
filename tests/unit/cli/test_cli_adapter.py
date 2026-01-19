@@ -66,6 +66,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
                     "dataset_version": "1.0.0",
                     "dataset_hash": "hash-cli",
                     "dataset_state": "frozen",
+                    "storage_uri": "file://datasets/retrieval_corpus.jsonl",
                 },
                 "allow_deprecated_datasets": False,
                 "replay_envelope": {
@@ -107,6 +108,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             dataset_version="1.0.0",
             dataset_hash="hash-cli",
             dataset_state=DatasetState.FROZEN,
+            storage_uri="file://datasets/retrieval_corpus.jsonl",
         ),
         allow_deprecated_datasets=False,
         steps=(),
@@ -141,6 +143,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
                 dataset_version="1.0.0",
                 dataset_hash="hash-cli",
                 dataset_state=DatasetState.FROZEN,
+                storage_uri="file://datasets/retrieval_corpus.jsonl",
             ),
             allow_deprecated_datasets=False,
             agents=(AgentID("agent-1"),),
@@ -163,6 +166,7 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             reasoning_bundles=[],
             verification_results=[],
             verification_arbitrations=[],
+            run_id=None,
         )
 
     cli_main_module = importlib.import_module("agentic_flows.cli.main")

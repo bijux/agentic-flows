@@ -33,6 +33,7 @@ def test_semantic_trace_diff_ignores_timestamps() -> None:
         dataset_version="1.0.0",
         dataset_hash="hash",
         dataset_state=DatasetState.FROZEN,
+        storage_uri="file://datasets/retrieval_corpus.jsonl",
     )
     replay_envelope = ReplayEnvelope(
         spec_version="v1",

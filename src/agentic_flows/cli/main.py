@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 from agentic_flows.api import ExecutionConfig, execute_flow
+from agentic_flows.runtime.observability.execution_store import DuckDBExecutionStore
 from agentic_flows.runtime.observability.trace_diff import entropy_summary
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
@@ -67,6 +68,7 @@ def _load_manifest(path: Path) -> FlowManifest:
             dataset_version=payload["dataset"]["dataset_version"],
             dataset_hash=payload["dataset"]["dataset_hash"],
             dataset_state=DatasetState(payload["dataset"]["dataset_state"]),
+            storage_uri=payload["dataset"]["storage_uri"],
         ),
         allow_deprecated_datasets=bool(payload["allow_deprecated_datasets"]),
         agents=tuple(AgentID(agent_id) for agent_id in payload["agents"]),
@@ -86,21 +88,30 @@ def main() -> None:
 
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("manifest")
+    run_parser.add_argument("--db-path", required=True)
 
     plan_parser = subparsers.add_parser("plan")
     plan_parser.add_argument("manifest")
+    plan_parser.add_argument("--db-path")
 
     dry_run_parser = subparsers.add_parser("dry-run")
     dry_run_parser.add_argument("manifest")
+    dry_run_parser.add_argument("--db-path", required=True)
 
     unsafe_parser = subparsers.add_parser("unsafe-run")
     unsafe_parser.add_argument("manifest")
+    unsafe_parser.add_argument("--db-path", required=True)
 
     args = parser.parse_args()
     manifest_path = Path(args.manifest)
     manifest = _load_manifest(manifest_path)
 
     config = ExecutionConfig.from_command(args.command)
+    if getattr(args, "db_path", None):
+        config = ExecutionConfig(
+            mode=config.mode,
+            execution_store=DuckDBExecutionStore(Path(args.db_path)),
+        )
     result = execute_flow(manifest, config=config)
     _render_result(args.command, result)
 

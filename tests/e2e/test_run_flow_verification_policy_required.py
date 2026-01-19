@@ -37,6 +37,7 @@ def test_verification_policy_required_before_execution(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     step = ResolvedStep(
         spec_version="v1",
@@ -78,5 +79,5 @@ def test_verification_policy_required_before_execution(
     with pytest.raises(ValueError, match="verification_policy is required"):
         execute_flow(
             resolved_flow=resolved_flow,
-            config=ExecutionConfig(mode=RunMode.LIVE),
+            config=ExecutionConfig(mode=RunMode.LIVE, execution_store=execution_store),
         )

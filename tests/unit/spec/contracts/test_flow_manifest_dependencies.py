@@ -49,6 +49,7 @@ def test_ambiguous_dependencies_raise() -> None:
             dataset_version="1.0.0",
             dataset_hash="hash",
             dataset_state=DatasetState.FROZEN,
+            storage_uri="file://datasets/retrieval_corpus.jsonl",
         ),
         allow_deprecated_datasets=False,
         agents=(AgentID("agent-a"), AgentID("agent-b")),

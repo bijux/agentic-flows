@@ -35,6 +35,7 @@ def test_flow_correlation_requires_parent() -> None:
         dataset_version="1.0.0",
         dataset_hash="hash",
         dataset_state=DatasetState.FROZEN,
+        storage_uri="file://datasets/retrieval_corpus.jsonl",
     )
     replay_envelope = ReplayEnvelope(
         spec_version="v1",
@@ -101,6 +102,7 @@ def test_flow_correlation_rejects_missing_parent() -> None:
         dataset_version="1.0.0",
         dataset_hash="hash",
         dataset_state=DatasetState.FROZEN,
+        storage_uri="file://datasets/retrieval_corpus.jsonl",
     )
     replay_envelope = ReplayEnvelope(
         spec_version="v1",

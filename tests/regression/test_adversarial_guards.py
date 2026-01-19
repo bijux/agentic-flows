@@ -129,6 +129,7 @@ def test_reused_artifact_id_rejected(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -246,7 +247,9 @@ def test_reused_artifact_id_rejected(
     result = execute_flow(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
-            mode=FlowRunMode.LIVE, verification_policy=baseline_policy
+            mode=FlowRunMode.LIVE,
+            verification_policy=baseline_policy,
+            execution_store=execution_store,
         ),
     )
 
@@ -265,6 +268,7 @@ def test_fake_evidence_id_rejected(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -358,7 +362,9 @@ def test_fake_evidence_id_rejected(
     result = execute_flow(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
-            mode=FlowRunMode.LIVE, verification_policy=baseline_policy
+            mode=FlowRunMode.LIVE,
+            verification_policy=baseline_policy,
+            execution_store=execution_store,
         ),
     )
 

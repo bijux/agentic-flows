@@ -39,6 +39,7 @@ def test_budget_exhaustion_records_failure(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     step = ResolvedStep(
         spec_version="v1",
@@ -81,6 +82,7 @@ def test_budget_exhaustion_records_failure(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.DRY_RUN,
+            execution_store=execution_store,
             budget=ExecutionBudget(
                 step_limit=0,
                 token_limit=None,

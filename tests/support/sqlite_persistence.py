@@ -437,4 +437,5 @@ def _decode_dataset(payload: dict[str, str]) -> DatasetDescriptor:
         dataset_version=payload["dataset_version"],
         dataset_hash=payload["dataset_hash"],
         dataset_state=DatasetState(payload["dataset_state"]),
+        storage_uri="file://datasets/retrieval_corpus.jsonl",
     )

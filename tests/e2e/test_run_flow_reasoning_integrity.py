@@ -49,6 +49,7 @@ def test_reasoning_references_missing_evidence(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -126,7 +127,11 @@ def test_reasoning_references_missing_evidence(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            execution_store=execution_store,
+        ),
     )
     trace = result.trace
 

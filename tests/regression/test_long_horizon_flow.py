@@ -51,6 +51,7 @@ def test_long_horizon_flow_is_stable(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda agent_id, **_kwargs: [
         {
@@ -167,7 +168,11 @@ def test_long_horizon_flow_is_stable(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            execution_store=execution_store,
+        ),
     )
     assert result.trace.finalized is True
     assert len(result.trace.events) >= 50
@@ -195,7 +200,11 @@ def test_long_horizon_flow_is_stable(
     )
     result_two = execute_flow(
         resolved_flow=resolved_flow_two,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            execution_store=execution_store,
+        ),
     )
     assert result_two.trace.finalized is True
     assert result.trace.plan_hash != result_two.trace.plan_hash

@@ -19,10 +19,16 @@ from agentic_flows.spec.ontology.ontology import ArbitrationRule
 pytestmark = pytest.mark.regression
 
 
-def test_replay_rejects_policy_mismatch(resolved_flow, baseline_policy) -> None:
+def test_replay_rejects_policy_mismatch(
+    resolved_flow, baseline_policy, execution_store
+) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.LIVE, verification_policy=baseline_policy),
+        config=ExecutionConfig(
+            mode=RunMode.LIVE,
+            verification_policy=baseline_policy,
+            execution_store=execution_store,
+        ),
     )
     trace = result.trace
     plan = result.resolved_flow.plan

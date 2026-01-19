@@ -15,12 +15,14 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 pytestmark = pytest.mark.regression
 
 
-def test_compare_runs_reports_overlap(resolved_flow) -> None:
+def test_compare_runs_reports_overlap(resolved_flow, execution_store) -> None:
     first = execute_flow(
-        resolved_flow=resolved_flow, config=ExecutionConfig(mode=RunMode.DRY_RUN)
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     second = execute_flow(
-        resolved_flow=resolved_flow, config=ExecutionConfig(mode=RunMode.DRY_RUN)
+        resolved_flow=resolved_flow,
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     summary = compare_runs([first.trace, second.trace])
     assert summary["runs"] == 2

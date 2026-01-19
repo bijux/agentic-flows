@@ -5,7 +5,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
+from agentic_flows.spec.ontology.ids import (
+    ContentHash,
+    ContractID,
+    EvidenceID,
+    TenantID,
+)
 from agentic_flows.spec.ontology.ontology import EvidenceDeterminism
 
 
@@ -13,6 +18,7 @@ from agentic_flows.spec.ontology.ontology import EvidenceDeterminism
 class RetrievedEvidence:
     spec_version: str
     evidence_id: EvidenceID
+    tenant_id: TenantID
     determinism: EvidenceDeterminism
     source_uri: str
     content_hash: ContentHash

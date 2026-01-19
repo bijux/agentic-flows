@@ -56,6 +56,7 @@ def test_hostile_artifact_store_triggers_verification_failure(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -157,6 +158,7 @@ def test_hostile_artifact_store_triggers_verification_failure(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
             artifact_store=artifact_store,
+            execution_store=execution_store,
         ),
     )
     trace = result.trace

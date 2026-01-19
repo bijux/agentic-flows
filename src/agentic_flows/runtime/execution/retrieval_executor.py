@@ -12,7 +12,12 @@ import bijux_vex
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
+from agentic_flows.spec.ontology.ids import (
+    ContentHash,
+    ContractID,
+    EvidenceID,
+    TenantID,
+)
 from agentic_flows.spec.ontology.ontology import (
     EntropyMagnitude,
     EntropySource,
@@ -40,7 +45,7 @@ class RetrievalExecutor:
             vector_contract_id=request.vector_contract_id,
         )
 
-        evidence = self._normalize_evidence(raw_evidence)
+        evidence = self._normalize_evidence(raw_evidence, tenant_id=context.tenant_id)
         if not evidence:
             raise ValueError("retrieval returned no evidence")
 
@@ -69,7 +74,9 @@ class RetrievalExecutor:
         context.record_evidence(step.step_index, evidence)
         return evidence
 
-    def _normalize_evidence(self, raw: Any) -> list[RetrievedEvidence]:
+    def _normalize_evidence(
+        self, raw: Any, *, tenant_id: TenantID
+    ) -> list[RetrievedEvidence]:
         if not isinstance(raw, list):
             raise ValueError("retrieval results must be a list")
 
@@ -94,6 +101,7 @@ class RetrievalExecutor:
                 RetrievedEvidence(
                     spec_version="v1",
                     evidence_id=EvidenceID(str(entry["evidence_id"])),
+                    tenant_id=tenant_id,
                     determinism=determinism,
                     source_uri=str(entry["source_uri"]),
                     content_hash=content_hash,

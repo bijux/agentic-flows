@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 import sys
 import types
 
@@ -12,6 +13,7 @@ from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
 from agentic_flows.runtime.observability.environment import (
     compute_environment_fingerprint,
 )
+from agentic_flows.runtime.observability.execution_store import DuckDBExecutionStore
 from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
@@ -140,6 +142,7 @@ def dataset_descriptor() -> DatasetDescriptor:
         dataset_version="1.0.0",
         dataset_hash="136275faf776ff9aae3823d7d6f928e9",
         dataset_state=DatasetState.FROZEN,
+        storage_uri="file://datasets/retrieval_corpus.jsonl",
     )
 
 
@@ -166,6 +169,11 @@ def deterministic_environment(
         lambda: fingerprint,
     )
     return fingerprint
+
+
+@pytest.fixture
+def execution_store(tmp_path: Path) -> DuckDBExecutionStore:
+    return DuckDBExecutionStore(tmp_path / "execution.duckdb")
 
 
 @pytest.fixture

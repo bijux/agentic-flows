@@ -105,6 +105,7 @@ def test_step_budget_halts_flow(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -143,6 +144,7 @@ def test_step_budget_halts_flow(
         config=ExecutionConfig(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
+            execution_store=execution_store,
             budget=ExecutionBudget(
                 step_limit=0,
                 token_limit=None,
@@ -163,6 +165,7 @@ def test_token_budget_failure_is_deterministic(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -222,6 +225,7 @@ def test_token_budget_failure_is_deterministic(
         config=ExecutionConfig(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
+            execution_store=execution_store,
             budget=ExecutionBudget(
                 step_limit=1,
                 token_limit=0,
@@ -248,6 +252,7 @@ def test_artifact_step_budget_halts_flow(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -286,6 +291,7 @@ def test_artifact_step_budget_halts_flow(
         config=ExecutionConfig(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
+            execution_store=execution_store,
             budget=ExecutionBudget(
                 step_limit=1,
                 token_limit=None,
@@ -306,6 +312,7 @@ def test_evidence_budget_halts_flow(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -344,6 +351,7 @@ def test_evidence_budget_halts_flow(
         config=ExecutionConfig(
             mode=RunMode.LIVE,
             verification_policy=baseline_policy,
+            execution_store=execution_store,
             budget=ExecutionBudget(
                 step_limit=1,
                 token_limit=None,

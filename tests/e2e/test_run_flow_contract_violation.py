@@ -37,6 +37,7 @@ def test_dry_run_execution_emits_trace(
     entropy_budget,
     replay_envelope,
     dataset_descriptor,
+    execution_store,
 ) -> None:
     step = ResolvedStep(
         spec_version="v1",
@@ -77,7 +78,7 @@ def test_dry_run_execution_emits_trace(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN),
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
 
     assert result.trace is not None

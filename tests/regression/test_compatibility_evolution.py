@@ -18,10 +18,10 @@ from agentic_flows.spec.ontology.ids import PlanHash
 pytestmark = pytest.mark.regression
 
 
-def test_allowed_evolution_preserves_replay(resolved_flow) -> None:
+def test_allowed_evolution_preserves_replay(resolved_flow, execution_store) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN),
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     plan = result.resolved_flow.plan
     trace = result.trace
@@ -34,10 +34,10 @@ def test_allowed_evolution_preserves_replay(resolved_flow) -> None:
     validate_replay(trace, updated_plan)
 
 
-def test_replay_breaker_is_rejected(resolved_flow) -> None:
+def test_replay_breaker_is_rejected(resolved_flow, execution_store) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN),
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
     )
     plan = result.resolved_flow.plan
     trace = result.trace

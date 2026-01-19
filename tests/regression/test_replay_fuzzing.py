@@ -54,6 +54,7 @@ def test_semantic_fingerprints_ignore_order() -> None:
         RetrievedEvidence(
             spec_version="v1",
             evidence_id=EvidenceID("ev-1"),
+            tenant_id=TenantID("tenant-a"),
             determinism=EvidenceDeterminism.DETERMINISTIC,
             source_uri="file://doc",
             content_hash=ContentHash("hash-ev-1"),
@@ -63,6 +64,7 @@ def test_semantic_fingerprints_ignore_order() -> None:
         RetrievedEvidence(
             spec_version="v1",
             evidence_id=EvidenceID("ev-2"),
+            tenant_id=TenantID("tenant-a"),
             determinism=EvidenceDeterminism.DETERMINISTIC,
             source_uri="file://doc",
             content_hash=ContentHash("hash-ev-2"),
