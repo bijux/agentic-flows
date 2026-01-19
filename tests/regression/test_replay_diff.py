@@ -21,7 +21,16 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     ResolverID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    DeterminismLevel,
+    EvidenceDeterminism,
+    EntropyMagnitude,
+    EntropySource,
+    ReplayAcceptability,
+)
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,
@@ -35,6 +44,13 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-replay-diff"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=EntropyBudget(
+            spec_version="v1",
+            allowed_sources=(EntropySource.SEEDED_RNG,),
+            max_magnitude=EntropyMagnitude.LOW,
+        ),
         agents=(AgentID("alpha"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -48,12 +64,15 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
         flow_id=plan.flow_id,
         parent_flow_id=None,
         child_flow_ids=(),
+        determinism_level=plan.determinism_level,
+        replay_acceptability=plan.replay_acceptability,
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=PlanHash("mismatch"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=False,
     )
     trace.finalize()
@@ -73,6 +92,7 @@ def test_replay_diff_includes_artifacts_and_evidence(deterministic_environment) 
         RetrievedEvidence(
             spec_version="v1",
             evidence_id=EvidenceID("ev-1"),
+            determinism=EvidenceDeterminism.DETERMINISTIC,
             source_uri="file://doc",
             content_hash=ContentHash("hash-ev"),
             score=0.9,

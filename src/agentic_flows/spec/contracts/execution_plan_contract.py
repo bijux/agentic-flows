@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
-from agentic_flows.spec.ontology.ontology import StepType
+from agentic_flows.spec.ontology.ontology import DeterminismLevel, StepType
 
 
 def validate(plan: ExecutionPlan) -> None:
@@ -20,6 +20,10 @@ def validate(plan: ExecutionPlan) -> None:
     for step in steps:
         if step.step_type is not StepType.AGENT:
             raise ValueError("executor only supports StepType.AGENT steps")
+        if not isinstance(step.determinism_level, DeterminismLevel):
+            raise ValueError("resolved step determinism_level must be declared")
+        if step.determinism_level != plan.manifest.determinism_level:
+            raise ValueError("resolved step determinism_level must match manifest")
         for dep in step.declared_dependencies:
             if dep not in agent_to_index:
                 raise ValueError("resolved step dependency references unknown agent")

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology.ids import (
@@ -14,6 +15,10 @@ from agentic_flows.spec.ontology.ids import (
     PolicyFingerprint,
     ResolverID,
 )
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    ReplayAcceptability,
+)
 
 
 @dataclass(frozen=True)
@@ -22,12 +27,15 @@ class ExecutionTrace:
     flow_id: FlowID
     parent_flow_id: FlowID | None
     child_flow_ids: tuple[FlowID, ...]
+    determinism_level: DeterminismLevel
+    replay_acceptability: ReplayAcceptability
     environment_fingerprint: EnvironmentFingerprint
     plan_hash: PlanHash
     verification_policy_fingerprint: PolicyFingerprint | None
     resolver_id: ResolverID
     events: tuple[ExecutionEvent, ...]
     tool_invocations: tuple[ToolInvocation, ...]
+    entropy_usage: tuple[EntropyUsage, ...]
     finalized: bool
 
     def finalize(self) -> ExecutionTrace:

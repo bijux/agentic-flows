@@ -9,8 +9,15 @@ import json
 from pathlib import Path
 
 from agentic_flows.api import ExecutionConfig, execute_flow
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import AgentID, ContractID, FlowID, GateID
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    ReplayAcceptability,
+)
 
 
 def _load_manifest(path: Path) -> FlowManifest:
@@ -19,6 +26,16 @@ def _load_manifest(path: Path) -> FlowManifest:
     return FlowManifest(
         spec_version="v1",
         flow_id=FlowID(payload["flow_id"]),
+        determinism_level=DeterminismLevel(payload["determinism_level"]),
+        replay_acceptability=ReplayAcceptability(payload["replay_acceptability"]),
+        entropy_budget=EntropyBudget(
+            spec_version="v1",
+            allowed_sources=tuple(
+                EntropySource(source)
+                for source in payload["entropy_budget"]["allowed_sources"]
+            ),
+            max_magnitude=EntropyMagnitude(payload["entropy_budget"]["max_magnitude"]),
+        ),
         agents=tuple(AgentID(agent_id) for agent_id in payload["agents"]),
         dependencies=tuple(payload["dependencies"]),
         retrieval_contracts=tuple(
@@ -83,6 +100,7 @@ def _render_result(command: str, result) -> None:
                 "evidence_id": item.evidence_id,
                 "content_hash": item.content_hash,
                 "vector_contract_id": item.vector_contract_id,
+                "determinism": item.determinism,
             }
             for item in result.evidence
         ]
@@ -106,6 +124,22 @@ def _render_result(command: str, result) -> None:
         ]
         output = {
             "trace": payload,
+            "determinism_level": result.resolved_flow.plan.determinism_level,
+            "replay_acceptability": result.resolved_flow.plan.replay_acceptability,
+            "entropy_used": [
+                {
+                    "source": usage.source,
+                    "magnitude": usage.magnitude,
+                    "description": usage.description,
+                    "step_index": usage.step_index,
+                }
+                for usage in result.trace.entropy_usage
+            ]
+            if result.trace is not None
+            else [],
+            "replay_confidence": _replay_confidence(
+                result.resolved_flow.plan.replay_acceptability
+            ),
             "artifacts": artifact_list,
             "retrieval_requests": retrieval_requests,
             "retrieval_evidence": evidence_list,
@@ -115,3 +149,13 @@ def _render_result(command: str, result) -> None:
         print(json.dumps(output, sort_keys=True))
         return
     print(f"Flow loaded successfully: {result.resolved_flow.manifest.flow_id}")
+
+
+def _replay_confidence(acceptability: ReplayAcceptability) -> str:
+    if acceptability == ReplayAcceptability.EXACT_MATCH:
+        return "exact"
+    if acceptability == ReplayAcceptability.INVARIANT_PRESERVING:
+        return "invariant_preserving"
+    if acceptability == ReplayAcceptability.STATISTICALLY_BOUNDED:
+        return "statistically_bounded"
+    return "unknown"

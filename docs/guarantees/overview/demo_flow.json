@@ -1,5 +1,11 @@
 {
   "flow_id": "demo-flow",
+  "determinism_level": "strict",
+  "replay_acceptability": "exact_match",
+  "entropy_budget": {
+    "allowed_sources": ["seeded_rng"],
+    "max_magnitude": "low"
+  },
   "agents": ["agent-a", "force-partial-failure", "agent-b"],
   "dependencies": [
     "force-partial-failure:agent-a",

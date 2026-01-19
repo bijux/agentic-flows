@@ -22,6 +22,7 @@ def enforce_flow_boundary(
         environment_fingerprint=plan.environment_fingerprint,
         seed=seed_token,
         unordered_normalized=True,
+        determinism_level=plan.determinism_level,
     )
     if config_validation is not None:
         config_validation()

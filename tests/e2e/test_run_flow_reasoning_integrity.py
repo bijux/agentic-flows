@@ -26,7 +26,13 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactType,
+    DeterminismLevel,
+    EventType,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
@@ -36,7 +42,7 @@ pytestmark = pytest.mark.e2e
 
 
 def test_reasoning_references_missing_evidence(
-    baseline_policy, resolved_flow_factory
+    baseline_policy, resolved_flow_factory, entropy_budget
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -79,6 +85,7 @@ def test_reasoning_references_missing_evidence(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -96,6 +103,9 @@ def test_reasoning_references_missing_evidence(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-reasoning"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

@@ -6,12 +6,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.ontology.ids import ContentHash, ToolID
+from agentic_flows.spec.ontology.ontology import DeterminismLevel
 
 
 @dataclass(frozen=True)
 class ToolInvocation:
     spec_version: str
     tool_id: ToolID
+    determinism_level: DeterminismLevel
     inputs_fingerprint: ContentHash
     outputs_fingerprint: ContentHash | None
     duration: float

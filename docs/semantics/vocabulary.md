@@ -6,4 +6,4 @@
 - artifact: an immutable record produced by a step or derivation.
 - evidence: a record used to support verification decisions.
 - verification: the determination of whether requirements are met.
-- replay: re-running a flow with identical inputs to obtain identical results.
+- replay: re-running a flow under declared acceptability constraints.

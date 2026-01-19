@@ -10,7 +10,6 @@ from typing import Protocol
 
 from agentic_flows.core.authority import evaluate_verification
 from agentic_flows.runtime.observability.fingerprint import fingerprint_policy
-from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
@@ -18,7 +17,11 @@ from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, RuleID
-from agentic_flows.spec.ontology.ontology import ArbitrationRule, VerificationPhase
+from agentic_flows.spec.ontology.ontology import (
+    ArbitrationRule,
+    VerificationPhase,
+    VerificationRandomness,
+)
 
 
 class VerificationEngine(Protocol):
@@ -55,11 +58,13 @@ class ContentVerificationEngine:
         policy: VerificationPolicy,
     ) -> VerificationResult:
         result = evaluate_verification(reasoning, evidence, artifacts, policy)
+        randomness = _max_rule_randomness(policy.rules)
         return VerificationResult(
             spec_version=result.spec_version,
             engine_id=self.engine_id,
             status=result.status,
             reason=result.reason,
+            randomness=randomness,
             violations=result.violations,
             checked_artifact_ids=result.checked_artifact_ids,
             phase=result.phase,
@@ -84,6 +89,7 @@ class SignatureVerificationEngine:
             engine_id=self.engine_id,
             status="PASS",
             reason="signature_ok",
+            randomness=VerificationRandomness.DETERMINISTIC,
             violations=(),
             checked_artifact_ids=(reasoning.bundle_id,),
             phase=VerificationPhase.POST_EXECUTION,
@@ -113,6 +119,7 @@ class ContradictionVerificationEngine:
             engine_id=self.engine_id,
             status=status,
             reason=reason,
+            randomness=VerificationRandomness.DETERMINISTIC,
             violations=violations,
             checked_artifact_ids=bundle_ids,
             phase=VerificationPhase.POST_EXECUTION,
@@ -186,7 +193,7 @@ class VerificationOrchestrator:
             engine.verify(reasoning, evidence, artifacts, policy)
             for engine in self._bundle_engines
         ]
-        arbitration = _arbitrate(results, policy.arbitration_policy)
+        arbitration = _arbitrate(results, policy)
         return results, arbitration
 
     def verify_flow(
@@ -198,15 +205,17 @@ class VerificationOrchestrator:
             engine.verify_flow(reasoning_bundles, policy)
             for engine in self._flow_engines
         ]
-        arbitration = _arbitrate(results, policy.arbitration_policy)
+        arbitration = _arbitrate(results, policy)
         return results, arbitration
 
 
 def _arbitrate(
-    results: list[VerificationResult], policy: ArbitrationPolicy
+    results: list[VerificationResult], policy: VerificationPolicy
 ) -> VerificationArbitration:
-    rule = policy.rule
+    arbitration_policy = policy.arbitration_policy
+    rule = arbitration_policy.rule
     statuses = [result.status for result in results]
+    randomness = _max_result_randomness(results)
     decision = "PASS"
     if rule == ArbitrationRule.STRICT_FIRST_FAILURE:
         for status in statuses:
@@ -222,7 +231,7 @@ def _arbitrate(
             decision = "ESCALATE"
     elif rule == ArbitrationRule.QUORUM:
         counts = Counter(statuses)
-        threshold = policy.quorum_threshold
+        threshold = arbitration_policy.quorum_threshold
         if threshold is None:
             threshold = len(statuses) // 2 + 1
         if counts["PASS"] >= threshold:
@@ -231,6 +240,10 @@ def _arbitrate(
             decision = "FAIL"
         else:
             decision = "ESCALATE"
+    if decision == "PASS" and _randomness_exceeds(
+        randomness, policy.randomness_tolerance
+    ):
+        decision = "ESCALATE"
     engine_ids = tuple(result.engine_id for result in results)
     engine_statuses = tuple(statuses)
     target_ids: list[ArtifactID] = []
@@ -238,13 +251,46 @@ def _arbitrate(
         target_ids.extend(result.checked_artifact_ids)
     return VerificationArbitration(
         spec_version="v1",
-        rule=rule,
+        rule=arbitration_policy.rule,
         policy_fingerprint=PolicyFingerprint(fingerprint_policy(policy)),
         decision=decision,
+        randomness=randomness,
         engine_ids=engine_ids,
         engine_statuses=engine_statuses,
         target_artifact_ids=tuple(target_ids),
     )
+
+
+def _max_rule_randomness(rules: tuple[object, ...]) -> VerificationRandomness:
+    if not rules:
+        return VerificationRandomness.DETERMINISTIC
+    return max(
+        (rule.randomness_requirement for rule in rules),
+        key=_randomness_rank,
+    )
+
+
+def _max_result_randomness(
+    results: list[VerificationResult],
+) -> VerificationRandomness:
+    if not results:
+        return VerificationRandomness.DETERMINISTIC
+    return max((result.randomness for result in results), key=_randomness_rank)
+
+
+def _randomness_rank(randomness: VerificationRandomness) -> int:
+    order = {
+        VerificationRandomness.DETERMINISTIC: 0,
+        VerificationRandomness.SAMPLED: 1,
+        VerificationRandomness.STATISTICAL: 2,
+    }
+    return order[randomness]
+
+
+def _randomness_exceeds(
+    observed: VerificationRandomness, tolerance: VerificationRandomness
+) -> bool:
+    return _randomness_rank(observed) > _randomness_rank(tolerance)
 
 
 __all__ = [

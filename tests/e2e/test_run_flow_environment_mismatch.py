@@ -21,19 +21,24 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import StepType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 
 pytestmark = pytest.mark.e2e
 
 
 def test_environment_fingerprint_mismatch_blocks_execution(
-    baseline_policy, resolved_flow_factory
+    baseline_policy, resolved_flow_factory, entropy_budget
 ) -> None:
     step = ResolvedStep(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -51,6 +56,9 @@ def test_environment_fingerprint_mismatch_blocks_execution(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-mismatch"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

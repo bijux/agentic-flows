@@ -34,13 +34,20 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactType,
+    DeterminismLevel,
+    EventType,
+    EvidenceDeterminism,
+    ReplayAcceptability,
+    StepType,
+)
 
 pytestmark = pytest.mark.e2e
 
 
 def test_reasoning_content_verification_catches_bad_claim(
-    baseline_policy, resolved_flow_factory
+    baseline_policy, resolved_flow_factory, entropy_budget
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -53,6 +60,7 @@ def test_reasoning_content_verification_catches_bad_claim(
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-1",
+            "determinism": EvidenceDeterminism.DETERMINISTIC.value,
             "source_uri": "file://doc",
             "content": "content",
             "score": 0.9,
@@ -97,6 +105,7 @@ def test_reasoning_content_verification_catches_bad_claim(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -114,6 +123,9 @@ def test_reasoning_content_verification_catches_bad_claim(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-bad-claim"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

@@ -9,13 +9,16 @@ from enum import Enum
 from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.budget import BudgetState
+from agentic_flows.runtime.observability.entropy import EntropyLedger
 from agentic_flows.runtime.observability.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.ontology.ids import EnvironmentFingerprint, FlowID
+from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
 
 class RunMode(str, Enum):
@@ -39,6 +42,7 @@ class ExecutionContext:
     verification_policy: VerificationPolicy | None
     observers: tuple[RuntimeObserver, ...]
     budget: BudgetState
+    entropy: EntropyLedger
     _step_evidence: dict[int, tuple[RetrievedEvidence, ...]]
     _step_artifacts: dict[int, tuple[Artifact, ...]]
     observed_run: ObservedRun | None = None
@@ -83,6 +87,24 @@ class ExecutionContext:
 
     def consume_evidence_budget(self, evidence_items: int) -> None:
         self.budget.consume_evidence(evidence_items)
+
+    def record_entropy(
+        self,
+        *,
+        source: EntropySource,
+        magnitude: EntropyMagnitude,
+        description: str,
+        step_index: int | None,
+    ) -> None:
+        self.entropy.record(
+            source=source,
+            magnitude=magnitude,
+            description=description,
+            step_index=step_index,
+        )
+
+    def entropy_usage(self) -> tuple[EntropyUsage, ...]:
+        return self.entropy.usage()
 
     def cancel(self) -> None:
         object.__setattr__(self, "_cancelled", True)

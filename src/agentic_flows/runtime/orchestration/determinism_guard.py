@@ -18,23 +18,36 @@ from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.ontology.ontology import EventType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EventType,
+    ReplayAcceptability,
+)
 
 
 def validate_determinism(
     environment_fingerprint: str | None,
     seed: Any | None,
     unordered_normalized: bool,
+    determinism_level: DeterminismLevel,
 ) -> None:
     current_fingerprint = compute_environment_fingerprint()
     if not environment_fingerprint:
-        raise ValueError("environment_fingerprint is required for deterministic runs")
+        raise ValueError("environment_fingerprint is required before execution")
     if environment_fingerprint != current_fingerprint:
         raise ValueError("environment_fingerprint mismatch")
-    if seed is None:
-        raise ValueError("deterministic seed is required for deterministic runs")
-    if not unordered_normalized:
-        raise ValueError("unordered collections must be normalized before execution")
+    if determinism_level in {DeterminismLevel.STRICT, DeterminismLevel.BOUNDED}:
+        if seed is None:
+            raise ValueError("deterministic seed is required for strict runs")
+        if not unordered_normalized:
+            raise ValueError(
+                "unordered collections must be normalized before execution"
+            )
+    elif determinism_level == DeterminismLevel.PROBABILISTIC:
+        if not unordered_normalized:
+            raise ValueError(
+                "unordered collections must be normalized before execution"
+            )
 
 
 def validate_replay(
@@ -52,8 +65,12 @@ def validate_replay(
         evidence=evidence,
         verification_policy=verification_policy,
     )
-    if diffs:
-        raise ValueError(f"replay mismatch: {diffs}")
+    blocking, acceptable = _partition_diffs(diffs, plan.replay_acceptability)
+    if blocking:
+        detail = {"blocking": blocking}
+        if acceptable:
+            detail["acceptable"] = acceptable
+        raise ValueError(f"replay mismatch: {detail}")
 
 
 def replay_diff(
@@ -69,6 +86,16 @@ def replay_diff(
         diffs["plan_hash"] = {
             "expected": plan.plan_hash,
             "observed": trace.plan_hash,
+        }
+    if trace.determinism_level != plan.determinism_level:
+        diffs["determinism_level"] = {
+            "expected": plan.determinism_level,
+            "observed": trace.determinism_level,
+        }
+    if trace.replay_acceptability != plan.replay_acceptability:
+        diffs["replay_acceptability"] = {
+            "expected": plan.replay_acceptability,
+            "observed": trace.replay_acceptability,
         }
     if trace.environment_fingerprint != plan.environment_fingerprint:
         diffs["environment_fingerprint"] = {
@@ -162,10 +189,36 @@ def semantic_evidence_fingerprint(evidence: Iterable[RetrievedEvidence]) -> str:
     )
     return fingerprint_inputs(
         [
-            {"evidence_id": item.evidence_id, "content_hash": item.content_hash}
+            {
+                "evidence_id": item.evidence_id,
+                "content_hash": item.content_hash,
+                "determinism": item.determinism,
+            }
             for item in normalized
         ]
     )
+
+
+def _partition_diffs(
+    diffs: dict[str, object], acceptability: ReplayAcceptability
+) -> tuple[dict[str, object], dict[str, object]]:
+    if not diffs:
+        return {}, {}
+    allowed: set[str] = set()
+    if acceptability in {
+        ReplayAcceptability.INVARIANT_PRESERVING,
+        ReplayAcceptability.STATISTICALLY_BOUNDED,
+    }:
+        allowed = {
+            "events",
+            "artifact_fingerprint",
+            "artifact_count",
+            "evidence_fingerprint",
+            "evidence_count",
+        }
+    blocking = {key: value for key, value in diffs.items() if key not in allowed}
+    acceptable = {key: value for key, value in diffs.items() if key in allowed}
+    return blocking, acceptable
 
 
 __all__ = [

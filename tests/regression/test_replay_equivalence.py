@@ -20,14 +20,21 @@ from agentic_flows.spec.ontology.ids import (
     GateID,
     ResolverID,
 )
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    ReplayAcceptability,
+)
 
 pytestmark = pytest.mark.regression
 
 
-def test_replay_equivalence(deterministic_environment) -> None:
+def test_replay_equivalence(deterministic_environment, entropy_budget) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-replay"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("alpha"), AgentID("bravo")),
         dependencies=("bravo:alpha",),
         retrieval_contracts=(ContractID("contract-a"),),
@@ -41,12 +48,15 @@ def test_replay_equivalence(deterministic_environment) -> None:
         flow_id=plan.flow_id,
         parent_flow_id=None,
         child_flow_ids=(),
+        determinism_level=plan.determinism_level,
+        replay_acceptability=plan.replay_acceptability,
         environment_fingerprint=plan.environment_fingerprint,
         plan_hash=plan.plan_hash,
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=False,
     )
     trace.finalize()

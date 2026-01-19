@@ -15,6 +15,7 @@ from agentic_flows.cli import main as cli_main
 from agentic_flows.runtime.orchestration.execute_flow import FlowRunResult
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology.ids import (
     AgentID,
@@ -22,6 +23,12 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     PlanHash,
     ResolverID,
+)
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    ReplayAcceptability,
 )
 
 pytestmark = pytest.mark.unit
@@ -39,6 +46,12 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         json.dumps(
             {
                 "flow_id": "flow-cli",
+                "determinism_level": "strict",
+                "replay_acceptability": "exact_match",
+                "entropy_budget": {
+                    "allowed_sources": ["seeded_rng"],
+                    "max_magnitude": "low",
+                },
                 "agents": ["agent-1"],
                 "dependencies": [],
                 "retrieval_contracts": [],
@@ -51,6 +64,13 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-cli"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=EntropyBudget(
+            spec_version="v1",
+            allowed_sources=(EntropySource.SEEDED_RNG,),
+            max_magnitude=EntropyMagnitude.LOW,
+        ),
         steps=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
@@ -61,6 +81,13 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
         manifest=FlowManifest(
             spec_version="v1",
             flow_id=FlowID("flow-cli"),
+            determinism_level=DeterminismLevel.STRICT,
+            replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+            entropy_budget=EntropyBudget(
+                spec_version="v1",
+                allowed_sources=(EntropySource.SEEDED_RNG,),
+                max_magnitude=EntropyMagnitude.LOW,
+            ),
             agents=(AgentID("agent-1"),),
             dependencies=(),
             retrieval_contracts=(),

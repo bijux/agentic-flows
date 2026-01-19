@@ -69,6 +69,7 @@ class ExecutionPlanner:
                     spec_version="v1",
                     step_index=index,
                     step_type=StepType.AGENT,
+                    determinism_level=manifest.determinism_level,
                     agent_id=AgentID(agent_id),
                     inputs_fingerprint=inputs_fingerprint,
                     declared_dependencies=tuple(AgentID(dep) for dep in declared),
@@ -84,10 +85,13 @@ class ExecutionPlanner:
                     retrieval_request=None,
                 )
             )
-        plan_hash = self._plan_hash(manifest.flow_id, steps, dependencies)
+        plan_hash = self._plan_hash(manifest, steps, dependencies)
         plan = ExecutionSteps(
             spec_version="v1",
             flow_id=FlowID(manifest.flow_id),
+            determinism_level=manifest.determinism_level,
+            replay_acceptability=manifest.replay_acceptability,
+            entropy_budget=manifest.entropy_budget,
             steps=tuple(steps),
             environment_fingerprint=EnvironmentFingerprint(
                 compute_environment_fingerprint()
@@ -148,12 +152,18 @@ class ExecutionPlanner:
 
     def _plan_hash(
         self,
-        flow_id: FlowID,
+        manifest: FlowManifest,
         steps: list[ResolvedStep],
         dependencies: dict[str, list[str]],
     ) -> PlanHash:
         payload = {
-            "flow_id": flow_id,
+            "flow_id": manifest.flow_id,
+            "determinism_level": manifest.determinism_level,
+            "replay_acceptability": manifest.replay_acceptability,
+            "entropy_budget": {
+                "allowed_sources": list(manifest.entropy_budget.allowed_sources),
+                "max_magnitude": manifest.entropy_budget.max_magnitude,
+            },
             "steps": [
                 {
                     "index": step.step_index,
@@ -161,6 +171,7 @@ class ExecutionPlanner:
                     "inputs_fingerprint": step.inputs_fingerprint,
                     "declared_dependencies": list(step.declared_dependencies),
                     "step_type": step.step_type,
+                    "determinism_level": step.determinism_level,
                 }
                 for step in steps
             ],

@@ -128,6 +128,8 @@ class DryRunExecutor:
             flow_id=steps_plan.flow_id,
             parent_flow_id=context.parent_flow_id,
             child_flow_ids=context.child_flow_ids,
+            determinism_level=steps_plan.determinism_level,
+            replay_acceptability=steps_plan.replay_acceptability,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
             verification_policy_fingerprint=(
@@ -138,6 +140,7 @@ class DryRunExecutor:
             resolver_id=resolver_id,
             events=recorder.events(),
             tool_invocations=(),
+            entropy_usage=context.entropy_usage(),
             finalized=False,
         )
         finalize_trace(trace)

@@ -13,6 +13,7 @@ from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
+from agentic_flows.spec.ontology.ontology import EvidenceDeterminism
 
 
 class RetrievalExecutor:
@@ -62,19 +63,24 @@ class RetrievalExecutor:
                 "evidence_id" not in entry
                 or "source_uri" not in entry
                 or "content" not in entry
+                or "determinism" not in entry
+                or "vector_contract_id" not in entry
             ):
                 raise ValueError("retrieval evidence missing required fields")
             content_hash = ContentHash(self._hash_content(entry["content"]))
+            try:
+                determinism = EvidenceDeterminism(str(entry["determinism"]))
+            except ValueError as exc:
+                raise ValueError("retrieval evidence determinism is invalid") from exc
             evidence.append(
                 RetrievedEvidence(
                     spec_version="v1",
                     evidence_id=EvidenceID(str(entry["evidence_id"])),
+                    determinism=determinism,
                     source_uri=str(entry["source_uri"]),
                     content_hash=content_hash,
                     score=float(entry.get("score", 0.0)),
-                    vector_contract_id=ContractID(
-                        str(entry.get("vector_contract_id", ""))
-                    ),
+                    vector_contract_id=ContractID(str(entry["vector_contract_id"])),
                 )
             )
         return evidence

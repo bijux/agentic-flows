@@ -6,6 +6,8 @@ from __future__ import annotations
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
@@ -31,6 +33,8 @@ __all__ = [
     "ExecutionPlan",
     "ExecutionSteps",
     "ExecutionTrace",
+    "EntropyBudget",
+    "EntropyUsage",
     "FlowManifest",
     "ReasoningBundle",
     "ReasoningClaim",

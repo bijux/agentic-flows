@@ -81,6 +81,43 @@ class ArbitrationRule(str, Enum):
     STRICT_FIRST_FAILURE = "strict_first_failure"
 
 
+class DeterminismLevel(str, Enum):
+    STRICT = "strict"
+    BOUNDED = "bounded"
+    PROBABILISTIC = "probabilistic"
+    UNCONSTRAINED = "unconstrained"
+
+
+class ReplayAcceptability(str, Enum):
+    EXACT_MATCH = "exact_match"
+    INVARIANT_PRESERVING = "invariant_preserving"
+    STATISTICALLY_BOUNDED = "statistically_bounded"
+
+
+class EvidenceDeterminism(str, Enum):
+    DETERMINISTIC = "deterministic"
+    SAMPLED = "sampled"
+    EXTERNAL = "external"
+
+
+class EntropySource(str, Enum):
+    SEEDED_RNG = "seeded_rng"
+    EXTERNAL_ORACLE = "external_oracle"
+    HUMAN_INPUT = "human_input"
+
+
+class EntropyMagnitude(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class VerificationRandomness(str, Enum):
+    DETERMINISTIC = "deterministic"
+    SAMPLED = "sampled"
+    STATISTICAL = "statistical"
+
+
 __all__ = [
     "Agent",
     "Tool",
@@ -95,4 +132,10 @@ __all__ = [
     "StepType",
     "VerificationPhase",
     "ArbitrationRule",
+    "DeterminismLevel",
+    "ReplayAcceptability",
+    "EvidenceDeterminism",
+    "EntropySource",
+    "EntropyMagnitude",
+    "VerificationRandomness",
 ]

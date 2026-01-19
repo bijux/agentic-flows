@@ -23,13 +23,19 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactType,
+    DeterminismLevel,
+    EventType,
+    ReplayAcceptability,
+    StepType,
+)
 
 pytestmark = pytest.mark.regression
 
 
 def test_forced_partial_failure_records_incomplete_trace(
-    baseline_policy, resolved_flow_factory
+    baseline_policy, resolved_flow_factory, entropy_budget
 ) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
@@ -44,6 +50,7 @@ def test_forced_partial_failure_records_incomplete_trace(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("force-partial-failure"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -61,6 +68,9 @@ def test_forced_partial_failure_records_incomplete_trace(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-partial"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("force-partial-failure"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

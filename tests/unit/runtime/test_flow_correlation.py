@@ -15,6 +15,10 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     ResolverID,
 )
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    ReplayAcceptability,
+)
 
 
 def test_flow_correlation_requires_parent() -> None:
@@ -23,12 +27,15 @@ def test_flow_correlation_requires_parent() -> None:
         flow_id=FlowID("parent"),
         parent_flow_id=None,
         child_flow_ids=(),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=True,
     )
     child = ExecutionTrace(
@@ -36,12 +43,15 @@ def test_flow_correlation_requires_parent() -> None:
         flow_id=FlowID("child"),
         parent_flow_id=FlowID("parent"),
         child_flow_ids=(),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=True,
     )
     validate_flow_correlation(child, [parent])
@@ -53,12 +63,15 @@ def test_flow_correlation_rejects_missing_parent() -> None:
         flow_id=FlowID("child"),
         parent_flow_id=FlowID("parent"),
         child_flow_ids=(),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=True,
     )
     with pytest.raises(ValueError, match="parent_flow_id"):

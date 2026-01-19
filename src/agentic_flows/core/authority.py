@@ -15,7 +15,11 @@ from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import RuleID
-from agentic_flows.spec.ontology.ontology import EventType, VerificationPhase
+from agentic_flows.spec.ontology.ontology import (
+    EventType,
+    VerificationPhase,
+    VerificationRandomness,
+)
 
 SEMANTICS_VERSION = "v1"
 SEMANTICS_SOURCE = "docs/guarantees/system_guarantees.md"
@@ -95,6 +99,7 @@ def evaluate_verification(
         engine_id="content",
         status=status,
         reason=reason,
+        randomness=VerificationRandomness.DETERMINISTIC,
         violations=tuple(violations),
         checked_artifact_ids=(reasoning.bundle_id,),
         phase=VerificationPhase.POST_EXECUTION,

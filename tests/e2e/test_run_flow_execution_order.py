@@ -20,19 +20,24 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import StepType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 
 pytestmark = pytest.mark.e2e
 
 
 def test_execution_order_mismatch_rejected(
-    baseline_policy, resolved_flow_factory, deterministic_environment
+    baseline_policy, resolved_flow_factory, deterministic_environment, entropy_budget
 ) -> None:
     step_one = ResolvedStep(
         spec_version="v1",
         step_index=1,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs-a"),
         declared_dependencies=(),
@@ -51,6 +56,7 @@ def test_execution_order_mismatch_rejected(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-b"),
         inputs_fingerprint=InputsFingerprint("inputs-b"),
         declared_dependencies=(),
@@ -68,6 +74,9 @@ def test_execution_order_mismatch_rejected(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-order"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

@@ -17,7 +17,11 @@ from agentic_flows.spec.ontology.ids import (
     ContractID,
     EvidenceID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    EvidenceDeterminism,
+)
 
 pytestmark = pytest.mark.regression
 
@@ -47,6 +51,7 @@ def test_semantic_fingerprints_ignore_order() -> None:
         RetrievedEvidence(
             spec_version="v1",
             evidence_id=EvidenceID("ev-1"),
+            determinism=EvidenceDeterminism.DETERMINISTIC,
             source_uri="file://doc",
             content_hash=ContentHash("hash-ev-1"),
             score=0.9,
@@ -55,6 +60,7 @@ def test_semantic_fingerprints_ignore_order() -> None:
         RetrievedEvidence(
             spec_version="v1",
             evidence_id=EvidenceID("ev-2"),
+            determinism=EvidenceDeterminism.DETERMINISTIC,
             source_uri="file://doc",
             content_hash=ContentHash("hash-ev-2"),
             score=0.8,

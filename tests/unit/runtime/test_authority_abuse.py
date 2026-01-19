@@ -16,7 +16,11 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     ResolverID,
 )
-from agentic_flows.spec.ontology.ontology import EventType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EventType,
+    ReplayAcceptability,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -27,12 +31,15 @@ def test_finalize_trace_twice_rejected() -> None:
         flow_id=FlowID("flow"),
         parent_flow_id=None,
         child_flow_ids=(),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=False,
     )
 
@@ -62,12 +69,15 @@ def test_bypass_verification_is_rejected() -> None:
         flow_id=FlowID("flow"),
         parent_flow_id=None,
         child_flow_ids=(),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("resolver"),
         events=(),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=True,
     )
 

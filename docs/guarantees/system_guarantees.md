@@ -46,4 +46,4 @@ This document defines system guarantees. If any other document conflicts, this o
 - Determination of whether requirements are met.
 - Consumes artifacts, evidence, and reasoning.
 - Produces a definitive status and basis.
-- Must be reproducible for the same inputs.
+- Must be reproducible within declared replay acceptability.

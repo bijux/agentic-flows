@@ -7,6 +7,12 @@ from collections import defaultdict, deque
 from collections.abc import Iterable
 
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    ReplayAcceptability,
+)
 
 
 def validate(manifest: FlowManifest) -> None:
@@ -14,6 +20,23 @@ def validate(manifest: FlowManifest) -> None:
     _require_tuple_of_str("dependencies", manifest.dependencies)
     _require_tuple_of_str("retrieval_contracts", manifest.retrieval_contracts)
     _require_tuple_of_str("verification_gates", manifest.verification_gates)
+    _require_enum("determinism_level", manifest.determinism_level, DeterminismLevel)
+    _require_enum(
+        "replay_acceptability", manifest.replay_acceptability, ReplayAcceptability
+    )
+    if manifest.entropy_budget is None:
+        raise ValueError("entropy_budget must be declared")
+    if not isinstance(manifest.entropy_budget.allowed_sources, tuple):
+        raise ValueError("entropy_budget.allowed_sources must be a tuple")
+    if not manifest.entropy_budget.allowed_sources:
+        raise ValueError("entropy_budget.allowed_sources must not be empty")
+    for source in manifest.entropy_budget.allowed_sources:
+        _require_enum("entropy_budget.allowed_sources", source, EntropySource)
+    _require_enum(
+        "entropy_budget.max_magnitude",
+        manifest.entropy_budget.max_magnitude,
+        EntropyMagnitude,
+    )
 
     if not isinstance(manifest.flow_id, str) or not manifest.flow_id.strip():
         raise ValueError("flow_id must be a non-empty string")
@@ -60,6 +83,11 @@ def _require_tuple_of_str(field: str, value: Iterable[str]) -> None:
         raise ValueError(f"{field} must be a tuple of strings")
     if not all(isinstance(item, str) and item.strip() for item in value):
         raise ValueError(f"{field} must contain non-empty strings")
+
+
+def _require_enum(field: str, value: object, enum_type: type) -> None:
+    if not isinstance(value, enum_type):
+        raise ValueError(f"{field} must be a valid {enum_type.__name__}")
 
 
 __all__ = ["validate"]

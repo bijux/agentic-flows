@@ -30,7 +30,13 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactType,
+    DeterminismLevel,
+    EvidenceDeterminism,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
@@ -40,7 +46,9 @@ from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 pytestmark = pytest.mark.regression
 
 
-def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
+def test_retrieval_determinism(
+    baseline_policy, resolved_flow_factory, entropy_budget
+) -> None:
     request = RetrievalRequest(
         spec_version="v1",
         request_id=RequestID("req-1"),
@@ -54,6 +62,7 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
         return [
             {
                 "evidence_id": "ev-1",
+                "determinism": EvidenceDeterminism.DETERMINISTIC.value,
                 "source_uri": "file://doc-1",
                 "content": "alpha",
                 "score": 0.9,
@@ -61,6 +70,7 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
             },
             {
                 "evidence_id": "ev-2",
+                "determinism": EvidenceDeterminism.DETERMINISTIC.value,
                 "source_uri": "file://doc-2",
                 "content": "beta",
                 "score": 0.8,
@@ -112,6 +122,7 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -129,6 +140,9 @@ def test_retrieval_determinism(baseline_policy, resolved_flow_factory) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-retrieval"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

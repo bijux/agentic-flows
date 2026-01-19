@@ -9,19 +9,33 @@ from agentic_flows.runtime.orchestration.determinism_guard import validate_repla
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.ontology.ids import (
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
     ResolverID,
 )
-from agentic_flows.spec.ontology.ontology import EventType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    EventType,
+    ReplayAcceptability,
+)
 
 
 def test_human_intervention_event_breaks_replay() -> None:
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=EntropyBudget(
+            spec_version="v1",
+            allowed_sources=(EntropySource.SEEDED_RNG,),
+            max_magnitude=EntropyMagnitude.LOW,
+        ),
         steps=(),
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
@@ -41,12 +55,15 @@ def test_human_intervention_event_breaks_replay() -> None:
         flow_id=FlowID("flow"),
         parent_flow_id=None,
         child_flow_ids=(),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
         environment_fingerprint=EnvironmentFingerprint("env"),
         plan_hash=PlanHash("plan"),
         verification_policy_fingerprint=None,
         resolver_id=ResolverID("agentic-flows:v0"),
         events=(event,),
         tool_invocations=(),
+        entropy_usage=(),
         finalized=True,
     )
     with pytest.raises(ValueError, match="human_intervention_events"):

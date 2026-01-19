@@ -6,12 +6,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.ontology.ids import ContentHash, ContractID, EvidenceID
+from agentic_flows.spec.ontology.ontology import EvidenceDeterminism
 
 
 @dataclass(frozen=True)
 class RetrievedEvidence:
     spec_version: str
     evidence_id: EvidenceID
+    determinism: EvidenceDeterminism
     source_uri: str
     content_hash: ContentHash
     score: float

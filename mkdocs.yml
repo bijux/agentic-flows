@@ -33,6 +33,7 @@ theme:
 
 nav:
   - System Guarantees: guarantees/system_guarantees.md
+  - Non-Determinism Contract: guarantees/non_determinism.md
   - Never Support: guarantees/never_support.md
   - Home: guarantees/index.md
   - Getting Started:

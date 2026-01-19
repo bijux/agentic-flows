@@ -47,6 +47,7 @@ from agentic_flows.spec.ontology.ontology import (
     EventType,
     StepType,
     VerificationPhase,
+    VerificationRandomness,
 )
 
 
@@ -207,6 +208,7 @@ class LiveExecutor:
                             ToolInvocation(
                                 spec_version="v1",
                                 tool_id=tool_retrieval,
+                                determinism_level=step.determinism_level,
                                 inputs_fingerprint=input_fingerprint,
                                 outputs_fingerprint=None,
                                 duration=0.0,
@@ -295,6 +297,7 @@ class LiveExecutor:
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_retrieval,
+                            determinism_level=step.determinism_level,
                             inputs_fingerprint=input_fingerprint,
                             outputs_fingerprint=ContentHash(output_fingerprint),
                             duration=0.0,
@@ -357,6 +360,7 @@ class LiveExecutor:
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_agent,
+                            determinism_level=step.determinism_level,
                             inputs_fingerprint=input_fingerprint,
                             outputs_fingerprint=None,
                             duration=0.0,
@@ -400,6 +404,7 @@ class LiveExecutor:
                     ToolInvocation(
                         spec_version="v1",
                         tool_id=tool_agent,
+                        determinism_level=step.determinism_level,
                         inputs_fingerprint=input_fingerprint,
                         outputs_fingerprint=ContentHash(output_fingerprint),
                         duration=0.0,
@@ -423,6 +428,7 @@ class LiveExecutor:
                             engine_id="forced",
                             status="FAIL",
                             reason="forced_partial_failure",
+                            randomness=VerificationRandomness.DETERMINISTIC,
                             violations=(RuleID("forced_partial_failure"),),
                             checked_artifact_ids=tuple(
                                 artifact.artifact_id for artifact in step_artifacts
@@ -525,6 +531,7 @@ class LiveExecutor:
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_reasoning,
+                            determinism_level=step.determinism_level,
                             inputs_fingerprint=input_fingerprint,
                             outputs_fingerprint=ContentHash(
                                 fingerprint_inputs({"bundle_hash": bundle_hash})
@@ -577,6 +584,7 @@ class LiveExecutor:
                         ToolInvocation(
                             spec_version="v1",
                             tool_id=tool_reasoning,
+                            determinism_level=step.determinism_level,
                             inputs_fingerprint=input_fingerprint,
                             outputs_fingerprint=None,
                             duration=0.0,
@@ -621,6 +629,7 @@ class LiveExecutor:
                             engine_id="integrity",
                             status="FAIL",
                             reason="artifact_store_integrity",
+                            randomness=VerificationRandomness.DETERMINISTIC,
                             violations=(RuleID("artifact_store_integrity"),),
                             checked_artifact_ids=tuple(
                                 artifact.artifact_id for artifact in step_artifacts
@@ -765,6 +774,8 @@ class LiveExecutor:
             flow_id=steps_plan.flow_id,
             parent_flow_id=context.parent_flow_id,
             child_flow_ids=context.child_flow_ids,
+            determinism_level=steps_plan.determinism_level,
+            replay_acceptability=steps_plan.replay_acceptability,
             environment_fingerprint=steps_plan.environment_fingerprint,
             plan_hash=steps_plan.plan_hash,
             verification_policy_fingerprint=(
@@ -775,6 +786,7 @@ class LiveExecutor:
             resolver_id=resolver_id,
             events=state.recorder.events(),
             tool_invocations=tuple(state.tool_invocations),
+            entropy_usage=context.entropy_usage(),
             finalized=False,
         )
         finalize_trace(trace)

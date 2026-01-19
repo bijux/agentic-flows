@@ -31,7 +31,14 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactType,
+    DeterminismLevel,
+    EvidenceDeterminism,
+    EventType,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
@@ -41,7 +48,9 @@ from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 pytestmark = pytest.mark.regression
 
 
-def test_invariant_canary(baseline_policy, resolved_flow_factory) -> None:
+def test_invariant_canary(
+    baseline_policy, resolved_flow_factory, entropy_budget
+) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
             "artifact_id": "agent-output",
@@ -53,6 +62,7 @@ def test_invariant_canary(baseline_policy, resolved_flow_factory) -> None:
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-1",
+            "determinism": EvidenceDeterminism.DETERMINISTIC.value,
             "source_uri": "file://doc-1",
             "content": "content",
             "score": 0.9,
@@ -101,6 +111,7 @@ def test_invariant_canary(baseline_policy, resolved_flow_factory) -> None:
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -118,6 +129,9 @@ def test_invariant_canary(baseline_policy, resolved_flow_factory) -> None:
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-canary"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

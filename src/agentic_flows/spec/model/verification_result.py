@@ -6,7 +6,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.ontology.ids import ArtifactID, RuleID
-from agentic_flows.spec.ontology.ontology import VerificationPhase
+from agentic_flows.spec.ontology.ontology import (
+    VerificationPhase,
+    VerificationRandomness,
+)
 
 
 @dataclass(frozen=True)
@@ -15,6 +18,7 @@ class VerificationResult:
     engine_id: str
     status: str
     reason: str
+    randomness: VerificationRandomness
     violations: tuple[RuleID, ...]
     checked_artifact_ids: tuple[ArtifactID, ...]
     phase: VerificationPhase

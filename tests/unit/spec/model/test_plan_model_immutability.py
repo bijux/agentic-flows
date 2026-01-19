@@ -9,6 +9,7 @@ import pytest
 
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     EnvironmentFingerprint,
@@ -17,7 +18,13 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import StepType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 
 pytestmark = pytest.mark.unit
@@ -28,6 +35,7 @@ def _make_step(index: int) -> ResolvedStep:
         spec_version="v1",
         step_index=index,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID(f"agent-{index}"),
         inputs_fingerprint=InputsFingerprint(f"inputs-{index}"),
         declared_dependencies=(),
@@ -46,12 +54,27 @@ def _make_step(index: int) -> ResolvedStep:
 
 def test_plan_is_structurally_immutable(plan_hash_for) -> None:
     step = _make_step(0)
+    entropy_budget = EntropyBudget(
+        spec_version="v1",
+        allowed_sources=(EntropySource.SEEDED_RNG,),
+        max_magnitude=EntropyMagnitude.LOW,
+    )
     plan = ExecutionSteps(
         spec_version="v1",
         flow_id=FlowID("flow-immutable"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         steps=(step,),
         environment_fingerprint=EnvironmentFingerprint("env"),
-        plan_hash=plan_hash_for("flow-immutable", (step,), {}),
+        plan_hash=plan_hash_for(
+            "flow-immutable",
+            (step,),
+            {},
+            determinism_level=DeterminismLevel.STRICT,
+            replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+            entropy_budget=entropy_budget,
+        ),
         resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
     )
 

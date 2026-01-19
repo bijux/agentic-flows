@@ -13,6 +13,7 @@ from agentic_flows.core.authority import authority_token
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
 from agentic_flows.runtime.budget import BudgetState
 from agentic_flows.runtime.context import ExecutionContext, RunMode
+from agentic_flows.runtime.observability.entropy import EntropyLedger
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -22,6 +23,7 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
@@ -29,7 +31,15 @@ from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.ontology.ontology import ArbitrationRule
+from agentic_flows.spec.ontology.ontology import (
+    ArbitrationRule,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySource,
+    EvidenceDeterminism,
+    ReplayAcceptability,
+    VerificationRandomness,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ArtifactID,
@@ -71,6 +81,7 @@ def test_fabricated_artifact_rejected() -> None:
             spec_version="v1",
             verification_level="baseline",
             failure_mode="halt",
+            randomness_tolerance=VerificationRandomness.DETERMINISTIC,
             arbitration_policy=ArbitrationPolicy(
                 spec_version="v1",
                 rule=ArbitrationRule.UNANIMOUS,
@@ -83,6 +94,13 @@ def test_fabricated_artifact_rejected() -> None:
         ),
         observers=(),
         budget=BudgetState(None),
+        entropy=EntropyLedger(
+            EntropyBudget(
+                spec_version="v1",
+                allowed_sources=(EntropySource.SEEDED_RNG,),
+                max_magnitude=EntropyMagnitude.LOW,
+            )
+        ),
         _step_evidence={},
         _step_artifacts={},
     )
@@ -100,7 +118,9 @@ def test_fabricated_artifact_rejected() -> None:
         context.record_artifacts(0, [fabricated])
 
 
-def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> None:
+def test_reused_artifact_id_rejected(
+    baseline_policy, resolved_flow_factory, entropy_budget
+) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
             "artifact_id": "dup-artifact",
@@ -112,6 +132,7 @@ def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> 
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-1",
+            "determinism": EvidenceDeterminism.DETERMINISTIC.value,
             "source_uri": "file://doc",
             "content": "content",
             "score": 0.9,
@@ -160,6 +181,7 @@ def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> 
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs-a"),
         declared_dependencies=(),
@@ -178,6 +200,7 @@ def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> 
         spec_version="v1",
         step_index=1,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-b"),
         inputs_fingerprint=InputsFingerprint("inputs-b"),
         declared_dependencies=(),
@@ -195,6 +218,9 @@ def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> 
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-reuse"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),
@@ -216,7 +242,9 @@ def test_reused_artifact_id_rejected(baseline_policy, resolved_flow_factory) -> 
     }
 
 
-def test_fake_evidence_id_rejected(baseline_policy, resolved_flow_factory) -> None:
+def test_fake_evidence_id_rejected(
+    baseline_policy, resolved_flow_factory, entropy_budget
+) -> None:
     bijux_agent.run = lambda **_kwargs: [
         {
             "artifact_id": "agent-output",
@@ -228,6 +256,7 @@ def test_fake_evidence_id_rejected(baseline_policy, resolved_flow_factory) -> No
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-1",
+            "determinism": EvidenceDeterminism.DETERMINISTIC.value,
             "source_uri": "file://doc",
             "content": "content",
             "score": 0.9,
@@ -272,6 +301,7 @@ def test_fake_evidence_id_rejected(baseline_policy, resolved_flow_factory) -> No
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -289,6 +319,9 @@ def test_fake_evidence_id_rejected(baseline_policy, resolved_flow_factory) -> No
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-fake-evidence"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-1"),),

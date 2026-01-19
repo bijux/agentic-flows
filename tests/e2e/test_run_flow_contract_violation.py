@@ -23,7 +23,13 @@ from agentic_flows.spec.ontology.ids import (
     RequestID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    DeterminismLevel,
+    EventType,
+    EvidenceDeterminism,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 
@@ -32,7 +38,9 @@ import pytest
 pytestmark = pytest.mark.e2e
 
 
-def test_contract_violation_aborts(baseline_policy, resolved_flow_factory) -> None:
+def test_contract_violation_aborts(
+    baseline_policy, resolved_flow_factory, entropy_budget
+) -> None:
     request = RetrievalRequest(
         spec_version="v1",
         request_id=RequestID("req-violate"),
@@ -45,6 +53,7 @@ def test_contract_violation_aborts(baseline_policy, resolved_flow_factory) -> No
     bijux_rag.retrieve = lambda **_kwargs: [
         {
             "evidence_id": "ev-bad",
+            "determinism": EvidenceDeterminism.DETERMINISTIC.value,
             "source_uri": "file://bad",
             "content": "bad",
             "score": 0.1,
@@ -65,6 +74,7 @@ def test_contract_violation_aborts(baseline_policy, resolved_flow_factory) -> No
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs"),
         declared_dependencies=(),
@@ -82,6 +92,9 @@ def test_contract_violation_aborts(baseline_policy, resolved_flow_factory) -> No
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-violation"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"),),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-expected"),),

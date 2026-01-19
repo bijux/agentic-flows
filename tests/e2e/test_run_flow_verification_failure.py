@@ -25,7 +25,13 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import ArtifactType, EventType, StepType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactType,
+    DeterminismLevel,
+    EventType,
+    ReplayAcceptability,
+    StepType,
+)
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
@@ -35,7 +41,7 @@ pytestmark = pytest.mark.e2e
 
 
 def test_verification_failure_halts_flow(
-    baseline_policy, resolved_flow_factory
+    baseline_policy, resolved_flow_factory, entropy_budget
 ) -> None:
     calls = {"agent": 0}
 
@@ -81,6 +87,7 @@ def test_verification_failure_halts_flow(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
         inputs_fingerprint=InputsFingerprint("inputs-a"),
         declared_dependencies=(),
@@ -99,6 +106,7 @@ def test_verification_failure_halts_flow(
         spec_version="v1",
         step_index=1,
         step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-b"),
         inputs_fingerprint=InputsFingerprint("inputs-b"),
         declared_dependencies=(),
@@ -116,6 +124,9 @@ def test_verification_failure_halts_flow(
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-verify"),
+        determinism_level=DeterminismLevel.STRICT,
+        replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+        entropy_budget=entropy_budget,
         agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),

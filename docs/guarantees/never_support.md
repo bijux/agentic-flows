@@ -1,6 +1,6 @@
 # What We Will Never Support
 
-- Non-deterministic flows that cannot be replayed from declared inputs.
+- Undeclared non-determinism that bypasses determinism level or entropy policy.
 - Silent overrides that alter execution without an explicit trace event.
 - Unverifiable reasoning that bypasses evidence and verification policy.
 - Best-effort execution that suppresses failures or hides partial results.

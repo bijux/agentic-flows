@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.ontology.ids import RuleID
+from agentic_flows.spec.ontology.ontology import VerificationRandomness
 
 
 @dataclass(frozen=True)
@@ -15,6 +16,7 @@ class VerificationRule:
     description: str
     severity: str
     target: str
+    randomness_requirement: VerificationRandomness
 
 
 __all__ = ["VerificationRule"]

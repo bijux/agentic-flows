@@ -13,6 +13,7 @@ from agentic_flows.runtime.execution.dry_run_executor import DryRunExecutor
 from agentic_flows.runtime.execution.live_executor import LiveExecutor
 from agentic_flows.runtime.execution.observer_executor import ObserverExecutor
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome, StepExecutor
+from agentic_flows.runtime.observability.entropy import EntropyLedger
 from agentic_flows.runtime.observability.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
@@ -116,6 +117,7 @@ def execute_flow(
         verification_policy=execution_config.verification_policy,
         observers=execution_config.observers or (),
         budget=BudgetState(execution_config.budget),
+        entropy=EntropyLedger(resolved_flow.manifest.entropy_budget),
         _step_evidence={},
         _step_artifacts={},
         observed_run=execution_config.observed_run,
