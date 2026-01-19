@@ -21,6 +21,7 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    CausalityTag,
     DatasetState,
     DeterminismLevel,
     EventType,
@@ -82,6 +83,7 @@ def test_emit_event_without_authority_fails() -> None:
         event_index=0,
         step_index=0,
         event_type=EventType.STEP_START,
+        causality_tag=CausalityTag.AGENT,
         timestamp_utc="1970-01-01T00:00:00Z",
         payload={"event_type": EventType.STEP_START.value},
         payload_hash="payload",

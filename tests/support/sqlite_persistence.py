@@ -13,6 +13,7 @@ from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
@@ -27,18 +28,20 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     PolicyFingerprint,
     ResolverID,
+    StepID,
     TenantID,
     ToolID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
+    CausalityTag,
+    DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     EntropySource,
     EventType,
     ReplayAcceptability,
-    DatasetState,
 )
 
 
@@ -92,10 +95,14 @@ _MIGRATIONS = (
             flow_id TEXT NOT NULL,
             entry_index INTEGER NOT NULL,
             spec_version TEXT NOT NULL,
+            tenant_id TEXT NOT NULL,
             source TEXT NOT NULL,
             magnitude TEXT NOT NULL,
             description TEXT NOT NULL,
             step_index INTEGER,
+            nondeterminism_authorized INTEGER NOT NULL,
+            nondeterminism_scope_id TEXT NOT NULL,
+            nondeterminism_scope_type TEXT NOT NULL,
             PRIMARY KEY (flow_id, entry_index)
         );
         """,
@@ -222,10 +229,14 @@ class SqliteEntropyStore:
                 str(flow_id),
                 index,
                 entry.spec_version,
+                str(entry.tenant_id),
                 entry.source.value,
                 entry.magnitude.value,
                 entry.description,
                 entry.step_index,
+                int(entry.nondeterminism_source.authorized),
+                str(entry.nondeterminism_source.scope),
+                _scope_type(entry.nondeterminism_source.scope),
             )
             for index, entry in enumerate(usage)
         ]
@@ -235,11 +246,15 @@ class SqliteEntropyStore:
                 flow_id,
                 entry_index,
                 spec_version,
+                tenant_id,
                 source,
                 magnitude,
                 description,
-                step_index
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                step_index,
+                nondeterminism_authorized,
+                nondeterminism_scope_id,
+                nondeterminism_scope_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             rows,
         )
@@ -248,7 +263,16 @@ class SqliteEntropyStore:
     def load_usage(self, flow_id: FlowID) -> tuple[EntropyUsage, ...]:
         cursor = self._connection.execute(
             """
-            SELECT spec_version, source, magnitude, description, step_index
+            SELECT
+                spec_version,
+                tenant_id,
+                source,
+                magnitude,
+                description,
+                step_index,
+                nondeterminism_authorized,
+                nondeterminism_scope_id,
+                nondeterminism_scope_type
             FROM entropy_usage WHERE flow_id = ?
             ORDER BY entry_index
             """,
@@ -257,13 +281,39 @@ class SqliteEntropyStore:
         return tuple(
             EntropyUsage(
                 spec_version=row[0],
-                source=EntropySource(row[1]),
-                magnitude=EntropyMagnitude(row[2]),
-                description=row[3],
-                step_index=row[4],
+                tenant_id=TenantID(row[1]),
+                source=EntropySource(row[2]),
+                magnitude=EntropyMagnitude(row[3]),
+                description=row[4],
+                step_index=row[5],
+                nondeterminism_source=_load_nondeterminism_source(
+                    source=EntropySource(row[2]),
+                    authorized=bool(row[6]),
+                    scope_id=row[7],
+                    scope_type=row[8],
+                ),
             )
             for row in cursor.fetchall()
         )
+
+
+def _scope_type(scope: StepID | FlowID) -> str:
+    return "step" if isinstance(scope, StepID) else "flow"
+
+
+def _load_nondeterminism_source(
+    *, source: EntropySource, authorized: bool, scope_id: str, scope_type: str
+) -> NonDeterminismSource:
+    scope: StepID | FlowID
+    if scope_type == "step":
+        scope = StepID(scope_id)
+    else:
+        scope = FlowID(scope_id)
+    return NonDeterminismSource(
+        source=source,
+        authorized=authorized,
+        scope=scope,
+    )
 
 
 def _encode_trace(trace: ExecutionTrace) -> dict[str, Any]:
@@ -337,6 +387,7 @@ def _decode_trace(payload: dict[str, Any]) -> ExecutionTrace:
 def _encode_event(event: ExecutionEvent) -> dict[str, Any]:
     payload = asdict(event)
     payload["event_type"] = event.event_type.value
+    payload["causality_tag"] = event.causality_tag.value
     payload["payload_hash"] = str(event.payload_hash)
     return payload
 
@@ -347,6 +398,7 @@ def _decode_event(payload: dict[str, Any]) -> ExecutionEvent:
         event_index=int(payload["event_index"]),
         step_index=int(payload["step_index"]),
         event_type=EventType(payload["event_type"]),
+        causality_tag=CausalityTag(payload["causality_tag"]),
         timestamp_utc=payload["timestamp_utc"],
         payload=payload["payload"],
         payload_hash=ContentHash(payload["payload_hash"]),
@@ -386,10 +438,17 @@ def _encode_entropy_usage(item: EntropyUsage) -> dict[str, Any]:
         "magnitude": item.magnitude.value,
         "description": item.description,
         "step_index": item.step_index,
+        "nondeterminism_source": {
+            "source": item.nondeterminism_source.source.value,
+            "authorized": item.nondeterminism_source.authorized,
+            "scope": str(item.nondeterminism_source.scope),
+            "scope_type": _scope_type(item.nondeterminism_source.scope),
+        },
     }
 
 
 def _decode_entropy_usage(payload: dict[str, Any]) -> EntropyUsage:
+    nondeterminism_source = payload["nondeterminism_source"]
     return EntropyUsage(
         spec_version=payload["spec_version"],
         tenant_id=TenantID(payload["tenant_id"]),
@@ -397,6 +456,12 @@ def _decode_entropy_usage(payload: dict[str, Any]) -> EntropyUsage:
         magnitude=EntropyMagnitude(payload["magnitude"]),
         description=payload["description"],
         step_index=payload["step_index"],
+        nondeterminism_source=_load_nondeterminism_source(
+            source=EntropySource(nondeterminism_source["source"]),
+            authorized=bool(nondeterminism_source["authorized"]),
+            scope_id=nondeterminism_source["scope"],
+            scope_type=nondeterminism_source["scope_type"],
+        ),
     )
 
 

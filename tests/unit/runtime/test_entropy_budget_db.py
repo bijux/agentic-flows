@@ -9,6 +9,7 @@ import pytest
 from agentic_flows.runtime.context import RunMode
 from agentic_flows.runtime.observability.execution_store import DuckDBExecutionWriteStore
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
 pytestmark = pytest.mark.unit
@@ -31,6 +32,11 @@ def test_entropy_budget_rejects_disallowed_source(
         magnitude=EntropyMagnitude.LOW,
         description="external",
         step_index=0,
+        nondeterminism_source=NonDeterminismSource(
+            source=EntropySource.EXTERNAL_ORACLE,
+            authorized=True,
+            scope=resolved_flow.plan.flow_id,
+        ),
     )
     with pytest.raises(duckdb.ConstraintException):
         execution_store.append_entropy_usage(
@@ -57,6 +63,11 @@ def test_entropy_budget_rejects_excess_magnitude(
         magnitude=EntropyMagnitude.HIGH,
         description="too_high",
         step_index=0,
+        nondeterminism_source=NonDeterminismSource(
+            source=EntropySource.SEEDED_RNG,
+            authorized=True,
+            scope=resolved_flow.plan.flow_id,
+        ),
     )
     with pytest.raises(duckdb.ConstraintException):
         execution_store.append_entropy_usage(

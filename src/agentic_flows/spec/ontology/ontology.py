@@ -63,6 +63,14 @@ class EventType(str, Enum):
     TOOL_CALL_FAIL = auto()
 
 
+class CausalityTag(str, Enum):
+    AGENT = "agent"
+    TOOL = "tool"
+    DATASET = "dataset"
+    ENVIRONMENT = "environment"
+    HUMAN = "human"
+
+
 class StepType(str, Enum):
     AGENT = "agent"
     RETRIEVAL = "retrieval"
@@ -140,6 +148,10 @@ class VerificationRandomness(str, Enum):
     STATISTICAL = "statistical"
 
 
+class ReasonCode(str, Enum):
+    CONTRADICTION_DETECTED = "contradiction_detected"
+
+
 __all__ = [
     "Agent",
     "Tool",
@@ -150,6 +162,7 @@ __all__ = [
     "Step",
     "ArtifactType",
     "ArtifactScope",
+    "CausalityTag",
     "EventType",
     "StepType",
     "VerificationPhase",
@@ -162,5 +175,6 @@ __all__ = [
     "EvidenceDeterminism",
     "EntropySource",
     "EntropyMagnitude",
+    "ReasonCode",
     "VerificationRandomness",
 ]

@@ -21,6 +21,7 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    CausalityTag,
     DatasetState,
     DeterminismLevel,
     EventType,
@@ -31,7 +32,7 @@ from agentic_flows.spec.ontology.ontology import (
 pytestmark = pytest.mark.unit
 
 
-def test_trace_is_immutable() -> None:
+def _build_trace() -> ExecutionTrace:
     events = AppendOnlyList()
     events.append(
         ExecutionEvent(
@@ -39,12 +40,13 @@ def test_trace_is_immutable() -> None:
             event_index=0,
             step_index=0,
             event_type=EventType.STEP_START,
+            causality_tag=CausalityTag.AGENT,
             timestamp_utc="1970-01-01T00:00:00Z",
             payload={"event_type": EventType.STEP_START.value},
             payload_hash="x",
         )
     )
-    trace = ExecutionTrace(
+    return ExecutionTrace(
         spec_version="v1",
         flow_id=FlowID("flow-trace"),
         tenant_id=TenantID("tenant-a"),
@@ -80,6 +82,10 @@ def test_trace_is_immutable() -> None:
         arbitration_decision="none",
         finalized=False,
     )
+
+
+def test_trace_is_immutable() -> None:
+    trace = _build_trace()
     trace.finalize()
 
     with pytest.raises(dataclasses.FrozenInstanceError):
@@ -91,6 +97,7 @@ def test_trace_is_immutable() -> None:
             event_index=999,
             step_index=0,
             event_type=EventType.STEP_START,
+            causality_tag=CausalityTag.AGENT,
             timestamp_utc="1970-01-01T00:00:00Z",
             payload={"event_type": EventType.STEP_START.value},
             payload_hash="x",
@@ -107,9 +114,17 @@ def test_trace_is_immutable() -> None:
                 event_index=999,
                 step_index=0,
                 event_type=EventType.STEP_END,
+                causality_tag=CausalityTag.AGENT,
                 timestamp_utc="1970-01-01T00:00:01Z",
                 payload={"event_type": EventType.STEP_END.value},
                 payload_hash="y",
             )
         )
     assert trace.events[0] == original_first
+
+
+def test_trace_mutation_after_finalize_raises() -> None:
+    trace = _build_trace()
+    trace.finalize()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        trace.events = ()

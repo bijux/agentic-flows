@@ -48,6 +48,7 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
+    CausalityTag,
     EventType,
     StepType,
     VerificationPhase,
@@ -75,6 +76,23 @@ def _notify_stage(context: ExecutionContext, stage: str, phase: str) -> None:
         hook = getattr(observer, hook_name, None)
         if callable(hook):
             hook(stage)
+
+
+_EVENT_CAUSALITY = {
+    EventType.TOOL_CALL_START: CausalityTag.TOOL,
+    EventType.TOOL_CALL_END: CausalityTag.TOOL,
+    EventType.TOOL_CALL_FAIL: CausalityTag.TOOL,
+    EventType.RETRIEVAL_START: CausalityTag.DATASET,
+    EventType.RETRIEVAL_END: CausalityTag.DATASET,
+    EventType.RETRIEVAL_FAILED: CausalityTag.DATASET,
+    EventType.HUMAN_INTERVENTION: CausalityTag.HUMAN,
+    EventType.EXECUTION_INTERRUPTED: CausalityTag.ENVIRONMENT,
+    EventType.SEMANTIC_VIOLATION: CausalityTag.ENVIRONMENT,
+}
+
+
+def _causality_tag(event_type: EventType) -> CausalityTag:
+    return _EVENT_CAUSALITY.get(event_type, CausalityTag.AGENT)
 
 
 class LiveExecutor:
@@ -134,6 +152,7 @@ class LiveExecutor:
                 event_index=event_index,
                 step_index=step_index,
                 event_type=event_type,
+                causality_tag=_causality_tag(event_type),
                 timestamp_utc=utc_now_deterministic(event_index),
                 payload=payload,
                 payload_hash=fingerprint_inputs(payload),

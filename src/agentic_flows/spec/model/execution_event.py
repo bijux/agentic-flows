@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ontology import EventType
+from agentic_flows.spec.ontology.ontology import CausalityTag, EventType
 
 
 @dataclass(frozen=True)
@@ -14,6 +14,7 @@ class ExecutionEvent:
     event_index: int
     step_index: int
     event_type: EventType
+    causality_tag: CausalityTag
     timestamp_utc: str
     payload: dict[str, object]
     payload_hash: str

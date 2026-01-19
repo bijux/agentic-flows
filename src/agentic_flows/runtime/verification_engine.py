@@ -19,6 +19,7 @@ from agentic_flows.spec.model.verification_result import VerificationResult
 from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, RuleID
 from agentic_flows.spec.ontology.ontology import (
     ArbitrationRule,
+    ReasonCode,
     VerificationPhase,
     VerificationRandomness,
 )
@@ -112,7 +113,7 @@ class ContradictionVerificationEngine:
         reason = "no_contradictions"
         if violations:
             status = "FAIL"
-            reason = "contradiction_detected"
+            reason = ReasonCode.CONTRADICTION_DETECTED.value
         bundle_ids = tuple(bundle.bundle_id for bundle in reasoning_bundles)
         return VerificationResult(
             spec_version="v1",

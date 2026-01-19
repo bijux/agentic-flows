@@ -16,6 +16,7 @@ from agentic_flows.runtime.observability.observed_run import ObservedRun
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification import VerificationPolicy
@@ -120,6 +121,7 @@ class ExecutionContext:
         magnitude: EntropyMagnitude,
         description: str,
         step_index: int | None,
+        nondeterminism_source: NonDeterminismSource,
     ) -> None:
         self.entropy.record(
             tenant_id=self.tenant_id,
@@ -127,6 +129,7 @@ class ExecutionContext:
             magnitude=magnitude,
             description=description,
             step_index=step_index,
+            nondeterminism_source=nondeterminism_source,
         )
 
     def entropy_usage(self) -> tuple[EntropyUsage, ...]:

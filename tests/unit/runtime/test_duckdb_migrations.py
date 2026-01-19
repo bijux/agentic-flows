@@ -11,6 +11,7 @@ from agentic_flows.runtime.observability.execution_store import (
     DuckDBExecutionWriteStore,
     MIGRATIONS_DIR,
     SCHEMA_CONTRACT_PATH,
+    SCHEMA_HASH_PATH,
     SCHEMA_VERSION,
 )
 
@@ -39,6 +40,8 @@ def test_duckdb_migrations_apply(tmp_path: Path) -> None:
         SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8")
     )
     assert contract_row[1] == contract_hash
+    expected_schema_hash = SCHEMA_HASH_PATH.read_text(encoding="utf-8").strip()
+    assert expected_schema_hash == contract_hash
 
 
 def test_duckdb_migrations_reject_future_version(tmp_path: Path) -> None:
@@ -74,5 +77,18 @@ def test_schema_contract_mismatch_fails(tmp_path: Path, monkeypatch) -> None:
         "agentic_flows.runtime.observability.execution_store.SCHEMA_CONTRACT_PATH",
         contract_path,
     )
-    with pytest.raises(RuntimeError, match="schema hash"):
+    with pytest.raises(RuntimeError, match="schema.hash"):
+        DuckDBExecutionWriteStore(db_path)
+
+
+def test_schema_hash_mismatch_fails(tmp_path: Path, monkeypatch) -> None:
+    db_path = tmp_path / "schema_hash.duckdb"
+    DuckDBExecutionWriteStore(db_path)
+    hash_path = tmp_path / "schema.hash"
+    hash_path.write_text("deadbeef", encoding="utf-8")
+    monkeypatch.setattr(
+        "agentic_flows.runtime.observability.execution_store.SCHEMA_HASH_PATH",
+        hash_path,
+    )
+    with pytest.raises(RuntimeError, match="schema.hash"):
         DuckDBExecutionWriteStore(db_path)

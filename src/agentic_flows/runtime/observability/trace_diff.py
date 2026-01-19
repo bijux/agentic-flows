@@ -3,16 +3,12 @@
 
 from __future__ import annotations
 
+from agentic_flows.runtime.observability.determinism_classification import (
+    determinism_classes_for_trace,
+)
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismClass,
-    DeterminismLevel,
-    EntropyMagnitude,
-    EntropySource,
-    EventType,
-    ReplayAcceptability,
-)
+from agentic_flows.spec.ontology.ontology import EntropyMagnitude, ReplayAcceptability
 
 _MAGNITUDE_ORDER = {
     EntropyMagnitude.LOW: 0,
@@ -205,40 +201,14 @@ def entropy_summary(usage: tuple[EntropyUsage, ...]) -> dict[str, object]:
 def determinism_class_report(
     expected: ExecutionTrace, observed: ExecutionTrace
 ) -> dict[str, object]:
-    expected_classes = _determinism_classes(expected)
-    observed_classes = _determinism_classes(observed)
+    expected_classes = determinism_classes_for_trace(expected)
+    observed_classes = determinism_classes_for_trace(observed)
     return {
         "expected": expected_classes,
         "observed": observed_classes,
         "added": sorted(set(observed_classes) - set(expected_classes)),
         "missing": sorted(set(expected_classes) - set(observed_classes)),
     }
-
-
-def _determinism_classes(trace: ExecutionTrace) -> list[str]:
-    classes: set[DeterminismClass] = set()
-    if trace.events:
-        classes.add(DeterminismClass.STRUCTURAL)
-    if trace.environment_fingerprint:
-        classes.add(DeterminismClass.ENVIRONMENTAL)
-    if trace.determinism_level in {
-        DeterminismLevel.PROBABILISTIC,
-        DeterminismLevel.UNCONSTRAINED,
-    }:
-        classes.add(DeterminismClass.STOCHASTIC)
-    if any(event.event_type == EventType.HUMAN_INTERVENTION for event in trace.events):
-        classes.add(DeterminismClass.HUMAN)
-    if trace.tool_invocations:
-        classes.add(DeterminismClass.EXTERNAL)
-    for entry in trace.entropy_usage:
-        if entry.source in {EntropySource.EXTERNAL_ORACLE}:
-            classes.add(DeterminismClass.EXTERNAL)
-        if entry.source in {EntropySource.HUMAN_INPUT}:
-            classes.add(DeterminismClass.HUMAN)
-        if entry.source in {EntropySource.EXTERNAL_ORACLE, EntropySource.HUMAN_INPUT}:
-            continue
-        classes.add(DeterminismClass.STOCHASTIC)
-    return sorted(item.value for item in classes)
 
 
 __all__ = [

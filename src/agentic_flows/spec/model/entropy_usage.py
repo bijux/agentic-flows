@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.ontology.ids import TenantID
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
@@ -17,6 +18,7 @@ class EntropyUsage:
     magnitude: EntropyMagnitude
     description: str
     step_index: int | None
+    nondeterminism_source: NonDeterminismSource
 
 
 __all__ = ["EntropyUsage"]

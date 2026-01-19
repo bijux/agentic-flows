@@ -23,7 +23,16 @@ from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, ResolverID
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, EventType
+from agentic_flows.spec.ontology.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    CausalityTag,
+    EventType,
+)
+
+
+def _causality_tag(event_type: EventType) -> CausalityTag:
+    return CausalityTag.AGENT
 
 
 class DryRunExecutor:
@@ -49,6 +58,7 @@ class DryRunExecutor:
                 event_index=event_index,
                 step_index=step.step_index,
                 event_type=EventType.STEP_START,
+                causality_tag=_causality_tag(EventType.STEP_START),
                 timestamp_utc=utc_now_deterministic(event_index),
                 payload=start_payload,
                 payload_hash=fingerprint_inputs(start_payload),
@@ -73,6 +83,7 @@ class DryRunExecutor:
                     event_index=event_index,
                     step_index=step.step_index,
                     event_type=EventType.STEP_FAILED,
+                    causality_tag=_causality_tag(EventType.STEP_FAILED),
                     timestamp_utc=utc_now_deterministic(event_index),
                     payload=fail_payload,
                     payload_hash=fingerprint_inputs(fail_payload),
@@ -110,6 +121,7 @@ class DryRunExecutor:
                 event_index=event_index,
                 step_index=step.step_index,
                 event_type=EventType.STEP_END,
+                causality_tag=_causality_tag(EventType.STEP_END),
                 timestamp_utc=utc_now_deterministic(event_index),
                 payload=end_payload,
                 payload_hash=fingerprint_inputs(end_payload),

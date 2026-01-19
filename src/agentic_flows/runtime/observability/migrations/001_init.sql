@@ -153,6 +153,9 @@ CREATE TABLE IF NOT EXISTS events (
             'TOOL_CALL_FAIL'
         )
     ),
+    causality_tag TEXT NOT NULL CHECK (
+        causality_tag IN ('agent', 'tool', 'dataset', 'environment', 'human')
+    ),
     timestamp_utc TEXT NOT NULL,
     payload_hash TEXT NOT NULL,
     agent_id TEXT,
@@ -205,6 +208,9 @@ CREATE TABLE IF NOT EXISTS entropy_usage (
     magnitude TEXT NOT NULL CHECK (magnitude IN ('low', 'medium', 'high')),
     description TEXT NOT NULL,
     step_index INTEGER,
+    nondeterminism_authorized BOOLEAN NOT NULL,
+    nondeterminism_scope_id TEXT NOT NULL,
+    nondeterminism_scope_type TEXT NOT NULL CHECK (nondeterminism_scope_type IN ('step', 'flow')),
     PRIMARY KEY (tenant_id, run_id, entry_index),
     FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id),
     FOREIGN KEY (tenant_id, run_id, source)

@@ -7,8 +7,9 @@ from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology.ids import (
     ContentHash,
@@ -21,6 +22,7 @@ from agentic_flows.spec.ontology.ids import (
     ToolID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    CausalityTag,
     DatasetState,
     DeterminismLevel,
     EventType,
@@ -52,6 +54,7 @@ def test_semantic_trace_diff_ignores_timestamps() -> None:
         event_index=0,
         step_index=0,
         event_type=EventType.STEP_START,
+        causality_tag=CausalityTag.AGENT,
         timestamp_utc="1970-01-01T00:00:00Z",
         payload=event_payload,
         payload_hash="hash",
@@ -61,6 +64,7 @@ def test_semantic_trace_diff_ignores_timestamps() -> None:
         event_index=0,
         step_index=0,
         event_type=EventType.STEP_START,
+        causality_tag=CausalityTag.AGENT,
         timestamp_utc="1970-01-01T00:01:00Z",
         payload=event_payload,
         payload_hash="hash",
@@ -137,6 +141,7 @@ def test_non_determinism_report_includes_class_taxonomy() -> None:
         event_index=0,
         step_index=0,
         event_type=EventType.HUMAN_INTERVENTION,
+        causality_tag=CausalityTag.HUMAN,
         timestamp_utc="1970-01-01T00:00:00Z",
         payload=event_payload,
         payload_hash="hash",
@@ -157,6 +162,11 @@ def test_non_determinism_report_includes_class_taxonomy() -> None:
         magnitude=EntropyMagnitude.LOW,
         description="seeded",
         step_index=0,
+        nondeterminism_source=NonDeterminismSource(
+            source=EntropySource.SEEDED_RNG,
+            authorized=True,
+            scope=FlowID("flow-a"),
+        ),
     )
     trace = ExecutionTrace(
         spec_version="v1",

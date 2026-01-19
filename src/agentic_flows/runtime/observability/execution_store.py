@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-import hashlib
 import json
 from pathlib import Path
 from uuid import uuid4
@@ -12,6 +11,7 @@ from uuid import uuid4
 import duckdb
 
 from agentic_flows.runtime.context import RunMode
+from agentic_flows.runtime.observability import schema_contracts
 from agentic_flows.runtime.observability.execution_store_protocol import (
     ExecutionReadStoreProtocol,
     ExecutionWriteStoreProtocol,
@@ -26,6 +26,7 @@ from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
@@ -42,12 +43,14 @@ from agentic_flows.spec.ontology.ids import (
     PolicyFingerprint,
     ResolverID,
     RunID,
+    StepID,
     TenantID,
     ToolID,
 )
 from agentic_flows.spec.ontology.ontology import (
     ArtifactScope,
     ArtifactType,
+    CausalityTag,
     DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
@@ -61,6 +64,7 @@ from agentic_flows.spec.ontology.ontology import (
 SCHEMA_VERSION = 1
 MIGRATIONS_DIR = Path(__file__).with_name("migrations")
 SCHEMA_CONTRACT_PATH = Path(__file__).with_name("schema.sql")
+SCHEMA_HASH_PATH = Path(__file__).with_name("schema.hash")
 
 
 class DuckDBExecutionStore:
@@ -254,12 +258,13 @@ class DuckDBExecutionStore:
                     event_index,
                     step_index,
                     event_type,
+                    causality_tag,
                     timestamp_utc,
                     payload_hash,
                     agent_id,
                     payload_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(tenant_id),
@@ -267,6 +272,7 @@ class DuckDBExecutionStore:
                     event.event_index,
                     event.step_index,
                     event.event_type.value,
+                    event.causality_tag.value,
                     event.timestamp_utc,
                     str(event.payload_hash),
                     str(payload.get("agent_id")) if "agent_id" in payload else None,
@@ -403,9 +409,12 @@ class DuckDBExecutionStore:
                     source,
                     magnitude,
                     description,
-                    step_index
+                    step_index,
+                    nondeterminism_authorized,
+                    nondeterminism_scope_id,
+                    nondeterminism_scope_type
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(item.tenant_id),
@@ -415,6 +424,9 @@ class DuckDBExecutionStore:
                     item.magnitude.value,
                     item.description,
                     item.step_index,
+                    item.nondeterminism_source.authorized,
+                    str(item.nondeterminism_source.scope),
+                    self._scope_type(item.nondeterminism_source.scope),
                 ),
             )
         self._connection.commit()
@@ -702,7 +714,14 @@ class DuckDBExecutionStore:
     ) -> tuple[ExecutionEvent, ...]:
         rows = self._connection.execute(
             """
-            SELECT event_index, step_index, event_type, timestamp_utc, payload_hash, payload_json
+            SELECT
+                event_index,
+                step_index,
+                event_type,
+                causality_tag,
+                timestamp_utc,
+                payload_hash,
+                payload_json
             FROM events
             WHERE tenant_id = ? AND run_id = ?
             ORDER BY event_index
@@ -715,9 +734,10 @@ class DuckDBExecutionStore:
                 event_index=int(row[0]),
                 step_index=int(row[1]),
                 event_type=EventType(row[2]),
-                timestamp_utc=row[3],
-                payload=json.loads(row[5]) if row[5] else {},
-                payload_hash=ContentHash(row[4]),
+                causality_tag=CausalityTag(row[3]),
+                timestamp_utc=row[4],
+                payload=json.loads(row[6]) if row[6] else {},
+                payload_hash=ContentHash(row[5]),
             )
             for row in rows
         )
@@ -813,7 +833,14 @@ class DuckDBExecutionStore:
     ) -> tuple[EntropyUsage, ...]:
         rows = self._connection.execute(
             """
-            SELECT source, magnitude, description, step_index
+            SELECT
+                source,
+                magnitude,
+                description,
+                step_index,
+                nondeterminism_authorized,
+                nondeterminism_scope_id,
+                nondeterminism_scope_type
             FROM entropy_usage
             WHERE tenant_id = ? AND run_id = ?
             ORDER BY entry_index
@@ -828,6 +855,12 @@ class DuckDBExecutionStore:
                 magnitude=EntropyMagnitude(row[1]),
                 description=row[2],
                 step_index=row[3],
+                nondeterminism_source=self._load_nondeterminism_source(
+                    source=EntropySource(row[0]),
+                    authorized=bool(row[4]),
+                    scope_id=row[5],
+                    scope_type=row[6],
+                ),
             )
             for row in rows
         )
@@ -843,6 +876,24 @@ class DuckDBExecutionStore:
             (str(tenant_id), str(run_id)),
         ).fetchall()
         return tuple(ClaimID(row[0]) for row in rows)
+
+    @staticmethod
+    def _scope_type(scope: StepID | FlowID) -> str:
+        return "step" if isinstance(scope, StepID) else "flow"
+
+    @staticmethod
+    def _load_nondeterminism_source(
+        *, source: EntropySource, authorized: bool, scope_id: str, scope_type: str
+    ) -> NonDeterminismSource:
+        if scope_type == "step":
+            scope: StepID | FlowID = StepID(scope_id)
+        else:
+            scope = FlowID(scope_id)
+        return NonDeterminismSource(
+            source=source,
+            authorized=authorized,
+            scope=scope,
+        )
 
     def _load_child_flow_ids(
         self, run_id: RunID, *, tenant_id: TenantID
@@ -931,7 +982,7 @@ class DuckDBExecutionStore:
                 "Database schema is ahead of code migrations; refusing to start."
             )
         for version, statement in migrations.items():
-            checksum = self._hash_payload(statement)
+            checksum = schema_contracts.hash_payload(statement)
             if version in applied:
                 if applied[version] != checksum:
                     raise RuntimeError(
@@ -963,8 +1014,11 @@ class DuckDBExecutionStore:
         self._assert_schema_contract(latest_version)
 
     def _assert_schema_contract(self, latest_version: int) -> None:
-        contract_payload = self._load_schema_contract()
-        contract_hash = self._hash_payload(contract_payload)
+        contract_payload = schema_contracts.load_schema_contract(SCHEMA_CONTRACT_PATH)
+        contract_hash = schema_contracts.hash_payload(contract_payload)
+        expected_hash = schema_contracts.load_schema_hash(SCHEMA_HASH_PATH)
+        if contract_hash != expected_hash:
+            raise RuntimeError("Schema contract hash does not match schema.hash.")
         try:
             row = self._connection.execute(
                 """
@@ -998,13 +1052,15 @@ class DuckDBExecutionStore:
 
     @staticmethod
     def _hash_payload(payload: str) -> str:
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        return schema_contracts.hash_payload(payload)
 
     @staticmethod
     def _load_schema_contract() -> str:
-        if not SCHEMA_CONTRACT_PATH.exists():
-            raise RuntimeError("Schema contract file missing.")
-        return SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8")
+        return schema_contracts.load_schema_contract(SCHEMA_CONTRACT_PATH)
+
+    @staticmethod
+    def _load_schema_hash() -> str:
+        return schema_contracts.load_schema_hash(SCHEMA_HASH_PATH)
 
     @staticmethod
     def _load_migrations() -> dict[int, str]:

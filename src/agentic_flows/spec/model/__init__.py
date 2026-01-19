@@ -14,6 +14,7 @@ from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
@@ -39,6 +40,7 @@ __all__ = [
     "EntropyBudget",
     "EntropyUsage",
     "FlowManifest",
+    "NonDeterminismSource",
     "ReplayEnvelope",
     "ReasoningBundle",
     "ReasoningClaim",

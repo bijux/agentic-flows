@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.ontology.ids import TenantID
 from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
 
@@ -28,6 +29,7 @@ class EntropyLedger:
         magnitude: EntropyMagnitude,
         description: str,
         step_index: int | None,
+        nondeterminism_source: NonDeterminismSource,
     ) -> None:
         if self._budget is None:
             raise ValueError("entropy budget must be declared before entropy is used")
@@ -43,6 +45,7 @@ class EntropyLedger:
                 magnitude=magnitude,
                 description=description,
                 step_index=step_index,
+                nondeterminism_source=nondeterminism_source,
             )
         )
 

@@ -10,12 +10,14 @@ import bijux_rag
 import bijux_vex
 
 from agentic_flows.runtime.context import ExecutionContext
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology.ids import (
     ContentHash,
     ContractID,
     EvidenceID,
+    StepID,
     TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
@@ -70,6 +72,11 @@ class RetrievalExecutor:
                 magnitude=magnitude,
                 description="retrieval evidence determinism",
                 step_index=step.step_index,
+                nondeterminism_source=NonDeterminismSource(
+                    source=EntropySource.DATA,
+                    authorized=True,
+                    scope=StepID(str(step.step_index)),
+                ),
             )
         context.record_evidence(step.step_index, evidence)
         return evidence

@@ -21,6 +21,7 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    CausalityTag,
     DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
@@ -69,6 +70,7 @@ def test_human_intervention_event_breaks_replay() -> None:
         event_index=0,
         step_index=0,
         event_type=EventType.HUMAN_INTERVENTION,
+        causality_tag=CausalityTag.HUMAN,
         timestamp_utc="1970-01-01T00:00:00Z",
         payload={
             "event_type": EventType.HUMAN_INTERVENTION.value,

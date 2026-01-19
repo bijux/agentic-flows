@@ -19,6 +19,7 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
 )
 from agentic_flows.spec.ontology.ontology import (
+    CausalityTag,
     DatasetState,
     DeterminismLevel,
     EventType,
@@ -44,6 +45,7 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         event_index=0,
         step_index=0,
         event_type=EventType.STEP_START,
+        causality_tag=CausalityTag.AGENT,
         timestamp_utc="1970-01-01T00:00:00Z",
         payload={"event_type": EventType.STEP_START.value},
         payload_hash="hash-a",
@@ -53,6 +55,7 @@ def test_probabilistic_replay_accepts_reordered_events() -> None:
         event_index=1,
         step_index=1,
         event_type=EventType.STEP_START,
+        causality_tag=CausalityTag.AGENT,
         timestamp_utc="1970-01-01T00:00:01Z",
         payload={"event_type": EventType.STEP_START.value},
         payload_hash="hash-b",
