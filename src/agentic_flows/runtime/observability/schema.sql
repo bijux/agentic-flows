@@ -1,4 +1,5 @@
--- 001: Canonical execution store schema
+-- schema_version: 1
+-- Canonical execution store schema contract
 CREATE TABLE IF NOT EXISTS schema_contract (
     schema_version INTEGER PRIMARY KEY,
     schema_hash TEXT NOT NULL,

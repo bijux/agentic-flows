@@ -10,6 +10,7 @@ import pytest
 from agentic_flows.runtime.observability.execution_store import (
     DuckDBExecutionStore,
     MIGRATIONS_DIR,
+    SCHEMA_CONTRACT_PATH,
     SCHEMA_VERSION,
 )
 
@@ -29,6 +30,15 @@ def test_duckdb_migrations_apply(tmp_path: Path) -> None:
         (MIGRATIONS_DIR / "001_init.sql").read_text(encoding="utf-8")
     )
     assert rows[0][1] == expected
+    contract_row = connection.execute(
+        "SELECT schema_version, schema_hash FROM schema_contract"
+    ).fetchone()
+    assert contract_row is not None
+    assert int(contract_row[0]) == SCHEMA_VERSION
+    contract_hash = DuckDBExecutionStore._hash_payload(
+        SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8")
+    )
+    assert contract_row[1] == contract_hash
 
 
 def test_duckdb_migrations_reject_future_version(tmp_path: Path) -> None:
@@ -53,3 +63,16 @@ def test_duckdb_migrations_rollback_on_failure(tmp_path: Path, monkeypatch) -> N
     )
     with pytest.raises(Exception):
         DuckDBExecutionStore(tmp_path / "broken.duckdb")
+
+
+def test_schema_contract_mismatch_fails(tmp_path: Path, monkeypatch) -> None:
+    db_path = tmp_path / "contract.duckdb"
+    DuckDBExecutionStore(db_path)
+    contract_path = tmp_path / "schema.sql"
+    contract_path.write_text("-- bad schema", encoding="utf-8")
+    monkeypatch.setattr(
+        "agentic_flows.runtime.observability.execution_store.SCHEMA_CONTRACT_PATH",
+        contract_path,
+    )
+    with pytest.raises(RuntimeError, match="schema hash"):
+        DuckDBExecutionStore(db_path)

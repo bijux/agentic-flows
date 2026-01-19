@@ -53,6 +53,7 @@ from agentic_flows.spec.ontology.ontology import (
 
 SCHEMA_VERSION = 1
 MIGRATIONS_DIR = Path(__file__).with_name("migrations")
+SCHEMA_CONTRACT_PATH = Path(__file__).with_name("schema.sql")
 
 
 class DuckDBExecutionStore(ExecutionStoreProtocol):
@@ -713,10 +714,51 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
         }
         if final_versions != set(migrations.keys()):
             raise RuntimeError("Schema migrations are out of sync with code.")
+        self._assert_schema_contract(latest_version)
+
+    def _assert_schema_contract(self, latest_version: int) -> None:
+        contract_payload = self._load_schema_contract()
+        contract_hash = self._hash_payload(contract_payload)
+        try:
+            row = self._connection.execute(
+                """
+                SELECT schema_version, schema_hash
+                FROM schema_contract
+                ORDER BY schema_version DESC
+                LIMIT 1
+                """
+            ).fetchone()
+        except Exception as exc:
+            raise RuntimeError(
+                "Schema contract table missing; database schema is out of sync."
+            ) from exc
+        if row is None:
+            self._connection.execute(
+                """
+                INSERT INTO schema_contract (schema_version, schema_hash, applied_at)
+                VALUES (?, ?, ?)
+                """,
+                (latest_version, contract_hash, datetime.now(tz=UTC).isoformat()),
+            )
+            self._connection.commit()
+            return
+        stored_version, stored_hash = int(row[0]), row[1]
+        if stored_version != latest_version:
+            raise RuntimeError(
+                "Database schema version does not match code contract version."
+            )
+        if stored_hash != contract_hash:
+            raise RuntimeError("Database schema hash does not match code contract.")
 
     @staticmethod
     def _hash_payload(payload: str) -> str:
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _load_schema_contract() -> str:
+        if not SCHEMA_CONTRACT_PATH.exists():
+            raise RuntimeError("Schema contract file missing.")
+        return SCHEMA_CONTRACT_PATH.read_text(encoding="utf-8")
 
     @staticmethod
     def _load_migrations() -> dict[int, str]:
@@ -729,4 +771,4 @@ class DuckDBExecutionStore(ExecutionStoreProtocol):
         return migrations
 
 
-__all__ = ["DuckDBExecutionStore", "SCHEMA_VERSION"]
+__all__ = ["DuckDBExecutionStore", "SCHEMA_CONTRACT_PATH", "SCHEMA_VERSION"]
