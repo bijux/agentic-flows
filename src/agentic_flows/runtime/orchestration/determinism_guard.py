@@ -9,6 +9,9 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+from agentic_flows.runtime.observability.analysis.trace_diff import (
+    non_determinism_report,
+)
 from agentic_flows.runtime.observability.capture.environment import (
     compute_environment_fingerprint,
 )
@@ -20,6 +23,10 @@ from agentic_flows.spec.model.artifact.artifact import Artifact
 from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_verdict import (
+    ReplayVerdict,
+    ReplayVerdictDetails,
+)
 from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.ontology import DeterminismLevel
 from agentic_flows.spec.ontology.public import (
@@ -55,7 +62,7 @@ def validate_determinism(
             )
 
 
-def validate_replay(
+def evaluate_structural_diffs(
     trace: ExecutionTrace,
     plan: ExecutionSteps,
     *,
@@ -63,9 +70,9 @@ def validate_replay(
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
 ) -> dict[str, object]:
-    """Validate replay; misuse breaks acceptability checks."""
+    """Evaluate structural diffs for replay."""
     try:
-        diffs = replay_diff(
+        return replay_diff(
             trace,
             plan,
             artifacts=artifacts,
@@ -73,18 +80,101 @@ def validate_replay(
             verification_policy=verification_policy,
         )
     except ReplayDiffError as exc:
-        diffs = exc.diffs
-    verdicts = _replay_verdicts(diffs, plan.replay_acceptability)
-    blocking = verdicts["bounded"]["blocking"]
-    acceptable = verdicts["bounded"]["acceptable_diffs"]
-    if plan.replay_mode == ReplayMode.STRICT and diffs:
-        raise ValueError(f"replay mismatch: {verdicts['strict']}")
-    if plan.replay_mode == ReplayMode.BOUNDED and blocking:
-        detail = {"blocking": blocking}
-        if acceptable:
-            detail["acceptable"] = acceptable
-        raise ValueError(f"replay mismatch: {detail}")
-    return verdicts
+        return exc.diffs
+
+
+def evaluate_entropy_diffs(
+    expected_trace: ExecutionTrace, observed_trace: ExecutionTrace | None
+) -> dict[str, object]:
+    """Evaluate entropy diffs for replay."""
+    if observed_trace is None:
+        return {}
+    return non_determinism_report(expected_trace, observed_trace)
+
+
+def evaluate_policy_verdict(
+    replay_mode: ReplayMode,
+    acceptability: ReplayAcceptability,
+    diffs: dict[str, object],
+    entropy_report: dict[str, object],
+    *,
+    observed_trace: ExecutionTrace | None = None,
+) -> ReplayVerdictDetails:
+    """Evaluate replay verdicts under policy."""
+    if observed_trace is not None and observed_trace.non_certifiable:
+        return ReplayVerdictDetails(
+            verdict=ReplayVerdict.NON_CERTIFIABLE,
+            details={
+                "reason": "observed trace marked non-certifiable",
+                "diffs": diffs,
+                "entropy_report": entropy_report,
+            },
+        )
+    blocking, acceptable = _partition_diffs(diffs, acceptability)
+    details: dict[str, object] = {
+        "blocking": blocking,
+        "acceptable": acceptable,
+    }
+    if entropy_report:
+        details["entropy_report"] = entropy_report
+    if replay_mode == ReplayMode.STRICT:
+        verdict = ReplayVerdict.ACCEPTABLE if not diffs else ReplayVerdict.UNACCEPTABLE
+    elif replay_mode == ReplayMode.BOUNDED:
+        if blocking:
+            verdict = ReplayVerdict.UNACCEPTABLE
+        elif acceptable:
+            verdict = ReplayVerdict.ACCEPTABLE_WITH_WARNINGS
+        else:
+            verdict = ReplayVerdict.ACCEPTABLE
+    else:
+        verdict = (
+            ReplayVerdict.ACCEPTABLE_WITH_WARNINGS
+            if diffs or acceptable or blocking
+            else ReplayVerdict.ACCEPTABLE
+        )
+    return ReplayVerdictDetails(verdict=verdict, details=details)
+
+
+def validate_replay(
+    trace: ExecutionTrace,
+    plan: ExecutionSteps,
+    *,
+    observed_trace: ExecutionTrace | None = None,
+    artifacts: Iterable[Artifact] | None = None,
+    evidence: Iterable[RetrievedEvidence] | None = None,
+    verification_policy: object | None = None,
+) -> ReplayVerdictDetails:
+    """Validate replay; misuse breaks acceptability checks."""
+    structural = evaluate_structural_diffs(
+        trace,
+        plan,
+        artifacts=artifacts,
+        evidence=evidence,
+        verification_policy=verification_policy,
+    )
+    entropy_report = (
+        evaluate_entropy_diffs(trace, observed_trace)
+        if observed_trace is not None
+        else {}
+    )
+    verdict = evaluate_policy_verdict(
+        plan.replay_mode,
+        plan.replay_acceptability,
+        structural,
+        entropy_report,
+        observed_trace=observed_trace,
+    )
+    if (
+        plan.replay_mode == ReplayMode.STRICT
+        and verdict.verdict is ReplayVerdict.UNACCEPTABLE
+    ):
+        raise ValueError(f"replay mismatch: {verdict.details}")
+    if (
+        plan.replay_mode == ReplayMode.BOUNDED
+        and verdict.verdict is ReplayVerdict.UNACCEPTABLE
+    ):
+        raise ValueError(f"replay mismatch: {verdict.details}")
+    return verdict
 
 
 def replay_diff(
@@ -322,30 +412,6 @@ def _partition_diffs(
     return blocking, acceptable
 
 
-def _replay_verdicts(
-    diffs: dict[str, object], acceptability: ReplayAcceptability
-) -> dict[str, object]:
-    """Internal helper; not part of the public API."""
-    blocking, acceptable = _partition_diffs(diffs, acceptability)
-    return {
-        "strict": {
-            "allowed": not diffs,
-            "blocking": blocking,
-            "acceptable_diffs": acceptable,
-        },
-        "bounded": {
-            "allowed": not blocking,
-            "blocking": blocking,
-            "acceptable_diffs": acceptable,
-        },
-        "observational": {
-            "allowed": True,
-            "blocking": blocking,
-            "acceptable_diffs": acceptable,
-        },
-    }
-
-
 def _dataset_payload(dataset) -> dict[str, object]:
     """Internal helper; not part of the public API."""
     return {
@@ -366,6 +432,9 @@ def _envelope_payload(envelope) -> dict[str, object]:
 
 
 __all__ = [
+    "evaluate_entropy_diffs",
+    "evaluate_policy_verdict",
+    "evaluate_structural_diffs",
     "replay_diff",
     "semantic_artifact_fingerprint",
     "semantic_evidence_fingerprint",

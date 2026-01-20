@@ -191,6 +191,15 @@ class EntropyMagnitude(str, Enum):
     HIGH = "high"
 
 
+class EntropySeverity(str, Enum):
+    """Entropy severity; wrong value breaks classification."""
+
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
+
 class EntropyExhaustionAction(str, Enum):
     """Entropy exhaustion action; wrong value breaks governance."""
 
@@ -238,6 +247,7 @@ __all__ = [
     "EntropySource",
     "NonDeterminismIntentSource",
     "EntropyMagnitude",
+    "EntropySeverity",
     "EntropyExhaustionAction",
     "ReasonCode",
     "VerificationRandomness",

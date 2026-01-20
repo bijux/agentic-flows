@@ -73,7 +73,7 @@ from agentic_flows.spec.ontology.public import (
     ReplayMode,
 )
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "migrations"
 SCHEMA_CONTRACT_PATH = Path(__file__).resolve().parents[1] / "schema.sql"
 SCHEMA_HASH_PATH = Path(__file__).resolve().parents[1] / "schema.hash"
@@ -1129,6 +1129,30 @@ class DuckDBExecutionStore:
                 VALUES (?, ?, ?)
                 """,
                 (str(plan.tenant_id), str(run_id), source.value),
+            )
+        for slice_budget in budget.per_source:
+            self._connection.execute(
+                """
+                INSERT OR REPLACE INTO entropy_budget_slices (
+                    tenant_id,
+                    run_id,
+                    source,
+                    min_magnitude,
+                    max_magnitude,
+                    exhaustion_action
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(plan.tenant_id),
+                    str(run_id),
+                    slice_budget.source.value,
+                    slice_budget.min_magnitude.value,
+                    slice_budget.max_magnitude.value,
+                    slice_budget.exhaustion_action.value
+                    if slice_budget.exhaustion_action is not None
+                    else None,
+                ),
             )
         magnitude_order = (
             EntropyMagnitude.LOW,

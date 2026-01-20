@@ -189,6 +189,15 @@ class ExecutionPlanner:
                 "min_magnitude": manifest.entropy_budget.min_magnitude,
                 "max_magnitude": manifest.entropy_budget.max_magnitude,
                 "exhaustion_action": manifest.entropy_budget.exhaustion_action,
+                "per_source": [
+                    {
+                        "source": entry.source,
+                        "min_magnitude": entry.min_magnitude,
+                        "max_magnitude": entry.max_magnitude,
+                        "exhaustion_action": entry.exhaustion_action,
+                    }
+                    for entry in manifest.entropy_budget.per_source
+                ],
             },
             "allowed_variance_class": manifest.allowed_variance_class,
             "nondeterminism_intent": [
@@ -230,6 +239,15 @@ class ExecutionPlanner:
                             "min_magnitude": step.declared_entropy_budget.min_magnitude,
                             "max_magnitude": step.declared_entropy_budget.max_magnitude,
                             "exhaustion_action": step.declared_entropy_budget.exhaustion_action,
+                            "per_source": [
+                                {
+                                    "source": entry.source,
+                                    "min_magnitude": entry.min_magnitude,
+                                    "max_magnitude": entry.max_magnitude,
+                                    "exhaustion_action": entry.exhaustion_action,
+                                }
+                                for entry in step.declared_entropy_budget.per_source
+                            ],
                         }
                         if step.declared_entropy_budget
                         else None

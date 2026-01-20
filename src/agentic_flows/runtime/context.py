@@ -15,7 +15,9 @@ from agentic_flows.runtime.budget import BudgetState
 from agentic_flows.runtime.observability.capture.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.capture.observed_run import ObservedRun
 from agentic_flows.runtime.observability.capture.trace_recorder import TraceRecorder
-from agentic_flows.runtime.observability.classification.entropy import EntropyLedger
+from agentic_flows.runtime.orchestration.non_determinism_lifecycle import (
+    NonDeterminismLifecycle,
+)
 from agentic_flows.spec.model.artifact.artifact import Artifact
 from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.artifact.non_determinism_source import (
@@ -66,7 +68,7 @@ class ExecutionContext:
     verification_policy: VerificationPolicy | None
     observers: tuple[RuntimeObserver, ...]
     budget: BudgetState
-    entropy: EntropyLedger
+    entropy: NonDeterminismLifecycle
     execution_store: ExecutionWriteStoreProtocol | None
     run_id: RunID | None
     resume_from_step_index: int

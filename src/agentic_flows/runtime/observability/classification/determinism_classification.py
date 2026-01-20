@@ -5,26 +5,22 @@
 
 from __future__ import annotations
 
-from enum import Enum
-
-from agentic_flows.spec.model.execution.determinism_profile import DeterminismProfile
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.execution.determinism_profile import (
+    DeterminismProfile,
+    EntropySourceProfile,
+)
 from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology import DeterminismLevel, EntropyMagnitude
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    EntropyMagnitude,
+    EntropySeverity,
+)
 from agentic_flows.spec.ontology.public import (
     DeterminismClass,
     EntropySource,
     EventType,
 )
-
-
-class EntropySeverity(str, Enum):
-    """Entropy severity; misuse breaks entropy classification."""
-
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    CRITICAL = "critical"
-
 
 EVENT_DETERMINISM_CLASS: dict[EventType, DeterminismClass] = {
     EventType.STEP_START: DeterminismClass.STRUCTURAL,
@@ -100,10 +96,13 @@ def determinism_classes_for_trace(trace: ExecutionTrace) -> list[str]:
     return sorted(item.value for item in classes)
 
 
-def determinism_profile_for_trace(trace: ExecutionTrace) -> DeterminismProfile:
+def determinism_profile_for_trace(
+    trace: ExecutionTrace, *, budget: EntropyBudget | None = None
+) -> DeterminismProfile:
     """Build determinism profile; misuse breaks auditability."""
     sources = tuple(sorted({entry.source for entry in trace.entropy_usage}))
     magnitude = None
+    source_profiles: list[EntropySourceProfile] = []
     if trace.entropy_usage:
         order = {
             EntropyMagnitude.LOW: 0,
@@ -114,6 +113,29 @@ def determinism_profile_for_trace(trace: ExecutionTrace) -> DeterminismProfile:
             (entry.magnitude for entry in trace.entropy_usage),
             key=lambda value: order[value],
         )
+        for source in sources:
+            observed = [
+                entry.magnitude
+                for entry in trace.entropy_usage
+                if entry.source is source
+            ]
+            observed_magnitude = (
+                max(observed, key=lambda value: order[value]) if observed else None
+            )
+            slice_budget = None
+            if budget is not None:
+                slice_budget = next(
+                    (entry for entry in budget.per_source if entry.source is source),
+                    None,
+                )
+            source_profiles.append(
+                EntropySourceProfile(
+                    source=source,
+                    severity=entropy_source_severity(source),
+                    observed_magnitude=observed_magnitude,
+                    budget_slice=slice_budget,
+                )
+            )
     decay = {
         DeterminismLevel.STRICT: 0.0,
         DeterminismLevel.BOUNDED: 0.2,
@@ -128,6 +150,7 @@ def determinism_profile_for_trace(trace: ExecutionTrace) -> DeterminismProfile:
         spec_version="v1",
         entropy_magnitude=magnitude,
         entropy_sources=sources,
+        source_profiles=tuple(source_profiles),
         replay_acceptability=trace.replay_acceptability,
         confidence_decay=decay,
     )

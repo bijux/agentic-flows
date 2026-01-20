@@ -59,6 +59,30 @@ def validate(manifest: FlowManifest) -> None:
         manifest.entropy_budget.exhaustion_action,
         EntropyExhaustionAction,
     )
+    if not isinstance(manifest.entropy_budget.per_source, tuple):
+        raise ValueError("entropy_budget.per_source must be a tuple")
+    for slice_budget in manifest.entropy_budget.per_source:
+        _require_enum(
+            "entropy_budget.per_source.source", slice_budget.source, EntropySource
+        )
+        _require_enum(
+            "entropy_budget.per_source.min_magnitude",
+            slice_budget.min_magnitude,
+            EntropyMagnitude,
+        )
+        _require_enum(
+            "entropy_budget.per_source.max_magnitude",
+            slice_budget.max_magnitude,
+            EntropyMagnitude,
+        )
+        if slice_budget.exhaustion_action is not None:
+            _require_enum(
+                "entropy_budget.per_source.exhaustion_action",
+                slice_budget.exhaustion_action,
+                EntropyExhaustionAction,
+            )
+        if slice_budget.source not in manifest.entropy_budget.allowed_sources:
+            raise ValueError("entropy_budget.per_source source must be allowed")
     if manifest.allowed_variance_class is not None:
         _require_enum(
             "allowed_variance_class",

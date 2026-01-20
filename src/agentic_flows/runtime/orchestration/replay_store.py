@@ -33,9 +33,10 @@ def replay_with_store(
     _ = store.load_replay_envelope(run_id, tenant_id=tenant_id)
     result = execute_flow(resolved_flow=resolved_flow, config=config)
     diff = semantic_trace_diff(stored_trace, result.trace)
-    validate_replay(
+    _ = validate_replay(
         stored_trace,
         resolved_flow.plan,
+        observed_trace=result.trace,
         artifacts=result.artifacts,
         evidence=result.evidence,
         verification_policy=config.verification_policy,

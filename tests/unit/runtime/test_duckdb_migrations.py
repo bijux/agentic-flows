@@ -27,7 +27,7 @@ def test_duckdb_migrations_apply(tmp_path: Path) -> None:
     rows = connection.execute(
         "SELECT version, checksum FROM schema_migrations ORDER BY version"
     ).fetchall()
-    assert [int(row[0]) for row in rows] == [1, SCHEMA_VERSION]
+    assert [int(row[0]) for row in rows] == [1, 2, SCHEMA_VERSION]
     expected_init = DuckDBExecutionWriteStore._hash_payload(
         (MIGRATIONS_DIR / "001_init.sql").read_text(encoding="utf-8")
     )
@@ -36,8 +36,14 @@ def test_duckdb_migrations_apply(tmp_path: Path) -> None:
             encoding="utf-8"
         )
     )
+    expected_slices = DuckDBExecutionWriteStore._hash_payload(
+        (MIGRATIONS_DIR / "003_entropy_budget_slices.sql").read_text(
+            encoding="utf-8"
+        )
+    )
     assert rows[0][1] == expected_init
     assert rows[1][1] == expected_update
+    assert rows[2][1] == expected_slices
     contract_row = connection.execute(
         "SELECT schema_version, schema_hash FROM schema_contract"
     ).fetchone()

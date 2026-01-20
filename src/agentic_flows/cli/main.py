@@ -31,7 +31,10 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 )
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.runtime.orchestration.replay_store import replay_with_store
-from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.artifact.entropy_budget import (
+    EntropyBudget,
+    EntropyBudgetSlice,
+)
 from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution.non_deterministic_intent import (
     NonDeterministicIntent,
@@ -117,6 +120,19 @@ def _load_manifest(path: Path) -> FlowManifest:
             ),
             exhaustion_action=EntropyExhaustionAction(
                 payload["entropy_budget"].get("exhaustion_action", "halt")
+            ),
+            per_source=tuple(
+                EntropyBudgetSlice(
+                    source=EntropySource(entry["source"]),
+                    min_magnitude=EntropyMagnitude(entry["min_magnitude"]),
+                    max_magnitude=EntropyMagnitude(entry["max_magnitude"]),
+                    exhaustion_action=EntropyExhaustionAction(
+                        entry["exhaustion_action"]
+                    )
+                    if entry.get("exhaustion_action") is not None
+                    else None,
+                )
+                for entry in payload["entropy_budget"].get("per_source", [])
             ),
         ),
         allowed_variance_class=EntropyMagnitude(payload["allowed_variance_class"])
