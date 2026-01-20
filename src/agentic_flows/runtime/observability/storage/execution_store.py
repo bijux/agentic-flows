@@ -73,6 +73,8 @@ SCHEMA_CONTRACT_PATH = Path(__file__).resolve().parents[1] / "schema.sql"
 SCHEMA_HASH_PATH = Path(__file__).resolve().parents[1] / "schema.hash"
 
 
+# Single-writer assumption; no concurrent mutation guarantees are provided.
+# This store is for audit and replay only, not transactional execution.
 class DuckDBExecutionStore:
     """Persists runs, steps, events, artifact, evidence, entropy usage, tool invocations, claim ids, dataset metadata, and replay envelopes; intentionally excludes in-memory execution state, transient executor caches, and any non-persisted runtime objects."""
 

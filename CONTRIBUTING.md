@@ -103,7 +103,7 @@ make docs-serve    # local docs server
 **Validate locally**
 
 ```bash
-.venv/bin/uvicorn agentic_flows.api.app:app --host 0.0.0.0 --port 8000 &
+.venv/bin/uvicorn agentic_flows.http_api.app:app --host 0.0.0.0 --port 8000 &
 make api
 ```
 

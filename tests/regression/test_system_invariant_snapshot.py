@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows import api
+import agentic_flows
 from agentic_flows.core import authority
 from agentic_flows.spec.contracts import compatibility_contract
 from agentic_flows.spec.ontology import (
@@ -19,14 +19,9 @@ pytestmark = pytest.mark.regression
 
 
 def test_system_invariant_snapshot() -> None:
-    assert set(api.__all__) == {
-        "ArbitrationPolicy",
-        "ExecutionConfig",
-        "ExecutionPlan",
+    assert set(agentic_flows.__all__) == {
         "FlowManifest",
-        "FlowRunResult",
         "RunMode",
-        "VerificationPolicy",
         "execute_flow",
     }
     assert [scope.value for scope in ArtifactScope] == [

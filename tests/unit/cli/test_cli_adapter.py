@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_flows.api import ExecutionConfig, RunMode
+from agentic_flows.runtime.orchestration.execute_flow import ExecutionConfig, RunMode
 from agentic_flows.cli import main as cli_main
 from agentic_flows.runtime.orchestration.execute_flow import FlowRunResult
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor

@@ -14,7 +14,7 @@ This system prioritizes replayability and auditability over convenience and spee
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/agentic-flows/)
 [![CI Status](https://github.com/bijux/agentic-flows/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/agentic-flows/actions)
 
-> **At a glance:** deterministic execution • invariant enforcement • replayable traces • API + CLI surfaces • structured telemetry  
+> **At a glance:** deterministic execution • invariant enforcement • replayable traces • CLI surface • structured telemetry  
 > **Quality:** coverage floors enforced per module, benchmark regression gate active, docs linted and built in CI, no telemetry.
 
 ---
@@ -72,7 +72,6 @@ agentic-flows run examples/boring/flow.json --policy examples/boring/policy.json
 * **Deterministic execution** — reproducible runs with explicit budgets.
 * **Contract-first design** — schema and invariants enforced at boundaries.
 * **Replayable traces** — audit-grade execution records.
-* **Dual surface** — CLI and API share the same contracts.
 * **Structured telemetry** — correlation IDs and traceable events.
 
 
@@ -131,7 +130,7 @@ Docs: [Execution Lifecycle](https://bijux.github.io/agentic-flows/architecture/e
 <a id="api-surface"></a>
 ## API Surface
 
-The HTTP API exposes the same contracts as the CLI.
+HTTP API is experimental and currently unimplemented.
 
 Docs: [API Overview](https://bijux.github.io/agentic-flows/api/overview/) · [Schema](https://bijux.github.io/agentic-flows/api/schema/)
 

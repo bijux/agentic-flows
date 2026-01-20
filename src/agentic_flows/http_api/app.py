@@ -1,3 +1,4 @@
+# EXPERIMENTAL HTTP API — NOT PRODUCTION READY
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 # API stability: v1 frozen; Backward compatibility rules apply.
@@ -14,7 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.routing import Match
 
-from agentic_flows.api.v1.schemas import (
+from agentic_flows.http_api.v1.schemas import (
     FailureEnvelope,
     FlowRunRequest,
     ReplayRequest,
@@ -108,61 +109,7 @@ def run_flow(
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
     """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the declared contract."""
-    allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
-    seed_value = "0"
-    if x_determinism_level in {None, "", "default"}:
-        payload = FailureEnvelope(
-            failure_class="structural",
-            reason_code="contradiction_detected",
-            violated_contract="configuration_error",
-            evidence_ids=[],
-            determinism_impact="structural",
-        )
-        return JSONResponse(
-            status_code=406,
-            content=payload.model_dump(),
-            headers={"X-Determinism-Seed": seed_value},
-        )
-    if x_agentic_gate is None or x_policy_fingerprint is None:
-        payload = FailureEnvelope(
-            failure_class="authority",
-            reason_code="contradiction_detected",
-            violated_contract="headers_required",
-            evidence_ids=[],
-            determinism_impact="structural",
-        )
-        return JSONResponse(
-            status_code=406,
-            content=payload.model_dump(),
-            headers={"X-Determinism-Seed": seed_value},
-        )
-    if x_determinism_level not in allowed_levels:
-        payload = FailureEnvelope(
-            failure_class="authority",
-            reason_code="contradiction_detected",
-            violated_contract="determinism_level_invalid",
-            evidence_ids=[],
-            determinism_impact="structural",
-        )
-        return JSONResponse(
-            status_code=406,
-            content=payload.model_dump(),
-            headers={"X-Determinism-Seed": seed_value},
-        )
-    payload = {
-        "run_id": "run-unimplemented",
-        "flow_id": "flow-unimplemented",
-        "status": "failed",
-        "determinism_class": "structural",
-        "environment_fingerprint": None,
-        "replay_acceptability": "exact_match",
-        "artifact_count": 0,
-    }
-    return JSONResponse(
-        status_code=200,
-        content=payload,
-        headers={"X-Determinism-Seed": seed_value},
-    )
+    raise StarletteHTTPException(status_code=501, detail="Not implemented")
 
 
 @app.post("/api/v1/flows/replay")
@@ -173,58 +120,4 @@ def replay_flow(
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
     """Preconditions: required headers are present, determinism level is valid, and the replay request is well-formed; acceptable replay means differences stay within the declared acceptability threshold; mismatches return FailureEnvelope with failure_class set to authority."""
-    allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
-    seed_value = "0"
-    if x_determinism_level in {None, "", "default"}:
-        payload = FailureEnvelope(
-            failure_class="structural",
-            reason_code="contradiction_detected",
-            violated_contract="configuration_error",
-            evidence_ids=[],
-            determinism_impact="structural",
-        )
-        return JSONResponse(
-            status_code=406,
-            content=payload.model_dump(),
-            headers={"X-Determinism-Seed": seed_value},
-        )
-    if x_agentic_gate is None or x_policy_fingerprint is None:
-        payload = FailureEnvelope(
-            failure_class="authority",
-            reason_code="contradiction_detected",
-            violated_contract="headers_required",
-            evidence_ids=[],
-            determinism_impact="structural",
-        )
-        return JSONResponse(
-            status_code=406,
-            content=payload.model_dump(),
-            headers={"X-Determinism-Seed": seed_value},
-        )
-    if x_determinism_level not in allowed_levels:
-        payload = FailureEnvelope(
-            failure_class="authority",
-            reason_code="contradiction_detected",
-            violated_contract="determinism_level_invalid",
-            evidence_ids=[],
-            determinism_impact="structural",
-        )
-        return JSONResponse(
-            status_code=406,
-            content=payload.model_dump(),
-            headers={"X-Determinism-Seed": seed_value},
-        )
-    payload = {
-        "run_id": "run-unimplemented",
-        "flow_id": "flow-unimplemented",
-        "status": "failed",
-        "determinism_class": "structural",
-        "environment_fingerprint": None,
-        "replay_acceptability": "exact_match",
-        "artifact_count": 0,
-    }
-    return JSONResponse(
-        status_code=200,
-        content=payload,
-        headers={"X-Determinism-Seed": seed_value},
-    )
+    raise StarletteHTTPException(status_code=501, detail="Not implemented")

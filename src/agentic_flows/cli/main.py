@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 import sys
 
-from agentic_flows.api import ExecutionConfig, RunMode, execute_flow
 from agentic_flows.core.errors import ConfigurationError, classify_failure
 from agentic_flows.runtime.observability.determinism_classification import (
     determinism_classes_for_trace,
@@ -23,6 +22,11 @@ from agentic_flows.runtime.observability.execution_store import (
 from agentic_flows.runtime.observability.trace_diff import (
     entropy_summary,
     semantic_trace_diff,
+)
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    RunMode,
+    execute_flow,
 )
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.runtime.orchestration.replay_store import replay_with_store

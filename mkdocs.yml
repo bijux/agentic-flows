@@ -42,6 +42,7 @@ nav:
       - determinism: overview/determinism.md
       - replay-equivalence: overview/replay-equivalence.md
       - storage-model: overview/storage-model.md
+      - dependencies: overview/dependencies.md
       - cli-contract: overview/cli-contract.md
       - documentation-policy: overview/documentation-policy.md
       - common-misuse: overview/common-misuse.md

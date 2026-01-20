@@ -8,7 +8,8 @@
 
 from __future__ import annotations
 
-from agentic_flows.api import FlowManifest, RunMode, execute_flow
+from agentic_flows.runtime.orchestration.execute_flow import RunMode, execute_flow
+from agentic_flows.spec.model.flow_manifest import FlowManifest
 
 __all__ = [
     "FlowManifest",
