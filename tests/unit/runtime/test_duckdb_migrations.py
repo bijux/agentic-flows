@@ -27,11 +27,17 @@ def test_duckdb_migrations_apply(tmp_path: Path) -> None:
     rows = connection.execute(
         "SELECT version, checksum FROM schema_migrations ORDER BY version"
     ).fetchall()
-    assert [int(row[0]) for row in rows] == [SCHEMA_VERSION]
-    expected = DuckDBExecutionWriteStore._hash_payload(
+    assert [int(row[0]) for row in rows] == [1, SCHEMA_VERSION]
+    expected_init = DuckDBExecutionWriteStore._hash_payload(
         (MIGRATIONS_DIR / "001_init.sql").read_text(encoding="utf-8")
     )
-    assert rows[0][1] == expected
+    expected_update = DuckDBExecutionWriteStore._hash_payload(
+        (MIGRATIONS_DIR / "002_nondeterminism_governance.sql").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert rows[0][1] == expected_init
+    assert rows[1][1] == expected_update
     contract_row = connection.execute(
         "SELECT schema_version, schema_hash FROM schema_contract"
     ).fetchone()

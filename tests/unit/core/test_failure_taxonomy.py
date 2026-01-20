@@ -8,6 +8,7 @@ import pytest
 from agentic_flows.core.errors import (
     FAILURE_CLASS_MAP,
     FailureClass,
+    NonDeterminismViolationError,
     SemanticViolationError,
     classify_failure,
 )
@@ -20,6 +21,7 @@ def test_failure_taxonomy_is_exhaustive() -> None:
         "RetrievalFailure",
         "ReasoningFailure",
         "VerificationFailure",
+        "NonDeterminismViolationError",
         "SemanticViolationError",
         "ConfigurationError",
     }
@@ -28,6 +30,13 @@ def test_failure_taxonomy_is_exhaustive() -> None:
 
 def test_failure_taxonomy_maps_semantic_violation() -> None:
     assert classify_failure(SemanticViolationError("boom")) == FailureClass.AUTHORITY
+
+
+def test_failure_taxonomy_maps_nondeterminism_violation() -> None:
+    assert (
+        classify_failure(NonDeterminismViolationError("boom"))
+        == FailureClass.SEMANTIC
+    )
 
 
 def test_failure_taxonomy_rejects_unknown() -> None:

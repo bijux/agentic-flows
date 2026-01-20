@@ -25,6 +25,7 @@ from agentic_flows.spec.ontology import DeterminismLevel
 from agentic_flows.spec.ontology.public import (
     EventType,
     ReplayAcceptability,
+    ReplayMode,
 )
 
 
@@ -61,7 +62,7 @@ def validate_replay(
     artifacts: Iterable[Artifact] | None = None,
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
-) -> None:
+) -> dict[str, object]:
     """Validate replay; misuse breaks acceptability checks."""
     try:
         diffs = replay_diff(
@@ -73,12 +74,17 @@ def validate_replay(
         )
     except ReplayDiffError as exc:
         diffs = exc.diffs
-    blocking, acceptable = _partition_diffs(diffs, plan.replay_acceptability)
-    if blocking:
+    verdicts = _replay_verdicts(diffs, plan.replay_acceptability)
+    blocking = verdicts["bounded"]["blocking"]
+    acceptable = verdicts["bounded"]["acceptable_diffs"]
+    if plan.replay_mode == ReplayMode.STRICT and diffs:
+        raise ValueError(f"replay mismatch: {verdicts['strict']}")
+    if plan.replay_mode == ReplayMode.BOUNDED and blocking:
         detail = {"blocking": blocking}
         if acceptable:
             detail["acceptable"] = acceptable
         raise ValueError(f"replay mismatch: {detail}")
+    return verdicts
 
 
 def replay_diff(
@@ -314,6 +320,30 @@ def _partition_diffs(
     blocking = {key: value for key, value in diffs.items() if key not in allowed}
     acceptable = {key: value for key, value in diffs.items() if key in allowed}
     return blocking, acceptable
+
+
+def _replay_verdicts(
+    diffs: dict[str, object], acceptability: ReplayAcceptability
+) -> dict[str, object]:
+    """Internal helper; not part of the public API."""
+    blocking, acceptable = _partition_diffs(diffs, acceptability)
+    return {
+        "strict": {
+            "allowed": not diffs,
+            "blocking": blocking,
+            "acceptable_diffs": acceptable,
+        },
+        "bounded": {
+            "allowed": not blocking,
+            "blocking": blocking,
+            "acceptable_diffs": acceptable,
+        },
+        "observational": {
+            "allowed": True,
+            "blocking": blocking,
+            "acceptable_diffs": acceptable,
+        },
+    }
 
 
 def _dataset_payload(dataset) -> dict[str, object]:

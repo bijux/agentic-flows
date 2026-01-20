@@ -105,7 +105,9 @@ def test_fabricated_artifact_rejected() -> None:
                 spec_version="v1",
                 allowed_sources=(EntropySource.SEEDED_RNG,),
                 max_magnitude=EntropyMagnitude.LOW,
-            )
+            ),
+            intents=(),
+            allowed_variance_class=None,
         ),
         execution_store=None,
         run_id=None,

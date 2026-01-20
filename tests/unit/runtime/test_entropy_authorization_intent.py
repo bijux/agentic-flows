@@ -6,7 +6,7 @@ from __future__ import annotations
 import bijux_agent
 import pytest
 
-from agentic_flows.core.errors import SemanticViolationError
+from agentic_flows.core.errors import NonDeterminismViolationError
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,
@@ -18,6 +18,9 @@ from agentic_flows.spec.model.artifact.non_determinism_source import (
 from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.datasets.retrieval_request import RetrievalRequest
 from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
+from agentic_flows.spec.model.execution.non_deterministic_intent import (
+    NonDeterministicIntent,
+)
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.ontology import (
@@ -41,6 +44,7 @@ from agentic_flows.spec.ontology.ids import (
 )
 from agentic_flows.spec.ontology.public import (
     EntropySource,
+    NonDeterminismIntentSource,
     ReplayAcceptability,
 )
 
@@ -96,6 +100,15 @@ def test_unauthorized_entropy_intent(
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(),
+        nondeterminism_intent=(
+            NonDeterministicIntent(
+                spec_version="v1",
+                source=NonDeterminismIntentSource.RETRIEVAL,
+                min_entropy_magnitude=EntropyMagnitude.LOW,
+                max_entropy_magnitude=EntropyMagnitude.LOW,
+                justification="retrieval variance permitted for test",
+            ),
+        ),
     )
     resolved_flow = resolved_flow_factory(manifest, (step,))
 
@@ -137,7 +150,7 @@ def test_unauthorized_entropy_intent(
         }
     ]
 
-    with pytest.raises(SemanticViolationError, match="entropy source"):
+    with pytest.raises(NonDeterminismViolationError, match="explicit authorization"):
         execute_flow(
             resolved_flow=resolved_flow,
             config=ExecutionConfig(

@@ -21,10 +21,18 @@ def validate(plan: ExecutionPlan) -> None:
         raise ValueError("execution plan tenant_id must match manifest")
     if plan.plan.flow_state != plan.manifest.flow_state:
         raise ValueError("execution plan flow_state must match manifest")
+    if plan.plan.replay_mode != plan.manifest.replay_mode:
+        raise ValueError("execution plan replay_mode must match manifest")
     if plan.plan.allow_deprecated_datasets != plan.manifest.allow_deprecated_datasets:
         raise ValueError("execution plan allow_deprecated_datasets must match manifest")
     if plan.plan.replay_envelope != plan.manifest.replay_envelope:
         raise ValueError("execution plan replay_envelope must match manifest")
+    if plan.plan.entropy_budget != plan.manifest.entropy_budget:
+        raise ValueError("execution plan entropy_budget must match manifest")
+    if plan.plan.allowed_variance_class != plan.manifest.allowed_variance_class:
+        raise ValueError("execution plan allowed_variance_class must match manifest")
+    if plan.plan.nondeterminism_intent != plan.manifest.nondeterminism_intent:
+        raise ValueError("execution plan nondeterminism_intent must match manifest")
     steps = plan.plan.steps
     step_agents = [step.agent_id for step in steps]
     if len(set(step_agents)) != len(step_agents):
@@ -40,6 +48,12 @@ def validate(plan: ExecutionPlan) -> None:
             raise ValueError("resolved step determinism_level must be declared")
         if step.determinism_level != plan.manifest.determinism_level:
             raise ValueError("resolved step determinism_level must match manifest")
+        if step.declared_entropy_budget != plan.manifest.entropy_budget:
+            raise ValueError("resolved step entropy budget must match manifest")
+        if step.allowed_variance_class != plan.manifest.allowed_variance_class:
+            raise ValueError("resolved step allowed_variance_class must match manifest")
+        if step.nondeterminism_intent != plan.manifest.nondeterminism_intent:
+            raise ValueError("resolved step nondeterminism_intent must match manifest")
         for dep in step.declared_dependencies:
             if dep not in agent_to_index:
                 raise ValueError("resolved step dependency references unknown agent")

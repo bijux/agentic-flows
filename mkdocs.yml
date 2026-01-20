@@ -41,6 +41,7 @@ nav:
       - minimal-run: overview/minimal-run.md
       - boring-path: overview/boring-path.md
       - determinism: overview/determinism.md
+      - non-determinism-contract: overview/non-determinism-contract.md
       - terminology: overview/terminology.md
       - replay-equivalence: overview/replay-equivalence.md
       - storage-model: overview/storage-model.md

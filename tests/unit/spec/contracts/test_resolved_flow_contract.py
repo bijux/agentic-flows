@@ -85,6 +85,7 @@ def _resolved_step(
     agent_id: AgentID,
     step_index: int,
     declared_dependencies: tuple[AgentID, ...],
+    entropy_budget: EntropyBudget | None = None,
 ) -> ResolvedStep:
     inputs_fingerprint = InputsFingerprint(f"inputs-{agent_id}")
     return ResolvedStep(
@@ -105,6 +106,7 @@ def _resolved_step(
             execution_mode="default",
         ),
         retrieval_request=None,
+        declared_entropy_budget=entropy_budget,
     )
 
 
@@ -125,8 +127,11 @@ def test_execution_plan_rejects_inverted_dependencies() -> None:
         tenant_id=manifest.tenant_id,
         flow_state=manifest.flow_state,
         determinism_level=manifest.determinism_level,
+        replay_mode=manifest.replay_mode,
         replay_acceptability=manifest.replay_acceptability,
         entropy_budget=manifest.entropy_budget,
+        allowed_variance_class=manifest.allowed_variance_class,
+        nondeterminism_intent=manifest.nondeterminism_intent,
         replay_envelope=manifest.replay_envelope,
         dataset=manifest.dataset,
         allow_deprecated_datasets=manifest.allow_deprecated_datasets,
@@ -135,11 +140,13 @@ def test_execution_plan_rejects_inverted_dependencies() -> None:
                 agent_id=AgentID("agent-b"),
                 step_index=0,
                 declared_dependencies=(AgentID("agent-a"),),
+                entropy_budget=manifest.entropy_budget,
             ),
             _resolved_step(
                 agent_id=AgentID("agent-a"),
                 step_index=1,
                 declared_dependencies=(),
+                entropy_budget=manifest.entropy_budget,
             ),
         ),
         environment_fingerprint=EnvironmentFingerprint("env"),

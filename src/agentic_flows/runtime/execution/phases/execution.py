@@ -10,7 +10,7 @@ from contextlib import suppress
 import os
 import signal
 
-from agentic_flows.core.errors import SemanticViolationError
+from agentic_flows.core.errors import NonDeterminismViolationError
 from agentic_flows.runtime.context import ExecutionContext, RunMode
 from agentic_flows.runtime.execution.agent_executor import AgentExecutor
 from agentic_flows.runtime.execution.reasoning_executor import ReasoningExecutor
@@ -190,7 +190,7 @@ def execution_phase(
             return
         for entry in new_entries:
             if not entry.nondeterminism_source.authorized:
-                raise SemanticViolationError(
+                raise NonDeterminismViolationError(
                     "entropy source used without explicit authorization"
                 )
 

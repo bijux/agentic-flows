@@ -7,8 +7,9 @@ from __future__ import annotations
 
 from enum import Enum
 
+from agentic_flows.spec.model.execution.determinism_profile import DeterminismProfile
 from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology import DeterminismLevel
+from agentic_flows.spec.ontology import DeterminismLevel, EntropyMagnitude
 from agentic_flows.spec.ontology.public import (
     DeterminismClass,
     EntropySource,
@@ -99,10 +100,44 @@ def determinism_classes_for_trace(trace: ExecutionTrace) -> list[str]:
     return sorted(item.value for item in classes)
 
 
+def determinism_profile_for_trace(trace: ExecutionTrace) -> DeterminismProfile:
+    """Build determinism profile; misuse breaks auditability."""
+    sources = tuple(sorted({entry.source for entry in trace.entropy_usage}))
+    magnitude = None
+    if trace.entropy_usage:
+        order = {
+            EntropyMagnitude.LOW: 0,
+            EntropyMagnitude.MEDIUM: 1,
+            EntropyMagnitude.HIGH: 2,
+        }
+        magnitude = max(
+            (entry.magnitude for entry in trace.entropy_usage),
+            key=lambda value: order[value],
+        )
+    decay = {
+        DeterminismLevel.STRICT: 0.0,
+        DeterminismLevel.BOUNDED: 0.2,
+        DeterminismLevel.PROBABILISTIC: 0.5,
+        DeterminismLevel.UNCONSTRAINED: 1.0,
+    }[trace.determinism_level]
+    if magnitude is EntropyMagnitude.HIGH:
+        decay = min(1.0, decay + 0.2)
+    if sources:
+        decay = min(1.0, decay + 0.1)
+    return DeterminismProfile(
+        spec_version="v1",
+        entropy_magnitude=magnitude,
+        entropy_sources=sources,
+        replay_acceptability=trace.replay_acceptability,
+        confidence_decay=decay,
+    )
+
+
 __all__ = [
     "EntropySeverity",
     "determinism_class_for_event",
     "determinism_class_for_entropy_source",
     "determinism_classes_for_trace",
+    "determinism_profile_for_trace",
     "entropy_source_severity",
 ]

@@ -28,6 +28,10 @@ class VerificationFailure(Exception):  # noqa: N818
     """Verification failure; misuse breaks verification trust."""
 
 
+class NonDeterminismViolationError(RuntimeError):
+    """Non-determinism violation; misuse breaks governance."""
+
+
 class SemanticViolationError(RuntimeError):
     """Semantic violation; misuse breaks authority guarantees."""
 
@@ -52,6 +56,7 @@ FAILURE_CLASS_MAP = {
     RetrievalFailure: FailureClass.STRUCTURAL,
     ReasoningFailure: FailureClass.STRUCTURAL,
     VerificationFailure: FailureClass.SEMANTIC,
+    NonDeterminismViolationError: FailureClass.SEMANTIC,
     SemanticViolationError: FailureClass.AUTHORITY,
     ConfigurationError: FailureClass.STRUCTURAL,
 }
@@ -71,6 +76,7 @@ __all__ = [
     "RetrievalFailure",
     "ReasoningFailure",
     "VerificationFailure",
+    "NonDeterminismViolationError",
     "SemanticViolationError",
     "ConfigurationError",
     "FailureClass",

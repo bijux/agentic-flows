@@ -35,10 +35,12 @@ from agentic_flows.spec.ontology.ontology import (
     DatasetState,
     DeterminismClass,
     DeterminismLevel,
+    EntropyExhaustionAction,
     EntropyMagnitude,
     EvidenceDeterminism,
     FlowState,
     ReasonCode,
+    ReplayMode,
     StepType,
     VerificationPhase,
     VerificationRandomness,
@@ -46,6 +48,7 @@ from agentic_flows.spec.ontology.ontology import (
 from agentic_flows.spec.ontology.public import (
     EntropySource,
     EventType,
+    NonDeterminismIntentSource,
     ReplayAcceptability,
 )
 
@@ -65,6 +68,7 @@ __all__ = [
     "DatasetState",
     "DeterminismClass",
     "DeterminismLevel",
+    "EntropyExhaustionAction",
     "EnvironmentFingerprint",
     "EvidenceID",
     "EvidenceDeterminism",
@@ -77,6 +81,7 @@ __all__ = [
     "InputsFingerprint",
     "PlanHash",
     "ReplayAcceptability",
+    "ReplayMode",
     "RequestID",
     "ReasonCode",
     "ResolverID",
@@ -85,6 +90,7 @@ __all__ = [
     "StepType",
     "VerificationPhase",
     "VerificationRandomness",
+    "NonDeterminismIntentSource",
     "ToolID",
     "VersionID",
 ]

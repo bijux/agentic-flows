@@ -36,6 +36,16 @@ class ExecutionWriteStoreProtocol(Protocol):
         """Execute finalize_run and enforce its contract."""
         ...
 
+    def save_run(
+        self,
+        *,
+        trace: ExecutionTrace | None,
+        plan: ExecutionSteps,
+        mode: RunMode,
+    ) -> RunID:
+        """Execute save_run and enforce its contract."""
+        ...
+
     def save_steps(
         self, *, run_id: RunID, tenant_id: TenantID, plan: ExecutionSteps
     ) -> None:

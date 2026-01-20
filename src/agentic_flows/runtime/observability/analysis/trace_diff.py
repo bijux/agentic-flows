@@ -6,8 +6,11 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
 from agentic_flows.runtime.observability.classification.determinism_classification import (
     determinism_classes_for_trace,
+    determinism_profile_for_trace,
 )
 from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
@@ -179,6 +182,8 @@ def non_determinism_report(
     expected_summary = entropy_summary(expected.entropy_usage)
     observed_summary = entropy_summary(observed.entropy_usage)
     class_report = determinism_class_report(expected, observed)
+    expected_profile = determinism_profile_for_trace(expected)
+    observed_profile = determinism_profile_for_trace(observed)
     return {
         "expected_entropy": expected_summary,
         "observed_entropy": observed_summary,
@@ -193,6 +198,10 @@ def non_determinism_report(
             "observed": observed_summary["max_magnitude"],
         },
         "determinism_classes": class_report,
+        "determinism_profile": {
+            "expected": asdict(expected_profile),
+            "observed": asdict(observed_profile),
+        },
     }
 
 

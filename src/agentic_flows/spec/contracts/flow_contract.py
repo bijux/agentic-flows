@@ -12,12 +12,15 @@ from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology import (
     DatasetState,
     DeterminismLevel,
+    EntropyExhaustionAction,
     EntropyMagnitude,
     FlowState,
 )
 from agentic_flows.spec.ontology.public import (
     EntropySource,
+    NonDeterminismIntentSource,
     ReplayAcceptability,
+    ReplayMode,
 )
 
 
@@ -29,6 +32,7 @@ def validate(manifest: FlowManifest) -> None:
     _require_tuple_of_str("retrieval_contracts", manifest.retrieval_contracts)
     _require_tuple_of_str("verification_gates", manifest.verification_gates)
     _require_enum("determinism_level", manifest.determinism_level, DeterminismLevel)
+    _require_enum("replay_mode", manifest.replay_mode, ReplayMode)
     _require_enum(
         "replay_acceptability", manifest.replay_acceptability, ReplayAcceptability
     )
@@ -41,10 +45,44 @@ def validate(manifest: FlowManifest) -> None:
     for source in manifest.entropy_budget.allowed_sources:
         _require_enum("entropy_budget.allowed_sources", source, EntropySource)
     _require_enum(
+        "entropy_budget.min_magnitude",
+        manifest.entropy_budget.min_magnitude,
+        EntropyMagnitude,
+    )
+    _require_enum(
         "entropy_budget.max_magnitude",
         manifest.entropy_budget.max_magnitude,
         EntropyMagnitude,
     )
+    _require_enum(
+        "entropy_budget.exhaustion_action",
+        manifest.entropy_budget.exhaustion_action,
+        EntropyExhaustionAction,
+    )
+    if manifest.allowed_variance_class is not None:
+        _require_enum(
+            "allowed_variance_class",
+            manifest.allowed_variance_class,
+            EntropyMagnitude,
+        )
+    if not isinstance(manifest.nondeterminism_intent, tuple):
+        raise ValueError("nondeterminism_intent must be a tuple")
+    for intent in manifest.nondeterminism_intent:
+        _require_enum(
+            "nondeterminism_intent.source", intent.source, NonDeterminismIntentSource
+        )
+        _require_enum(
+            "nondeterminism_intent.min_entropy_magnitude",
+            intent.min_entropy_magnitude,
+            EntropyMagnitude,
+        )
+        _require_enum(
+            "nondeterminism_intent.max_entropy_magnitude",
+            intent.max_entropy_magnitude,
+            EntropyMagnitude,
+        )
+        if not intent.justification.strip():
+            raise ValueError("nondeterminism_intent.justification must be non-empty")
     if not 0.0 <= manifest.replay_envelope.min_claim_overlap <= 1.0:
         raise ValueError("replay_envelope.min_claim_overlap must be between 0 and 1")
     if manifest.replay_envelope.max_contradiction_delta < 0:

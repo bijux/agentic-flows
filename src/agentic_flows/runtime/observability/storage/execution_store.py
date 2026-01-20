@@ -44,6 +44,7 @@ from agentic_flows.spec.ontology import (
     CausalityTag,
     DatasetState,
     DeterminismLevel,
+    EntropyExhaustionAction,
     EntropyMagnitude,
     EvidenceDeterminism,
     FlowState,
@@ -69,9 +70,10 @@ from agentic_flows.spec.ontology.public import (
     EntropySource,
     EventType,
     ReplayAcceptability,
+    ReplayMode,
 )
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "migrations"
 SCHEMA_CONTRACT_PATH = Path(__file__).resolve().parents[1] / "schema.sql"
 SCHEMA_HASH_PATH = Path(__file__).resolve().parents[1] / "schema.hash"
@@ -153,6 +155,7 @@ class DuckDBExecutionStore:
                 flow_id,
                 flow_state,
                 determinism_level,
+                replay_mode,
                 replay_acceptability,
                 dataset_id,
                 dataset_version,
@@ -160,6 +163,7 @@ class DuckDBExecutionStore:
                 dataset_hash,
                 dataset_storage_uri,
                 allow_deprecated_datasets,
+                allowed_variance_class,
                 replay_envelope_min_claim_overlap,
                 replay_envelope_max_contradiction_delta,
                 environment_fingerprint,
@@ -170,10 +174,13 @@ class DuckDBExecutionStore:
                 contradiction_count,
                 arbitration_decision,
                 finalized,
+                entropy_exhausted,
+                entropy_exhaustion_action,
+                non_certifiable,
                 run_mode,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 str(plan.tenant_id),
@@ -181,6 +188,7 @@ class DuckDBExecutionStore:
                 str(plan.flow_id),
                 plan.flow_state.value,
                 plan.determinism_level.value,
+                plan.replay_mode.value,
                 plan.replay_acceptability.value,
                 str(plan.dataset.dataset_id),
                 plan.dataset.dataset_version,
@@ -188,6 +196,9 @@ class DuckDBExecutionStore:
                 plan.dataset.dataset_hash,
                 plan.dataset.storage_uri,
                 plan.allow_deprecated_datasets,
+                plan.allowed_variance_class.value
+                if plan.allowed_variance_class is not None
+                else None,
                 plan.replay_envelope.min_claim_overlap,
                 plan.replay_envelope.max_contradiction_delta,
                 str(plan.environment_fingerprint),
@@ -198,11 +209,15 @@ class DuckDBExecutionStore:
                 0,
                 "none",
                 False,
+                False,
+                None,
+                False,
                 mode.value,
                 created_at,
             ),
         )
         self._persist_entropy_budget(run_id, plan)
+        self._persist_nondeterminism_intents(run_id, plan)
         self._connection.commit()
         return run_id
 
@@ -216,7 +231,10 @@ class DuckDBExecutionStore:
                 parent_flow_id = ?,
                 contradiction_count = ?,
                 arbitration_decision = ?,
-                finalized = ?
+                finalized = ?,
+                entropy_exhausted = ?,
+                entropy_exhaustion_action = ?,
+                non_certifiable = ?
             WHERE tenant_id = ? AND run_id = ?
             """,
             (
@@ -228,6 +246,11 @@ class DuckDBExecutionStore:
                 trace.contradiction_count,
                 trace.arbitration_decision,
                 bool(trace.finalized),
+                bool(trace.entropy_exhausted),
+                trace.entropy_exhaustion_action.value
+                if trace.entropy_exhaustion_action is not None
+                else None,
+                bool(trace.non_certifiable),
                 str(trace.tenant_id),
                 str(run_id),
             ),
@@ -292,9 +315,13 @@ class DuckDBExecutionStore:
                     agent_id,
                     step_type,
                     determinism_level,
-                    inputs_fingerprint
+                    inputs_fingerprint,
+                    declared_entropy_min_magnitude,
+                    declared_entropy_max_magnitude,
+                    declared_entropy_exhaustion_action,
+                    allowed_variance_class
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(tenant_id),
@@ -304,6 +331,18 @@ class DuckDBExecutionStore:
                     step.step_type.value,
                     step.determinism_level.value,
                     str(step.inputs_fingerprint),
+                    step.declared_entropy_budget.min_magnitude.value
+                    if step.declared_entropy_budget is not None
+                    else None,
+                    step.declared_entropy_budget.max_magnitude.value
+                    if step.declared_entropy_budget is not None
+                    else None,
+                    step.declared_entropy_budget.exhaustion_action.value
+                    if step.declared_entropy_budget is not None
+                    else None,
+                    step.allowed_variance_class.value
+                    if step.allowed_variance_class is not None
+                    else None,
                 ),
             )
             for dependency in step.declared_dependencies:
@@ -649,6 +688,7 @@ class DuckDBExecutionStore:
                 flow_id,
                 flow_state,
                 determinism_level,
+                replay_mode,
                 replay_acceptability,
                 dataset_id,
                 dataset_version,
@@ -665,7 +705,10 @@ class DuckDBExecutionStore:
                 parent_flow_id,
                 contradiction_count,
                 arbitration_decision,
-                finalized
+                finalized,
+                entropy_exhausted,
+                entropy_exhaustion_action,
+                non_certifiable
             FROM runs
             WHERE tenant_id = ? AND run_id = ?
             """,
@@ -680,43 +723,49 @@ class DuckDBExecutionStore:
         child_flow_ids = self._load_child_flow_ids(run_id, tenant_id=tenant_id)
         dataset = DatasetDescriptor(
             spec_version="v1",
-            dataset_id=DatasetID(run_row[4]),
+            dataset_id=DatasetID(run_row[5]),
             tenant_id=tenant_id,
-            dataset_version=run_row[5],
-            dataset_hash=run_row[7],
-            dataset_state=DatasetState(run_row[6]),
-            storage_uri=run_row[8],
+            dataset_version=run_row[6],
+            dataset_hash=run_row[8],
+            dataset_state=DatasetState(run_row[7]),
+            storage_uri=run_row[9],
         )
         replay_envelope = ReplayEnvelope(
             spec_version="v1",
-            min_claim_overlap=float(run_row[10]),
-            max_contradiction_delta=int(run_row[11]),
+            min_claim_overlap=float(run_row[11]),
+            max_contradiction_delta=int(run_row[12]),
         )
         return ExecutionTrace(
             spec_version="v1",
             flow_id=FlowID(run_row[0]),
             tenant_id=tenant_id,
-            parent_flow_id=FlowID(run_row[16]) if run_row[16] else None,
+            parent_flow_id=FlowID(run_row[17]) if run_row[17] else None,
             child_flow_ids=child_flow_ids,
             flow_state=FlowState(run_row[1]),
             determinism_level=DeterminismLevel(run_row[2]),
-            replay_acceptability=ReplayAcceptability(run_row[3]),
+            replay_mode=ReplayMode(run_row[3]),
+            replay_acceptability=ReplayAcceptability(run_row[4]),
             dataset=dataset,
             replay_envelope=replay_envelope,
-            allow_deprecated_datasets=bool(run_row[9]),
-            environment_fingerprint=EnvironmentFingerprint(run_row[12]),
-            plan_hash=PlanHash(run_row[13]),
-            verification_policy_fingerprint=PolicyFingerprint(run_row[14])
-            if run_row[14] is not None
+            allow_deprecated_datasets=bool(run_row[10]),
+            environment_fingerprint=EnvironmentFingerprint(run_row[13]),
+            plan_hash=PlanHash(run_row[14]),
+            verification_policy_fingerprint=PolicyFingerprint(run_row[15])
+            if run_row[15] is not None
             else None,
-            resolver_id=ResolverID(run_row[15]),
+            resolver_id=ResolverID(run_row[16]),
             events=events,
             tool_invocations=tool_invocations,
             entropy_usage=entropy_usage,
             claim_ids=claim_ids,
-            contradiction_count=int(run_row[17]),
-            arbitration_decision=run_row[18],
-            finalized=bool(run_row[19]),
+            contradiction_count=int(run_row[18]),
+            arbitration_decision=run_row[19],
+            finalized=bool(run_row[20]),
+            entropy_exhausted=bool(run_row[21]),
+            entropy_exhaustion_action=EntropyExhaustionAction(run_row[22])
+            if run_row[22] is not None
+            else None,
+            non_certifiable=bool(run_row[23]),
         )
 
     def load_replay_envelope(
@@ -1046,6 +1095,29 @@ class DuckDBExecutionStore:
     def _persist_entropy_budget(self, run_id: RunID, plan: ExecutionSteps) -> None:
         """Internal helper; not part of the public API."""
         budget = plan.entropy_budget
+        self._connection.execute(
+            """
+            INSERT OR REPLACE INTO entropy_budget (
+                tenant_id,
+                run_id,
+                min_magnitude,
+                max_magnitude,
+                exhaustion_action,
+                allowed_variance_class
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(plan.tenant_id),
+                str(run_id),
+                budget.min_magnitude.value,
+                budget.max_magnitude.value,
+                budget.exhaustion_action.value,
+                plan.allowed_variance_class.value
+                if plan.allowed_variance_class is not None
+                else None,
+            ),
+        )
         for source in budget.allowed_sources:
             self._connection.execute(
                 """
@@ -1076,6 +1148,64 @@ class DuckDBExecutionStore:
                 """,
                 (str(plan.tenant_id), str(run_id), magnitude.value),
             )
+
+    def _persist_nondeterminism_intents(
+        self, run_id: RunID, plan: ExecutionSteps
+    ) -> None:
+        """Internal helper; not part of the public API."""
+        for index, intent in enumerate(plan.nondeterminism_intent):
+            self._connection.execute(
+                """
+                INSERT OR REPLACE INTO nondeterminism_intents (
+                    tenant_id,
+                    run_id,
+                    step_index,
+                    intent_index,
+                    intent_source,
+                    min_entropy_magnitude,
+                    max_entropy_magnitude,
+                    justification
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(plan.tenant_id),
+                    str(run_id),
+                    None,
+                    index,
+                    intent.source.value,
+                    intent.min_entropy_magnitude.value,
+                    intent.max_entropy_magnitude.value,
+                    intent.justification,
+                ),
+            )
+        for step in plan.steps:
+            for index, intent in enumerate(step.nondeterminism_intent):
+                self._connection.execute(
+                    """
+                    INSERT OR REPLACE INTO nondeterminism_intents (
+                        tenant_id,
+                        run_id,
+                        step_index,
+                        intent_index,
+                        intent_source,
+                        min_entropy_magnitude,
+                        max_entropy_magnitude,
+                        justification
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(plan.tenant_id),
+                        str(run_id),
+                        step.step_index,
+                        index,
+                        intent.source.value,
+                        intent.min_entropy_magnitude.value,
+                        intent.max_entropy_magnitude.value,
+                        intent.justification,
+                    ),
+                )
 
     def _migrate(self) -> None:
         """Internal helper; not part of the public API."""

@@ -24,6 +24,9 @@ from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.non_deterministic_intent import (
+    NonDeterministicIntent,
+)
 from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
@@ -55,6 +58,7 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.public import (
     EntropySource,
     ReplayAcceptability,
+    ReplayMode,
 )
 
 
@@ -202,17 +206,33 @@ def plan_hash_for():
         replay_envelope: ReplayEnvelope,
         dataset,
         allow_deprecated_datasets: bool,
+        replay_mode: ReplayMode = ReplayMode.STRICT,
+        allowed_variance_class: EntropyMagnitude | None = None,
+        nondeterminism_intent: tuple[NonDeterministicIntent, ...] = (),
     ) -> PlanHash:
         payload = {
             "flow_id": flow_id,
             "tenant_id": tenant_id,
             "flow_state": flow_state,
             "determinism_level": determinism_level,
+            "replay_mode": replay_mode,
             "replay_acceptability": replay_acceptability,
             "entropy_budget": {
                 "allowed_sources": list(entropy_budget.allowed_sources),
+                "min_magnitude": entropy_budget.min_magnitude,
                 "max_magnitude": entropy_budget.max_magnitude,
+                "exhaustion_action": entropy_budget.exhaustion_action,
             },
+            "allowed_variance_class": allowed_variance_class,
+            "nondeterminism_intent": [
+                {
+                    "source": intent.source,
+                    "min_entropy_magnitude": intent.min_entropy_magnitude,
+                    "max_entropy_magnitude": intent.max_entropy_magnitude,
+                    "justification": intent.justification,
+                }
+                for intent in nondeterminism_intent
+            ],
             "replay_envelope": {
                 "min_claim_overlap": replay_envelope.min_claim_overlap,
                 "max_contradiction_delta": replay_envelope.max_contradiction_delta,
@@ -233,6 +253,28 @@ def plan_hash_for():
                     "declared_dependencies": list(step.declared_dependencies),
                     "step_type": step.step_type,
                     "determinism_level": step.determinism_level,
+                    "declared_entropy_budget": (
+                        {
+                            "allowed_sources": list(
+                                step.declared_entropy_budget.allowed_sources
+                            ),
+                            "min_magnitude": step.declared_entropy_budget.min_magnitude,
+                            "max_magnitude": step.declared_entropy_budget.max_magnitude,
+                            "exhaustion_action": step.declared_entropy_budget.exhaustion_action,
+                        }
+                        if step.declared_entropy_budget
+                        else None
+                    ),
+                    "allowed_variance_class": step.allowed_variance_class,
+                    "nondeterminism_intent": [
+                        {
+                            "source": intent.source,
+                            "min_entropy_magnitude": intent.min_entropy_magnitude,
+                            "max_entropy_magnitude": intent.max_entropy_magnitude,
+                            "justification": intent.justification,
+                        }
+                        for intent in step.nondeterminism_intent
+                    ],
                 }
                 for step in steps
             ],

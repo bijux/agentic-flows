@@ -11,7 +11,7 @@ from dataclasses import dataclass, replace
 import os
 
 from agentic_flows.core.authority import authority_token, enforce_runtime_semantics
-from agentic_flows.core.errors import ConfigurationError
+from agentic_flows.core.errors import ConfigurationError, NonDeterminismViolationError
 from agentic_flows.runtime.artifact_store import ArtifactStore, InMemoryArtifactStore
 from agentic_flows.runtime.budget import BudgetState, ExecutionBudget
 from agentic_flows.runtime.context import ExecutionContext, RunMode
@@ -44,14 +44,21 @@ from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.policy.non_determinism_policy import NonDeterminismPolicy
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.verification.verification import VerificationPolicy
 from agentic_flows.spec.model.verification.verification_arbitration import (
     VerificationArbitration,
 )
 from agentic_flows.spec.model.verification.verification_result import VerificationResult
-from agentic_flows.spec.ontology import CausalityTag, DeterminismLevel, EventType
+from agentic_flows.spec.ontology import (
+    CausalityTag,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EventType,
+)
 from agentic_flows.spec.ontology.ids import ClaimID, FlowID, RunID, TenantID
+from agentic_flows.spec.ontology.public import NonDeterminismIntentSource
 
 
 @dataclass(frozen=True)
@@ -75,6 +82,7 @@ class ExecutionConfig:
     mode: RunMode
     determinism_level: DeterminismLevel | None
     verification_policy: VerificationPolicy | None = None
+    non_determinism_policy: NonDeterminismPolicy | None = None
     artifact_store: ArtifactStore | None = None
     execution_store: ExecutionWriteStoreProtocol | None = None
     execution_read_store: ExecutionReadStoreProtocol | None = None
@@ -165,6 +173,11 @@ def execute_flow(
         and execution_config.verification_policy is None
     ):
         raise ValueError("verification_policy is required before execution")
+    if execution_config.mode in {RunMode.LIVE, RunMode.OBSERVE, RunMode.UNSAFE}:
+        execution_config = _ensure_non_determinism_policy(
+            resolved_flow, execution_config
+        )
+        _validate_non_determinism_policy(resolved_flow, execution_config)
 
     strategy = LiveExecutor()
     if execution_config.mode == RunMode.DRY_RUN:
@@ -184,7 +197,11 @@ def execute_flow(
     initial_evidence: list[RetrievedEvidence] = []
     initial_tool_invocations: list[ToolInvocation] = []
     trace_recorder = TraceRecorder()
-    entropy_ledger = EntropyLedger(resolved_flow.manifest.entropy_budget)
+    entropy_ledger = EntropyLedger(
+        resolved_flow.manifest.entropy_budget,
+        intents=resolved_flow.manifest.nondeterminism_intent,
+        allowed_variance_class=resolved_flow.manifest.allowed_variance_class,
+    )
     if run_id is not None:
         read_store = _resolve_read_store(execution_config)
         resume_state = _load_resume_state(
@@ -304,6 +321,70 @@ def _derive_seed_token(plan: ExecutionSteps) -> str | None:
         if not step.inputs_fingerprint:
             return None
     return plan.steps[0].inputs_fingerprint
+
+
+def _ensure_non_determinism_policy(
+    resolved_flow: ExecutionPlan, config: ExecutionConfig
+) -> ExecutionConfig:
+    """Internal helper; not part of the public API."""
+    if config.non_determinism_policy is not None:
+        return config
+    manifest = resolved_flow.manifest
+    budget = manifest.entropy_budget
+    allowed_variance = (
+        manifest.allowed_variance_class or budget.max_magnitude or EntropyMagnitude.LOW
+    )
+    policy = NonDeterminismPolicy(
+        spec_version="v1",
+        policy_id="implicit",
+        allowed_sources=budget.allowed_sources,
+        allowed_intent_sources=(
+            NonDeterminismIntentSource.LLM,
+            NonDeterminismIntentSource.RETRIEVAL,
+            NonDeterminismIntentSource.HUMAN,
+            NonDeterminismIntentSource.EXTERNAL,
+        ),
+        min_entropy_magnitude=budget.min_magnitude,
+        max_entropy_magnitude=budget.max_magnitude,
+        allowed_variance_class=allowed_variance,
+        require_justification=False,
+    )
+    return replace(config, non_determinism_policy=policy)
+
+
+def _validate_non_determinism_policy(
+    resolved_flow: ExecutionPlan, config: ExecutionConfig
+) -> None:
+    """Internal helper; not part of the public API."""
+    policy = config.non_determinism_policy
+    if policy is None:
+        return
+    policy.validate_intents(resolved_flow.manifest.nondeterminism_intent)
+    budget = resolved_flow.manifest.entropy_budget
+    if any(source not in policy.allowed_sources for source in budget.allowed_sources):
+        raise NonDeterminismViolationError(
+            "entropy budget includes forbidden entropy sources"
+        )
+    order = {
+        EntropyMagnitude.LOW: 0,
+        EntropyMagnitude.MEDIUM: 1,
+        EntropyMagnitude.HIGH: 2,
+    }
+    if order[budget.min_magnitude] < order[policy.min_entropy_magnitude]:
+        raise NonDeterminismViolationError(
+            "entropy budget minimum below policy minimum"
+        )
+    if order[budget.max_magnitude] > order[policy.max_entropy_magnitude]:
+        raise NonDeterminismViolationError(
+            "entropy budget maximum exceeds policy maximum"
+        )
+    if resolved_flow.manifest.allowed_variance_class is not None and (
+        order[resolved_flow.manifest.allowed_variance_class]
+        > order[policy.allowed_variance_class]
+    ):
+        raise NonDeterminismViolationError(
+            "allowed variance class exceeds policy allowance"
+        )
 
 
 def _persist_run(result: FlowRunResult, config: ExecutionConfig) -> FlowRunResult:

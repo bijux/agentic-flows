@@ -91,6 +91,9 @@ class ExecutionPlanner:
                         execution_mode="seeded",
                     ),
                     retrieval_request=None,
+                    declared_entropy_budget=manifest.entropy_budget,
+                    allowed_variance_class=manifest.allowed_variance_class,
+                    nondeterminism_intent=manifest.nondeterminism_intent,
                 )
             )
         plan_hash = self._plan_hash(manifest, steps, dependencies)
@@ -100,8 +103,11 @@ class ExecutionPlanner:
             tenant_id=manifest.tenant_id,
             flow_state=manifest.flow_state,
             determinism_level=manifest.determinism_level,
+            replay_mode=manifest.replay_mode,
             replay_acceptability=manifest.replay_acceptability,
             entropy_budget=manifest.entropy_budget,
+            allowed_variance_class=manifest.allowed_variance_class,
+            nondeterminism_intent=manifest.nondeterminism_intent,
             replay_envelope=manifest.replay_envelope,
             dataset=manifest.dataset,
             allow_deprecated_datasets=manifest.allow_deprecated_datasets,
@@ -176,11 +182,24 @@ class ExecutionPlanner:
             "tenant_id": manifest.tenant_id,
             "flow_state": manifest.flow_state,
             "determinism_level": manifest.determinism_level,
+            "replay_mode": manifest.replay_mode,
             "replay_acceptability": manifest.replay_acceptability,
             "entropy_budget": {
                 "allowed_sources": list(manifest.entropy_budget.allowed_sources),
+                "min_magnitude": manifest.entropy_budget.min_magnitude,
                 "max_magnitude": manifest.entropy_budget.max_magnitude,
+                "exhaustion_action": manifest.entropy_budget.exhaustion_action,
             },
+            "allowed_variance_class": manifest.allowed_variance_class,
+            "nondeterminism_intent": [
+                {
+                    "source": intent.source,
+                    "min_entropy_magnitude": intent.min_entropy_magnitude,
+                    "max_entropy_magnitude": intent.max_entropy_magnitude,
+                    "justification": intent.justification,
+                }
+                for intent in manifest.nondeterminism_intent
+            ],
             "replay_envelope": {
                 "min_claim_overlap": manifest.replay_envelope.min_claim_overlap,
                 "max_contradiction_delta": (
@@ -203,6 +222,28 @@ class ExecutionPlanner:
                     "declared_dependencies": list(step.declared_dependencies),
                     "step_type": step.step_type,
                     "determinism_level": step.determinism_level,
+                    "declared_entropy_budget": (
+                        {
+                            "allowed_sources": list(
+                                step.declared_entropy_budget.allowed_sources
+                            ),
+                            "min_magnitude": step.declared_entropy_budget.min_magnitude,
+                            "max_magnitude": step.declared_entropy_budget.max_magnitude,
+                            "exhaustion_action": step.declared_entropy_budget.exhaustion_action,
+                        }
+                        if step.declared_entropy_budget
+                        else None
+                    ),
+                    "allowed_variance_class": step.allowed_variance_class,
+                    "nondeterminism_intent": [
+                        {
+                            "source": intent.source,
+                            "min_entropy_magnitude": intent.min_entropy_magnitude,
+                            "max_entropy_magnitude": intent.max_entropy_magnitude,
+                            "justification": intent.justification,
+                        }
+                        for intent in step.nondeterminism_intent
+                    ],
                 }
                 for step in steps
             ],

@@ -1,4 +1,4 @@
--- schema_version: 1
+-- schema_version: 2
 -- Canonical execution store schema contract
 CREATE TABLE IF NOT EXISTS schema_contract (
     schema_version INTEGER PRIMARY KEY,
@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS runs (
     flow_id TEXT NOT NULL,
     flow_state TEXT NOT NULL CHECK (flow_state IN ('draft', 'validated', 'frozen', 'deprecated')),
     determinism_level TEXT NOT NULL CHECK (determinism_level IN ('strict', 'bounded', 'probabilistic', 'unconstrained')),
+    replay_mode TEXT NOT NULL CHECK (replay_mode IN ('strict', 'bounded', 'observational')),
     replay_acceptability TEXT NOT NULL CHECK (replay_acceptability IN ('exact_match', 'invariant_preserving', 'statistically_bounded')),
     dataset_id TEXT NOT NULL,
     dataset_version TEXT NOT NULL,
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS runs (
     dataset_hash TEXT NOT NULL,
     dataset_storage_uri TEXT NOT NULL,
     allow_deprecated_datasets BOOLEAN NOT NULL,
+    allowed_variance_class TEXT CHECK (allowed_variance_class IN ('low', 'medium', 'high')),
     replay_envelope_min_claim_overlap DOUBLE NOT NULL CHECK (replay_envelope_min_claim_overlap >= 0 AND replay_envelope_min_claim_overlap <= 1),
     replay_envelope_max_contradiction_delta INTEGER NOT NULL CHECK (replay_envelope_max_contradiction_delta >= 0),
     environment_fingerprint TEXT NOT NULL,
@@ -62,6 +64,9 @@ CREATE TABLE IF NOT EXISTS runs (
     contradiction_count INTEGER NOT NULL CHECK (contradiction_count >= 0),
     arbitration_decision TEXT NOT NULL,
     finalized BOOLEAN NOT NULL,
+    entropy_exhausted BOOLEAN NOT NULL,
+    entropy_exhaustion_action TEXT CHECK (entropy_exhaustion_action IN ('halt', 'degrade', 'mark_non_certifiable')),
+    non_certifiable BOOLEAN NOT NULL,
     run_mode TEXT NOT NULL CHECK (run_mode IN ('plan', 'dry-run', 'live', 'observe', 'unsafe')),
     created_at TEXT NOT NULL,
     PRIMARY KEY (tenant_id, run_id),
@@ -103,6 +108,30 @@ CREATE TABLE IF NOT EXISTS entropy_budget_magnitudes (
     FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
 );
 
+CREATE TABLE IF NOT EXISTS entropy_budget (
+    tenant_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    min_magnitude TEXT NOT NULL CHECK (min_magnitude IN ('low', 'medium', 'high')),
+    max_magnitude TEXT NOT NULL CHECK (max_magnitude IN ('low', 'medium', 'high')),
+    exhaustion_action TEXT NOT NULL CHECK (exhaustion_action IN ('halt', 'degrade', 'mark_non_certifiable')),
+    allowed_variance_class TEXT CHECK (allowed_variance_class IN ('low', 'medium', 'high')),
+    PRIMARY KEY (tenant_id, run_id),
+    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
+);
+
+CREATE TABLE IF NOT EXISTS nondeterminism_intents (
+    tenant_id TEXT NOT NULL,
+    run_id TEXT NOT NULL,
+    step_index INTEGER CHECK (step_index >= 0),
+    intent_index INTEGER NOT NULL CHECK (intent_index >= 0),
+    intent_source TEXT NOT NULL CHECK (intent_source IN ('llm', 'retrieval', 'human', 'external')),
+    min_entropy_magnitude TEXT NOT NULL CHECK (min_entropy_magnitude IN ('low', 'medium', 'high')),
+    max_entropy_magnitude TEXT NOT NULL CHECK (max_entropy_magnitude IN ('low', 'medium', 'high')),
+    justification TEXT NOT NULL,
+    PRIMARY KEY (tenant_id, run_id, step_index, intent_index),
+    FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
+);
+
 CREATE TABLE IF NOT EXISTS steps (
     tenant_id TEXT NOT NULL,
     run_id TEXT NOT NULL,
@@ -111,6 +140,10 @@ CREATE TABLE IF NOT EXISTS steps (
     step_type TEXT NOT NULL CHECK (step_type IN ('agent', 'retrieval', 'reasoning', 'verification')),
     determinism_level TEXT NOT NULL CHECK (determinism_level IN ('strict', 'bounded', 'probabilistic', 'unconstrained')),
     inputs_fingerprint TEXT NOT NULL,
+    declared_entropy_min_magnitude TEXT CHECK (declared_entropy_min_magnitude IN ('low', 'medium', 'high')),
+    declared_entropy_max_magnitude TEXT CHECK (declared_entropy_max_magnitude IN ('low', 'medium', 'high')),
+    declared_entropy_exhaustion_action TEXT CHECK (declared_entropy_exhaustion_action IN ('halt', 'degrade', 'mark_non_certifiable')),
+    allowed_variance_class TEXT CHECK (allowed_variance_class IN ('low', 'medium', 'high')),
     PRIMARY KEY (tenant_id, run_id, step_index),
     FOREIGN KEY (tenant_id, run_id) REFERENCES runs (tenant_id, run_id)
 );

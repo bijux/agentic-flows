@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology import EntropyMagnitude
+from agentic_flows.spec.ontology import EntropyExhaustionAction, EntropyMagnitude
 from agentic_flows.spec.ontology.public import EntropySource
 
 
@@ -18,6 +18,8 @@ class EntropyBudget:
     spec_version: str
     allowed_sources: tuple[EntropySource, ...]
     max_magnitude: EntropyMagnitude
+    min_magnitude: EntropyMagnitude = EntropyMagnitude.LOW
+    exhaustion_action: EntropyExhaustionAction = EntropyExhaustionAction.HALT
 
 
 __all__ = ["EntropyBudget"]

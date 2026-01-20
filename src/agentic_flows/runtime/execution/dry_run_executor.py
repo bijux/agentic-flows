@@ -142,6 +142,13 @@ class DryRunExecutor:
         resolver_id = ResolverID(
             self._resolver_id_from_metadata(steps_plan.resolution_metadata)
         )
+        entropy_exhausted = context.entropy.exhausted()
+        entropy_exhaustion_action = context.entropy.exhaustion_action()
+        non_certifiable = bool(
+            entropy_exhausted
+            and entropy_exhaustion_action is not None
+            and entropy_exhaustion_action.value == "mark_non_certifiable"
+        )
         trace = ExecutionTrace(
             spec_version="v1",
             flow_id=steps_plan.flow_id,
@@ -150,6 +157,7 @@ class DryRunExecutor:
             child_flow_ids=context.child_flow_ids,
             flow_state=steps_plan.flow_state,
             determinism_level=steps_plan.determinism_level,
+            replay_mode=steps_plan.replay_mode,
             replay_acceptability=steps_plan.replay_acceptability,
             dataset=steps_plan.dataset,
             replay_envelope=steps_plan.replay_envelope,
@@ -168,6 +176,9 @@ class DryRunExecutor:
             claim_ids=(),
             contradiction_count=0,
             arbitration_decision="none",
+            entropy_exhausted=entropy_exhausted,
+            entropy_exhaustion_action=entropy_exhaustion_action,
+            non_certifiable=non_certifiable,
             finalized=False,
         )
         finalize_trace(trace)

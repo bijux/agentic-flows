@@ -18,6 +18,7 @@ from agentic_flows.runtime.observability.analysis.trace_diff import (
 )
 from agentic_flows.runtime.observability.classification.determinism_classification import (
     determinism_classes_for_trace,
+    determinism_profile_for_trace,
 )
 from agentic_flows.runtime.observability.storage.execution_store import (
     DuckDBExecutionReadStore,
@@ -32,6 +33,9 @@ from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.runtime.orchestration.replay_store import replay_with_store
 from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.non_deterministic_intent import (
+    NonDeterministicIntent,
+)
 from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.verification.arbitration_policy import ArbitrationPolicy
@@ -41,6 +45,7 @@ from agentic_flows.spec.ontology import (
     ArbitrationRule,
     DatasetState,
     DeterminismLevel,
+    EntropyExhaustionAction,
     EntropyMagnitude,
     FlowState,
     VerificationRandomness,
@@ -58,7 +63,9 @@ from agentic_flows.spec.ontology.ids import (
 )
 from agentic_flows.spec.ontology.public import (
     EntropySource,
+    NonDeterminismIntentSource,
     ReplayAcceptability,
+    ReplayMode,
 )
 
 
@@ -71,8 +78,11 @@ def _load_manifest(path: Path) -> FlowManifest:
         "tenant_id",
         "flow_state",
         "determinism_level",
+        "replay_mode",
         "replay_acceptability",
         "entropy_budget",
+        "allowed_variance_class",
+        "nondeterminism_intent",
         "replay_envelope",
         "dataset",
         "allow_deprecated_datasets",
@@ -93,6 +103,7 @@ def _load_manifest(path: Path) -> FlowManifest:
         tenant_id=TenantID(payload["tenant_id"]),
         flow_state=FlowState(payload["flow_state"]),
         determinism_level=DeterminismLevel(payload["determinism_level"]),
+        replay_mode=ReplayMode(payload.get("replay_mode", "strict")),
         replay_acceptability=ReplayAcceptability(payload["replay_acceptability"]),
         entropy_budget=EntropyBudget(
             spec_version="v1",
@@ -101,6 +112,25 @@ def _load_manifest(path: Path) -> FlowManifest:
                 for source in payload["entropy_budget"]["allowed_sources"]
             ),
             max_magnitude=EntropyMagnitude(payload["entropy_budget"]["max_magnitude"]),
+            min_magnitude=EntropyMagnitude(
+                payload["entropy_budget"].get("min_magnitude", "low")
+            ),
+            exhaustion_action=EntropyExhaustionAction(
+                payload["entropy_budget"].get("exhaustion_action", "halt")
+            ),
+        ),
+        allowed_variance_class=EntropyMagnitude(payload["allowed_variance_class"])
+        if payload.get("allowed_variance_class") is not None
+        else None,
+        nondeterminism_intent=tuple(
+            NonDeterministicIntent(
+                spec_version="v1",
+                source=NonDeterminismIntentSource(entry["source"]),
+                min_entropy_magnitude=EntropyMagnitude(entry["min_entropy_magnitude"]),
+                max_entropy_magnitude=EntropyMagnitude(entry["max_entropy_magnitude"]),
+                justification=entry["justification"],
+            )
+            for entry in payload.get("nondeterminism_intent", [])
         ),
         replay_envelope=ReplayEnvelope(
             spec_version="v1",
@@ -444,6 +474,11 @@ def _render_json_result(command: str, result) -> None:
             "trace": payload,
             "determinism_level": result.resolved_flow.plan.determinism_level,
             "replay_acceptability": result.resolved_flow.plan.replay_acceptability,
+            "determinism_profile": (
+                asdict(determinism_profile_for_trace(result.trace))
+                if result.trace is not None
+                else None
+            ),
             "dataset": {
                 "dataset_id": result.resolved_flow.plan.dataset.dataset_id,
                 "tenant_id": result.resolved_flow.plan.dataset.tenant_id,
@@ -495,6 +530,14 @@ def _render_human_result(command: str, result) -> None:
         determinism_class = determinism_classes_for_trace(trace) if trace else []
         summary = ", ".join(determinism_class) if determinism_class else "unknown"
         print(f"Determinism class: {summary}")
+        if trace is not None:
+            profile = determinism_profile_for_trace(trace)
+            print(
+                "Determinism profile: "
+                f"magnitude={profile.entropy_magnitude} "
+                f"sources={','.join(source.value for source in profile.entropy_sources)} "
+                f"decay={profile.confidence_decay:.2f}"
+            )
         return
     if command in {"run", "unsafe-run"}:
         trace = result.trace
@@ -507,6 +550,14 @@ def _render_human_result(command: str, result) -> None:
         determinism_class = determinism_classes_for_trace(trace) if trace else []
         summary = ", ".join(determinism_class) if determinism_class else "unknown"
         print(f"Determinism class: {summary}")
+        if trace is not None:
+            profile = determinism_profile_for_trace(trace)
+            print(
+                "Determinism profile: "
+                f"magnitude={profile.entropy_magnitude} "
+                f"sources={','.join(source.value for source in profile.entropy_sources)} "
+                f"decay={profile.confidence_decay:.2f}"
+            )
         return
     print(f"Flow loaded: {result.resolved_flow.manifest.flow_id}")
 

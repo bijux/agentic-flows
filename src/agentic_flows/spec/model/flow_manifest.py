@@ -5,13 +5,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.non_deterministic_intent import (
+    NonDeterministicIntent,
+)
 from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
+    EntropyMagnitude,
     FlowState,
 )
 from agentic_flows.spec.ontology.ids import (
@@ -21,7 +25,7 @@ from agentic_flows.spec.ontology.ids import (
     GateID,
     TenantID,
 )
-from agentic_flows.spec.ontology.public import ReplayAcceptability
+from agentic_flows.spec.ontology.public import ReplayAcceptability, ReplayMode
 
 
 # NOTE: This manifest defines structure only.
@@ -44,6 +48,11 @@ class FlowManifest:
     dependencies: tuple[str, ...]
     retrieval_contracts: tuple[ContractID, ...]
     verification_gates: tuple[GateID, ...]
+    allowed_variance_class: EntropyMagnitude | None = None
+    nondeterminism_intent: tuple[NonDeterministicIntent, ...] = field(
+        default_factory=tuple
+    )
+    replay_mode: ReplayMode = ReplayMode.STRICT
 
 
 __all__ = ["FlowManifest"]

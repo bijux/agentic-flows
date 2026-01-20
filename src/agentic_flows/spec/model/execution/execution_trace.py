@@ -14,6 +14,7 @@ from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
+    EntropyExhaustionAction,
     FlowState,
 )
 from agentic_flows.spec.ontology.ids import (
@@ -25,7 +26,7 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     TenantID,
 )
-from agentic_flows.spec.ontology.public import ReplayAcceptability
+from agentic_flows.spec.ontology.public import ReplayAcceptability, ReplayMode
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,10 @@ class ExecutionTrace:
     contradiction_count: int
     arbitration_decision: str
     finalized: bool
+    replay_mode: ReplayMode = ReplayMode.STRICT
+    entropy_exhausted: bool = False
+    entropy_exhaustion_action: EntropyExhaustionAction | None = None
+    non_certifiable: bool = False
 
     def finalize(self) -> ExecutionTrace:
         """Execute finalize and enforce its contract."""
@@ -93,6 +98,9 @@ class ExecutionTrace:
             f"contradiction_count={self.contradiction_count}",
             f"arbitration_decision={self.arbitration_decision}",
             f"finalized={self.finalized}",
+            f"replay_mode={self.replay_mode.value}",
+            f"entropy_exhausted={self.entropy_exhausted}",
+            f"non_certifiable={self.non_certifiable}",
         )
         return f"ExecutionTrace({', '.join(summary)})"
 

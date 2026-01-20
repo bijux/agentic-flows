@@ -5,14 +5,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.non_deterministic_intent import (
+    NonDeterministicIntent,
+)
 from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
+    EntropyMagnitude,
     FlowState,
 )
 from agentic_flows.spec.ontology.ids import (
@@ -21,7 +25,7 @@ from agentic_flows.spec.ontology.ids import (
     PlanHash,
     TenantID,
 )
-from agentic_flows.spec.ontology.public import ReplayAcceptability
+from agentic_flows.spec.ontology.public import ReplayAcceptability, ReplayMode
 
 
 @dataclass(frozen=True)
@@ -42,6 +46,11 @@ class ExecutionSteps:
     environment_fingerprint: EnvironmentFingerprint
     plan_hash: PlanHash
     resolution_metadata: tuple[tuple[str, str], ...]
+    allowed_variance_class: EntropyMagnitude | None = None
+    nondeterminism_intent: tuple[NonDeterministicIntent, ...] = field(
+        default_factory=tuple
+    )
+    replay_mode: ReplayMode = ReplayMode.STRICT
 
 
 __all__ = ["ExecutionSteps"]

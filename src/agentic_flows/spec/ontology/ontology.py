@@ -124,6 +124,14 @@ class DeterminismClass(str, Enum):
     EXTERNAL = "external"
 
 
+class ReplayMode(str, Enum):
+    """Replay modes; wrong value breaks replay governance."""
+
+    STRICT = "strict"
+    BOUNDED = "bounded"
+    OBSERVATIONAL = "observational"
+
+
 class FlowState(str, Enum):
     """Flow lifecycle state; misuse breaks flow governance."""
 
@@ -166,12 +174,29 @@ class EntropySource(str, Enum):
     DATA = "data"
 
 
+class NonDeterminismIntentSource(str, Enum):
+    """Declared nondeterminism sources; misuse breaks intent contracts."""
+
+    LLM = "llm"
+    RETRIEVAL = "retrieval"
+    HUMAN = "human"
+    EXTERNAL = "external"
+
+
 class EntropyMagnitude(str, Enum):
     """Entropy magnitude; wrong value breaks budget enforcement."""
 
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
+
+
+class EntropyExhaustionAction(str, Enum):
+    """Entropy exhaustion action; wrong value breaks governance."""
+
+    HALT = "halt"
+    DEGRADE = "degrade"
+    MARK_NON_CERTIFIABLE = "mark_non_certifiable"
 
 
 class VerificationRandomness(str, Enum):
@@ -205,12 +230,15 @@ __all__ = [
     "ArbitrationRule",
     "DeterminismLevel",
     "DeterminismClass",
+    "ReplayMode",
     "FlowState",
     "DatasetState",
     "ReplayAcceptability",
     "EvidenceDeterminism",
     "EntropySource",
+    "NonDeterminismIntentSource",
     "EntropyMagnitude",
+    "EntropyExhaustionAction",
     "ReasonCode",
     "VerificationRandomness",
 ]
