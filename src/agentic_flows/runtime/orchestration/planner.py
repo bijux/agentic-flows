@@ -18,21 +18,23 @@ try:
 except PackageNotFoundError:
     bijux_cli_version = "0.0.0"
 
-from agentic_flows.runtime.observability.environment import (
+from agentic_flows.runtime.observability.capture.environment import (
     compute_environment_fingerprint,
 )
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_inputs,
+)
 from agentic_flows.spec.contracts.execution_plan_contract import (
     validate as validate_execution_plan,
 )
 from agentic_flows.spec.contracts.flow_contract import (
     validate as validate_flow_manifest,
 )
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.ontology import StepType
 from agentic_flows.spec.ontology.ids import (
     AgentID,

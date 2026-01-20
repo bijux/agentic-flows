@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 import logging
 
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 
 _LOGGER = logging.getLogger(__name__)
 

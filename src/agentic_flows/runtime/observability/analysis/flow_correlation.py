@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 
 
 def validate_flow_correlation(

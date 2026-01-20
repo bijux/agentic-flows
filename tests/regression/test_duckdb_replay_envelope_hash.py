@@ -7,7 +7,9 @@ from dataclasses import asdict
 
 import pytest
 
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_inputs,
+)
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,

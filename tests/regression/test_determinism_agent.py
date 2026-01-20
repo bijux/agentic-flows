@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.observability.environment import (
+from agentic_flows.runtime.observability.capture.environment import (
     compute_environment_fingerprint,
 )
 from agentic_flows.runtime.orchestration.determinism_guard import validate_determinism

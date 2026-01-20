@@ -41,6 +41,7 @@ nav:
       - minimal-run: overview/minimal-run.md
       - boring-path: overview/boring-path.md
       - determinism: overview/determinism.md
+      - terminology: overview/terminology.md
       - replay-equivalence: overview/replay-equivalence.md
       - storage-model: overview/storage-model.md
       - dependencies: overview/dependencies.md
@@ -121,6 +122,7 @@ nav:
       - overview: api/overview.md
       - schema: api/schema.md
       - schema-mapping: api/schema-mapping.md
+      - python-surface: api/python_surface.md
       - public-surface: api/public-surface.md
       - failures: api/failures.md
       - http-failures: api/http_failures.md

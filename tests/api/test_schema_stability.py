@@ -6,7 +6,6 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_PATH = REPO_ROOT / "api" / "v1" / "schema.yaml"
 HASH_PATH = REPO_ROOT / "api" / "v1" / "schema.hash"
@@ -56,9 +55,9 @@ def test_schema_hash_is_stable() -> None:
     assert stored_version, "schema.hash must define version"
 
     schema_version = _extract_version(schema_text)
-    assert (
-        schema_version == stored_version
-    ), "Schema version must match schema.hash before updating"
+    assert schema_version == stored_version, (
+        "Schema version must match schema.hash before updating"
+    )
     assert schema_hash == stored_hash, (
         "Schema changed. Update api/v1/schema.hash and bump info.version "
         "for breaking changes."

@@ -13,7 +13,7 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
+from agentic_flows.spec.model.verification.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.ontology import ArbitrationRule
 
 pytestmark = pytest.mark.regression

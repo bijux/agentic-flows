@@ -7,8 +7,10 @@
 
 from __future__ import annotations
 
+from contextlib import suppress
 from datetime import UTC, datetime
 import json
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -24,16 +26,18 @@ from agentic_flows.spec.contracts.dataset_contract import (
     validate_dataset_descriptor,
     validate_transition,
 )
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.artifact.non_determinism_source import (
+    NonDeterminismSource,
+)
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
+from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,
@@ -73,6 +77,35 @@ SCHEMA_CONTRACT_PATH = Path(__file__).resolve().parents[1] / "schema.sql"
 SCHEMA_HASH_PATH = Path(__file__).resolve().parents[1] / "schema.hash"
 
 
+def _acquire_lock(path: Path) -> int:
+    """Internal helper; not part of the public API."""
+    payload = f"{os.getpid()}\n".encode("ascii")
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDWR)
+        os.write(fd, payload)
+        return fd
+    except FileExistsError:
+        pass
+
+    try:
+        existing = path.read_text(encoding="ascii").strip()
+        existing_pid = int(existing) if existing else None
+    except Exception:
+        existing_pid = None
+
+    if existing_pid == os.getpid():
+        return os.open(path, os.O_RDWR)
+
+    if existing_pid is not None:
+        try:
+            os.kill(existing_pid, 0)
+        except OSError:
+            path.unlink(missing_ok=True)
+            return _acquire_lock(path)
+
+    raise RuntimeError("execution store lock already held")
+
+
 # Single-writer assumption; no concurrent mutation guarantees are provided.
 # This store is for audit and replay only, not transactional execution.
 class DuckDBExecutionStore:
@@ -80,8 +113,27 @@ class DuckDBExecutionStore:
 
     def __init__(self, path: Path) -> None:
         """Internal helper; not part of the public API."""
+        self._lock_path = path.with_suffix(f"{path.suffix}.lock")
+        self._lock_fd = _acquire_lock(self._lock_path)
         self._connection = duckdb.connect(str(path))
         self._migrate()
+
+    def close(self) -> None:
+        """Internal helper; not part of the public API."""
+        with suppress(Exception):
+            self._connection.close()
+        if getattr(self, "_lock_fd", None) is None:
+            return
+        with suppress(Exception):
+            os.close(self._lock_fd)
+        with suppress(Exception):
+            self._lock_path.unlink()
+        self._lock_fd = None
+
+    def __del__(self) -> None:
+        """Internal helper; not part of the public API."""
+        with suppress(Exception):
+            self.close()
 
     def begin_run(
         self,
@@ -90,6 +142,7 @@ class DuckDBExecutionStore:
         mode: RunMode,
     ) -> RunID:
         """Execute begin_run and enforce its contract."""
+        self.register_dataset(plan.dataset)
         run_id = RunID(str(uuid4()))
         created_at = datetime.now(tz=UTC).isoformat()
         self._connection.execute(
@@ -204,7 +257,24 @@ class DuckDBExecutionStore:
     ) -> RunID:
         """Execute save_run and enforce its contract."""
         run_id = self.begin_run(plan=plan, mode=mode)
+        if plan.steps:
+            self.save_steps(run_id=run_id, tenant_id=plan.tenant_id, plan=plan)
         if trace is not None:
+            if trace.events:
+                self.save_events(
+                    run_id=run_id, tenant_id=trace.tenant_id, events=trace.events
+                )
+            if trace.tool_invocations:
+                self.append_tool_invocations(
+                    run_id=run_id,
+                    tenant_id=trace.tenant_id,
+                    tool_invocations=trace.tool_invocations,
+                    starting_index=0,
+                )
+            if trace.entropy_usage:
+                self.append_entropy_usage(
+                    run_id=run_id, usage=trace.entropy_usage, starting_index=0
+                )
             self.finalize_run(run_id=run_id, trace=trace)
         return run_id
 
@@ -1143,6 +1213,16 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
     def finalize_run(self, *, run_id: RunID, trace: ExecutionTrace) -> None:
         """Execute finalize_run and enforce its contract."""
         self._store.finalize_run(run_id=run_id, trace=trace)
+
+    def save_run(
+        self,
+        *,
+        trace: ExecutionTrace | None,
+        plan: ExecutionSteps,
+        mode: RunMode,
+    ) -> RunID:
+        """Execute save_run and enforce its contract."""
+        return self._store.save_run(trace=trace, plan=plan, mode=mode)
 
     def save_steps(
         self, *, run_id: RunID, tenant_id: TenantID, plan: ExecutionSteps

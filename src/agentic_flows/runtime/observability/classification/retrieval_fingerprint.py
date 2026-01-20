@@ -8,7 +8,7 @@ from __future__ import annotations
 from agentic_flows.runtime.observability.classification.fingerprint import (
     fingerprint_inputs,
 )
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.datasets.retrieval_request import RetrievalRequest
 
 
 def fingerprint_retrieval(request: RetrievalRequest) -> str:

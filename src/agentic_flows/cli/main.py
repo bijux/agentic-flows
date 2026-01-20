@@ -12,16 +12,16 @@ from pathlib import Path
 import sys
 
 from agentic_flows.core.errors import ConfigurationError, classify_failure
-from agentic_flows.runtime.observability.determinism_classification import (
-    determinism_classes_for_trace,
-)
-from agentic_flows.runtime.observability.execution_store import (
-    DuckDBExecutionReadStore,
-    DuckDBExecutionWriteStore,
-)
-from agentic_flows.runtime.observability.trace_diff import (
+from agentic_flows.runtime.observability.analysis.trace_diff import (
     entropy_summary,
     semantic_trace_diff,
+)
+from agentic_flows.runtime.observability.classification.determinism_classification import (
+    determinism_classes_for_trace,
+)
+from agentic_flows.runtime.observability.storage.execution_store import (
+    DuckDBExecutionReadStore,
+    DuckDBExecutionWriteStore,
 )
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
@@ -30,13 +30,13 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 )
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.runtime.orchestration.replay_store import replay_with_store
-from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.model.verification_rule import VerificationRule
+from agentic_flows.spec.model.verification.arbitration_policy import ArbitrationPolicy
+from agentic_flows.spec.model.verification.verification import VerificationPolicy
+from agentic_flows.spec.model.verification.verification_rule import VerificationRule
 from agentic_flows.spec.ontology import (
     ArbitrationRule,
     DatasetState,
@@ -511,14 +511,31 @@ def _render_human_result(command: str, result) -> None:
     print(f"Flow loaded: {result.resolved_flow.manifest.flow_id}")
 
 
-def _normalize_for_json(value):
+def _normalize_for_json(value, *, normalize_timestamps: bool = False):
     """Internal helper; not part of the public API."""
     if isinstance(value, tuple):
-        return [_normalize_for_json(item) for item in value]
+        return [
+            _normalize_for_json(item, normalize_timestamps=normalize_timestamps)
+            for item in value
+        ]
     if isinstance(value, list):
-        return [_normalize_for_json(item) for item in value]
+        normalized = [
+            _normalize_for_json(item, normalize_timestamps=normalize_timestamps)
+            for item in value
+        ]
+        if normalize_timestamps and all(isinstance(item, str) for item in normalized):
+            return sorted(normalized)
+        return normalized
     if isinstance(value, dict):
-        return {key: _normalize_for_json(item) for key, item in value.items()}
+        normalized: dict[str, object] = {}
+        for key, item in value.items():
+            if normalize_timestamps and "timestamp" in key:
+                normalized[key] = "normalized"
+            else:
+                normalized[key] = _normalize_for_json(
+                    item, normalize_timestamps=normalize_timestamps
+                )
+        return normalized
     if hasattr(value, "value"):
         return value.value
     return value
@@ -576,7 +593,9 @@ def _explain_failure(args: argparse.Namespace, *, json_output: bool) -> None:
     ]
     payload = {
         "run_id": args.run_id,
-        "failure": _normalize_for_json(failure_events[-1].payload)
+        "failure": _normalize_for_json(
+            failure_events[-1].payload, normalize_timestamps=True
+        )
         if failure_events
         else None,
         "event_type": failure_events[-1].event_type.value if failure_events else None,
@@ -586,9 +605,7 @@ def _explain_failure(args: argparse.Namespace, *, json_output: bool) -> None:
         return
     if failure_events:
         last = failure_events[-1]
-        print(
-            f"Failure {last.event_type.value}: " f"{_normalize_for_json(last.payload)}"
-        )
+        print(f"Failure {last.event_type.value}: {_normalize_for_json(last.payload)}")
     else:
         print("No failure events recorded")
 
@@ -638,8 +655,10 @@ def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
     )
     if json_output:
         payload = {
-            "diff": _normalize_for_json(diff),
-            "trace": _normalize_for_json(asdict(result.trace)),
+            "diff": _normalize_for_json(diff, normalize_timestamps=True),
+            "trace": _normalize_for_json(
+                asdict(result.trace), normalize_timestamps=True
+            ),
             "run_id": str(result.run_id),
         }
         print(json.dumps(payload, sort_keys=True))

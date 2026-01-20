@@ -1,7 +1,10 @@
-Semantic versioning rules apply to all public CLI and API contracts.
-PATCH increments cover documentation fixes and non-functional changes.
-Example PATCH: correcting a typo in API field descriptions.
-MINOR increments cover additive, backward-compatible API fields and new CLI flags.
-Example MINOR: adding an optional header or response field without changing meaning.
-MAJOR increments cover any change that can alter replay equivalence or public contracts.
-Example MAJOR: changing determinism classification semantics or required headers.
+# Versioning
+> Rules for changes in the first public release.
+
+This is the first public release and the rules start here.
+MAJOR: any change that can alter replay equivalence, persisted schema, or public contracts.
+MINOR: additive, backward-compatible changes to public CLI, HTTP schema, or ontology values.
+PATCH: documentation fixes, refactors, or internal changes with identical behavior.
+Example PATCH: comment fixes or file moves with no API impact.
+Example MINOR: adding an optional response field or a new CLI flag that preserves defaults.
+Example MAJOR: changing determinism semantics, replay rules, or required fields.

@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 
 
 def build_claim_statement(

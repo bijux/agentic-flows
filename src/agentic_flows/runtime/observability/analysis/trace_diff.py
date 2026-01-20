@@ -9,8 +9,8 @@ from __future__ import annotations
 from agentic_flows.runtime.observability.classification.determinism_classification import (
     determinism_classes_for_trace,
 )
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 from agentic_flows.spec.ontology import EntropyMagnitude
 from agentic_flows.spec.ontology.public import ReplayAcceptability
 

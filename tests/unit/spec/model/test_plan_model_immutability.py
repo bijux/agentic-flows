@@ -7,12 +7,12 @@ import dataclasses
 
 import pytest
 
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.ontology import (
     DatasetState,
     DeterminismLevel,

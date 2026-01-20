@@ -44,10 +44,12 @@ $(VENV):
 ensure-venv: $(VENV) ## Ensure venv exists and deps are installed
 	@set -e; \
 	echo "→ Ensuring dependencies in $(VENV) ..."; \
+	PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
 	"$(VENV_PYTHON)" -m pip install --upgrade pip setuptools wheel; \
 	EXTRAS="$${EXTRAS:-dev}"; \
 	if [ -n "$$EXTRAS" ]; then SPEC=".[$$EXTRAS]"; else SPEC="."; fi; \
 	echo "→ Installing: $$SPEC"; \
+	PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 \
 	"$(VENV_PYTHON)" -m pip install -e "$$SPEC"
 
 install: ensure-venv ## Install project into .venv (dev)

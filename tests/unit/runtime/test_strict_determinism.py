@@ -12,12 +12,14 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.artifact.non_determinism_source import (
+    NonDeterminismSource,
+)
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.datasets.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
     EntropyMagnitude,

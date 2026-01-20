@@ -10,10 +10,10 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.datasets.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
     FlowState,
@@ -88,7 +88,11 @@ def test_dry_run_with_retrieval_request_is_repeatable(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, determinism_level=manifest.determinism_level, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
 
     assert result.trace is not None

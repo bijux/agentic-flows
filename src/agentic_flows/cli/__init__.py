@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+from agentic_flows.cli import main as _main_module
 from agentic_flows.cli.main import main
+
+main._explain_failure = _main_module._explain_failure
 
 __all__ = ["main"]

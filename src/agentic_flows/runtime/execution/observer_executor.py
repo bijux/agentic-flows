@@ -9,7 +9,7 @@ from agentic_flows.core.errors import ExecutionFailure
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
 from agentic_flows.runtime.verification_engine import VerificationOrchestrator
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
 
 
 class ObserverExecutor:

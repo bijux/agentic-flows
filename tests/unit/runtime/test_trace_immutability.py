@@ -7,11 +7,11 @@ import dataclasses
 
 import pytest
 
-from agentic_flows.runtime.observability.trace_recorder import AppendOnlyList
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.runtime.observability.capture.trace_recorder import AppendOnlyList
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.ontology import (
     CausalityTag,
     DatasetState,

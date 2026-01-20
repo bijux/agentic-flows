@@ -10,9 +10,9 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
     FlowState,
@@ -79,5 +79,9 @@ def test_verification_policy_required_before_execution(
     with pytest.raises(ValueError, match="verification_policy is required"):
         execute_flow(
             resolved_flow=resolved_flow,
-            config=ExecutionConfig(mode=RunMode.LIVE, determinism_level=manifest.determinism_level, execution_store=execution_store),
+            config=ExecutionConfig(
+                mode=RunMode.LIVE,
+                determinism_level=manifest.determinism_level,
+                execution_store=execution_store,
+            ),
         )

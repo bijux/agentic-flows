@@ -8,11 +8,11 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.model.verification_rule import VerificationRule
+from agentic_flows.spec.model.verification.verification import VerificationPolicy
+from agentic_flows.spec.model.verification.verification_rule import VerificationRule
 from agentic_flows.spec.ontology import VerificationRandomness
 from agentic_flows.spec.ontology.ids import RuleID
 

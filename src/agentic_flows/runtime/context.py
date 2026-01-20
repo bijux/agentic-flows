@@ -12,16 +12,18 @@ from typing import TYPE_CHECKING
 from agentic_flows.core.authority import AuthorityToken
 from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.runtime.budget import BudgetState
-from agentic_flows.runtime.observability.entropy import EntropyLedger
-from agentic_flows.runtime.observability.hooks import RuntimeObserver
-from agentic_flows.runtime.observability.observed_run import ObservedRun
-from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
-from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.runtime.observability.capture.hooks import RuntimeObserver
+from agentic_flows.runtime.observability.capture.observed_run import ObservedRun
+from agentic_flows.runtime.observability.capture.trace_recorder import TraceRecorder
+from agentic_flows.runtime.observability.classification.entropy import EntropyLedger
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.artifact.non_determinism_source import (
+    NonDeterminismSource,
+)
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.verification.verification import VerificationPolicy
 from agentic_flows.spec.ontology import EntropyMagnitude
 from agentic_flows.spec.ontology.ids import (
     ClaimID,
@@ -33,7 +35,7 @@ from agentic_flows.spec.ontology.ids import (
 from agentic_flows.spec.ontology.public import EntropySource
 
 if TYPE_CHECKING:
-    from agentic_flows.runtime.observability.execution_store_protocol import (
+    from agentic_flows.runtime.observability.storage.execution_store_protocol import (
         ExecutionWriteStoreProtocol,
     )
 

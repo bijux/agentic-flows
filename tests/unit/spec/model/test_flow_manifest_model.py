@@ -5,10 +5,10 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology import (
     DatasetState,
     DeterminismLevel,

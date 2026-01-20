@@ -11,12 +11,14 @@ from typing import Literal, Protocol
 
 from agentic_flows.core.errors import SemanticViolationError
 from agentic_flows.core.verification_rules import default_rule_registry
-from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
-from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.model.verification.verification import VerificationPolicy
+from agentic_flows.spec.model.verification.verification_arbitration import (
+    VerificationArbitration,
+)
+from agentic_flows.spec.model.verification.verification_result import VerificationResult
 from agentic_flows.spec.ontology import (
     VerificationPhase,
     VerificationRandomness,

@@ -6,10 +6,10 @@ from __future__ import annotations
 import duckdb
 import pytest
 
-from agentic_flows.runtime.observability.execution_store import (
+from agentic_flows.runtime.observability.storage.execution_store import (
     DuckDBExecutionWriteStore,
 )
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
 
 pytestmark = pytest.mark.unit
 

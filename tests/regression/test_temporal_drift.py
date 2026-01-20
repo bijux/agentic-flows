@@ -5,8 +5,11 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.observability.drift import entropy_drift, outcome_drift
-from agentic_flows.runtime.observability.trace_diff import entropy_summary
+from agentic_flows.runtime.observability.analysis.drift import (
+    entropy_drift,
+    outcome_drift,
+)
+from agentic_flows.runtime.observability.analysis.trace_diff import entropy_summary
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,

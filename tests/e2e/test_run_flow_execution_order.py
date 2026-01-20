@@ -47,6 +47,11 @@ def test_execution_plan_orders_dependencies(
         verification_gates=(GateID("gate-a"),),
     )
 
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
+    result = execute_flow(
+        manifest,
+        config=ExecutionConfig(
+            mode=RunMode.PLAN, determinism_level=manifest.determinism_level
+        ),
+    )
     ordered = [step.agent_id for step in result.resolved_flow.plan.steps]
     assert ordered == [AgentID("agent-a"), AgentID("agent-b"), AgentID("agent-c")]

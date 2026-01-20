@@ -8,15 +8,15 @@ from __future__ import annotations
 from typing import Protocol
 
 from agentic_flows.runtime.context import RunMode
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
+from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology.ids import ClaimID, RunID, TenantID
 
 

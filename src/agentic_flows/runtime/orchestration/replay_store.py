@@ -5,17 +5,17 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.observability.execution_store_protocol import (
+from agentic_flows.runtime.observability.analysis.trace_diff import semantic_trace_diff
+from agentic_flows.runtime.observability.storage.execution_store_protocol import (
     ExecutionReadStoreProtocol,
 )
-from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
 from agentic_flows.runtime.orchestration.determinism_guard import validate_replay
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     FlowRunResult,
     execute_flow,
 )
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
 from agentic_flows.spec.ontology.ids import RunID, TenantID
 
 

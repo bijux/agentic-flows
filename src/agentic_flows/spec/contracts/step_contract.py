@@ -8,8 +8,8 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,

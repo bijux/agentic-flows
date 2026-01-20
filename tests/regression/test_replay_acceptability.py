@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.runtime.observability.analysis.trace_diff import semantic_trace_diff
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.ontology import (
     CausalityTag,
     DatasetState,

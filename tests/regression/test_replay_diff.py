@@ -11,11 +11,11 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,
@@ -67,7 +67,12 @@ def test_replay_diff_includes_artifacts_and_evidence(
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
+    result = execute_flow(
+        manifest,
+        config=ExecutionConfig(
+            mode=RunMode.PLAN, determinism_level=manifest.determinism_level
+        ),
+    )
     plan = result.resolved_flow.plan
 
     trace = ExecutionTrace(

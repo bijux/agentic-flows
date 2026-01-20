@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import pytest
 
-from agentic_flows.runtime.observability.comparative_analysis import compare_runs
+from agentic_flows.runtime.observability.analysis.comparative_analysis import (
+    compare_runs,
+)
 from agentic_flows.runtime.orchestration.execute_flow import (
     ExecutionConfig,
     RunMode,

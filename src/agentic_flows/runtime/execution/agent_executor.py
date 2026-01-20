@@ -15,9 +15,9 @@ import bijux_agent
 
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
-from agentic_flows.runtime.observability.seed import deterministic_seed
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.runtime.observability.classification.seed import deterministic_seed
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,

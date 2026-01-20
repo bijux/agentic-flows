@@ -47,5 +47,10 @@ def test_plan_mode_produces_resolved_flow(
         verification_gates=(GateID("gate-a"),),
     )
 
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
+    result = execute_flow(
+        manifest,
+        config=ExecutionConfig(
+            mode=RunMode.PLAN, determinism_level=manifest.determinism_level
+        ),
+    )
     assert result.resolved_flow.plan.steps

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import hashlib
 
-from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology.ids import ContentHash
 
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from agentic_flows.spec.model.execution_event import ExecutionEvent
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 
 
 class RuntimeObserver(Protocol):

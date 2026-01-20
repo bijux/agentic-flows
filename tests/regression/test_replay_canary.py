@@ -5,7 +5,9 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_inputs,
+)
 
 
 def test_replay_envelope_canary(replay_envelope) -> None:

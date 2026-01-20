@@ -3,31 +3,33 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
 import types
+from pathlib import Path
 
 import pytest
 
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
-from agentic_flows.runtime.observability.environment import (
+from agentic_flows.runtime.observability.capture.environment import (
     compute_environment_fingerprint,
 )
-from agentic_flows.runtime.observability.execution_store import (
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_inputs,
+)
+from agentic_flows.runtime.observability.storage.execution_store import (
     DuckDBExecutionReadStore,
     DuckDBExecutionWriteStore,
 )
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
-from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.verification.arbitration_policy import ArbitrationPolicy
+from agentic_flows.spec.model.verification.verification import VerificationPolicy
 from agentic_flows.spec.ontology import (
     ArbitrationRule,
     DatasetState,
@@ -161,7 +163,7 @@ def deterministic_environment(
 ) -> EnvironmentFingerprint:
     fingerprint = EnvironmentFingerprint("env-fingerprint")
     monkeypatch.setattr(
-        "agentic_flows.runtime.observability.environment.compute_environment_fingerprint",
+        "agentic_flows.runtime.observability.capture.environment.compute_environment_fingerprint",
         lambda: fingerprint,
     )
     monkeypatch.setattr(

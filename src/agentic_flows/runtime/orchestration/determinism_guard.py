@@ -9,18 +9,18 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from agentic_flows.runtime.observability.environment import (
+from agentic_flows.runtime.observability.capture.environment import (
     compute_environment_fingerprint,
 )
-from agentic_flows.runtime.observability.fingerprint import (
+from agentic_flows.runtime.observability.classification.fingerprint import (
     fingerprint_inputs,
     fingerprint_policy,
 )
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.ontology import DeterminismLevel
 from agentic_flows.spec.ontology.public import (
     EventType,
@@ -63,13 +63,16 @@ def validate_replay(
     verification_policy: object | None = None,
 ) -> None:
     """Validate replay; misuse breaks acceptability checks."""
-    diffs = replay_diff(
-        trace,
-        plan,
-        artifacts=artifacts,
-        evidence=evidence,
-        verification_policy=verification_policy,
-    )
+    try:
+        diffs = replay_diff(
+            trace,
+            plan,
+            artifacts=artifacts,
+            evidence=evidence,
+            verification_policy=verification_policy,
+        )
+    except ReplayDiffError as exc:
+        diffs = exc.diffs
     blocking, acceptable = _partition_diffs(diffs, plan.replay_acceptability)
     if blocking:
         detail = {"blocking": blocking}
@@ -86,7 +89,7 @@ def replay_diff(
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
 ) -> dict[str, object]:
-    """Input contract: trace and plan describe the same run boundary and are finalized for comparison; output guarantee: returns a diff map of all contract mismatches across plan, environment, dataset, artifact, evidence, and policy; failure semantics: does not raise and reports violations via the returned diff map."""
+    """Input contract: trace and plan describe the same run boundary and are finalized for comparison; output guarantee: returns a diff map of all contract mismatches across plan, environment, dataset, artifact, evidence, and policy; failure semantics: raises ReplayDiffError when any mismatch is detected."""
     diffs: dict[str, object] = {}
     if trace.plan_hash != plan.plan_hash:
         diffs["plan_hash"] = {
@@ -181,8 +184,39 @@ def replay_diff(
     if diffs:
         primary = next(iter(diffs))
         diffs["summary"] = f"Replay rejected: {primary}"
+        raise ReplayDiffError(
+            step_id=_first_divergent_step(plan, diffs),
+            reason_code=primary,
+            diffs=diffs,
+        )
 
     return diffs
+
+
+class ReplayDiffError(ValueError):
+    """Replay diff error; misuse breaks deterministic replay."""
+
+    def __init__(self, *, step_id: int, reason_code: str, diffs: dict[str, object]):
+        super().__init__(f"replay diff at step {step_id}: {reason_code}")
+        self.step_id = step_id
+        self.reason_code = reason_code
+        self.diffs = diffs
+
+
+def _first_divergent_step(plan: ExecutionSteps, diffs: dict[str, object]) -> int:
+    """Internal helper; not part of the public API."""
+    candidates: list[int] = []
+    missing = diffs.get("missing_step_end")
+    if isinstance(missing, list):
+        candidates.extend(int(value) for value in missing)
+    failed = diffs.get("failed_steps")
+    if isinstance(failed, list):
+        candidates.extend(int(value) for value in failed)
+    if candidates:
+        return min(candidates)
+    if plan.steps:
+        return int(plan.steps[0].step_index)
+    return 0
 
 
 def _missing_step_end(

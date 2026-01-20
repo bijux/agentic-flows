@@ -14,13 +14,17 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from agentic_flows.core.authority import evaluate_verification
-from agentic_flows.runtime.observability.fingerprint import fingerprint_policy
-from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_policy,
+)
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.verification import VerificationPolicy
-from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
-from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.model.verification.verification import VerificationPolicy
+from agentic_flows.spec.model.verification.verification_arbitration import (
+    VerificationArbitration,
+)
+from agentic_flows.spec.model.verification.verification_result import VerificationResult
 from agentic_flows.spec.ontology import (
     ArbitrationRule,
     ReasonCode,

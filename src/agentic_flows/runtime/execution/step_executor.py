@@ -7,12 +7,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
-from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.model.verification.verification_arbitration import (
+    VerificationArbitration,
+)
+from agentic_flows.spec.model.verification.verification_result import VerificationResult
 
 
 @dataclass(frozen=True)

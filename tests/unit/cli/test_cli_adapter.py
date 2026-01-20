@@ -3,23 +3,26 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import importlib
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
-from agentic_flows.runtime.orchestration.execute_flow import ExecutionConfig, RunMode
 from agentic_flows.cli import main as cli_main
-from agentic_flows.runtime.orchestration.execute_flow import FlowRunResult
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
-from agentic_flows.spec.model.execution_steps import ExecutionSteps
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.runtime.orchestration.execute_flow import (
+    ExecutionConfig,
+    FlowRunResult,
+    RunMode,
+)
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology import (
     DatasetState,
     DeterminismLevel,
@@ -346,10 +349,10 @@ def test_cli_sets_strict_determinism_flag(tmp_path: Path, monkeypatch) -> None:
     assert calls[0].config.strict_determinism is True
 
 
-@pytest.mark.parametrize("missing_key", ["min_claim_overlap", "max_contradiction_delta"])
-def test_cli_replay_envelope_requires_fields(
-    tmp_path: Path, missing_key: str
-) -> None:
+@pytest.mark.parametrize(
+    "missing_key", ["min_claim_overlap", "max_contradiction_delta"]
+)
+def test_cli_replay_envelope_requires_fields(tmp_path: Path, missing_key: str) -> None:
     manifest_path = tmp_path / "manifest.json"
     payload = {
         "flow_id": "flow-cli",

@@ -3,21 +3,23 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict
 import json
-from pathlib import Path
 import sqlite3
+from dataclasses import asdict
+from pathlib import Path
 from typing import Any
 
 from agentic_flows.runtime.artifact_store import ArtifactStore
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.artifact.non_determinism_source import (
+    NonDeterminismSource,
+)
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
+from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,

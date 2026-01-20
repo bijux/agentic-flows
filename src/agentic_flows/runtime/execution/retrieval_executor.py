@@ -12,9 +12,11 @@ import bijux_rag
 import bijux_vex
 
 from agentic_flows.runtime.context import ExecutionContext
-from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.artifact.non_determinism_source import (
+    NonDeterminismSource,
+)
+from agentic_flows.spec.model.artifact.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.ontology import (
     EntropyMagnitude,
     EvidenceDeterminism,

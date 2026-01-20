@@ -14,16 +14,16 @@ from agentic_flows.core.authority import finalize_trace
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
 from agentic_flows.runtime.execution.step_executor import ExecutionOutcome
-from agentic_flows.runtime.observability.fingerprint import (
+from agentic_flows.runtime.observability.capture.time import utc_now_deterministic
+from agentic_flows.runtime.observability.classification.fingerprint import (
     fingerprint_inputs,
     fingerprint_policy,
 )
-from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.orchestration.flow_boundary import enforce_flow_boundary
-from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.execution_plan import ExecutionPlan
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.artifact.artifact import Artifact
+from agentic_flows.spec.model.execution.execution_plan import ExecutionPlan
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
 from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,

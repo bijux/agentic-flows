@@ -3,10 +3,16 @@
 # Copyright © 2025 Bijan Mousavi
 # API stability: v1 frozen; Backward compatibility rules apply.
 
-"""API is batch-oriented and not intended for chat, streaming, or interactive use."""
+"""EXPERIMENTAL HTTP API.
+
+NOT GUARANTEED STABLE.
+MAY BE REMOVED.
+"""
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Body, FastAPI, Header, Request, status
@@ -19,6 +25,9 @@ from agentic_flows.http_api.v1.schemas import (
     FailureEnvelope,
     FlowRunRequest,
     ReplayRequest,
+)
+from agentic_flows.runtime.observability.storage.execution_store import (
+    DuckDBExecutionWriteStore,
 )
 
 app = FastAPI(
@@ -103,6 +112,7 @@ def handle_starlette_http_exception(
 @app.get("/api/v1/health")
 def health() -> dict[str, str]:
     """Provide a lightweight liveness signal for health checks."""
+    # /health = process alive; /ready = storage writable.
     return {"status": "ok"}
 
 
@@ -110,7 +120,14 @@ def health() -> dict[str, str]:
 @app.get("/api/v1/ready")
 def ready() -> dict[str, str]:
     """Provide a readiness signal without performing deep dependency checks."""
-    return {"status": "ok"}
+    db_path = os.environ.get("AGENTIC_FLOWS_DB_PATH")
+    if not db_path:
+        return JSONResponse(status_code=503, content={"ready": False})
+    try:
+        DuckDBExecutionWriteStore(Path(db_path))
+    except Exception:
+        return JSONResponse(status_code=503, content={"ready": False})
+    return {"ready": True}
 
 
 @app.post("/api/v1/flows/run")

@@ -2,9 +2,10 @@
 
 **Scope:** HTTP API summary.  
 **Audience:** API users.  
-**Guarantees:** API mirrors CLI capabilities.  
+**Guarantees:** API contracts are defined; implementation may be absent.  
 **Non-Goals:** Authentication.  
 Why: This doc exists to record its single responsibility for review.  
+HTTP API is experimental and currently unimplemented.  
 
 ## Overview  
 This doc defines one responsibility.  

@@ -11,7 +11,7 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.execution.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
@@ -53,7 +53,12 @@ def test_replay_equivalence(
         verification_gates=(GateID("gate-a"),),
     )
 
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
+    result = execute_flow(
+        manifest,
+        config=ExecutionConfig(
+            mode=RunMode.PLAN, determinism_level=manifest.determinism_level
+        ),
+    )
     plan = result.resolved_flow.plan
     trace = ExecutionTrace(
         spec_version="v1",

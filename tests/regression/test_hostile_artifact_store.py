@@ -8,7 +8,6 @@ import bijux_rag
 import bijux_rar
 import bijux_vex
 import pytest
-from tests.helpers import build_claim_statement
 
 from agentic_flows.runtime.artifact_store import HostileArtifactStore
 from agentic_flows.runtime.orchestration.execute_flow import (
@@ -16,13 +15,13 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     RunMode,
     execute_flow,
 )
-from agentic_flows.spec.model.agent_invocation import AgentInvocation
+from agentic_flows.spec.model.artifact.reasoning_claim import ReasoningClaim
+from agentic_flows.spec.model.datasets.retrieval_request import RetrievalRequest
+from agentic_flows.spec.model.execution.resolved_step import ResolvedStep
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.model.identifiers.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
-from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
-from agentic_flows.spec.model.resolved_step import ResolvedStep
-from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.ontology import (
     ArtifactType,
     DeterminismLevel,
@@ -48,6 +47,7 @@ from agentic_flows.spec.ontology.public import (
     EventType,
     ReplayAcceptability,
 )
+from tests.helpers import build_claim_statement
 
 pytestmark = pytest.mark.regression
 

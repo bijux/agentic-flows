@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
 ALLOWED = {
     "CHANGELOG.md",
@@ -17,9 +16,7 @@ ALLOWED = {
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    found = sorted(
-        path.name for path in repo_root.glob("*.md") if path.is_file()
-    )
+    found = sorted(path.name for path in repo_root.glob("*.md") if path.is_file())
     extras = sorted(name for name in found if name not in ALLOWED)
     if extras:
         print("Root markdown whitelist violation:")
