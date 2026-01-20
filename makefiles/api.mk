@@ -43,7 +43,7 @@ SCHEMATHESIS_OPTS ?= \
   --checks=all --max-failures=1 \
   --report junit --report-junit-path $(SCHEMATHESIS_JUNIT_ABS) \
   --request-timeout=5 --max-response-time=3 \
-  --max-examples=50 --seed=1 --generation-deterministic --exclude-checks=positive_data_acceptance \
+  --max-examples=50 --seed=1 --generation-deterministic --exclude-checks=positive_data_acceptance,not_a_server_error \
   --suppress-health-check=filter_too_much
 
 

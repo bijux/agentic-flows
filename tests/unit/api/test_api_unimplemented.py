@@ -19,9 +19,16 @@ def test_run_flow_unimplemented() -> None:
             "dataset_id": "dataset-1",
             "policy_fingerprint": "policy-hash",
         },
+        headers={
+            "X-Agentic-Gate": "gate-1",
+            "X-Determinism-Level": "strict",
+            "X-Policy-Fingerprint": "policy-hash",
+        },
     )
     assert response.status_code == 501
-    assert response.json()["detail"] == "Not implemented"
+    payload = response.json()
+    assert payload["failure_class"] == "structural"
+    assert payload["violated_contract"] == "not_implemented"
 
 
 def test_replay_flow_unimplemented() -> None:
@@ -34,6 +41,13 @@ def test_replay_flow_unimplemented() -> None:
             "acceptability_threshold": "exact_match",
             "observer_mode": False,
         },
+        headers={
+            "X-Agentic-Gate": "gate-1",
+            "X-Determinism-Level": "strict",
+            "X-Policy-Fingerprint": "policy-hash",
+        },
     )
     assert response.status_code == 501
-    assert response.json()["detail"] == "Not implemented"
+    payload = response.json()
+    assert payload["failure_class"] == "structural"
+    assert payload["violated_contract"] == "not_implemented"
