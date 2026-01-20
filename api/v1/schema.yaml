@@ -12,7 +12,7 @@ paths:
   /flows/run:
     post:
       summary: Run a flow
-      description: Submit a flow for execution with a declared policy and dataset.
+      description: Executes a flow only when the declared policy, dataset, and headers satisfy the execution contract, otherwise returns a FailureEnvelope.
       operationId: runFlow
       parameters:
         - $ref: '#/components/parameters/XAgenticGate'
@@ -61,7 +61,7 @@ paths:
   /flows/replay:
     post:
       summary: Replay a flow
-      description: Replay a persisted run against a declared acceptability threshold.
+      description: Replays a persisted run under the declared acceptability threshold and reports contractual mismatches in the response envelope.
       operationId: replayFlow
       parameters:
         - $ref: '#/components/parameters/XAgenticGate'

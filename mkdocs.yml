@@ -42,6 +42,7 @@ nav:
       - relationship-to-agentic-proteins: overview/relationship-to-agentic-proteins.md
       - audience: overview/audience.md
       - non-goals: overview/non-goals.md
+      - stability: overview/stability.md
   - Concepts:
       - concepts: concepts/index.md
       - core_concepts: concepts/core_concepts.md
@@ -104,6 +105,7 @@ nav:
       - overview: api/overview.md
       - schema: api/schema.md
       - schema-mapping: api/schema-mapping.md
+      - failures: api/failures.md
   - Security:
       - dependencies: security/dependencies.md
       - threat_model: security/threat_model.md

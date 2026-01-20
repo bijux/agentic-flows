@@ -70,7 +70,7 @@ SCHEMA_HASH_PATH = Path(__file__).with_name("schema.hash")
 
 
 class DuckDBExecutionStore:
-    """DuckDB execution store; misuse breaks persistence contracts."""
+    """Persists runs, steps, events, artifacts, evidence, entropy usage, tool invocations, claim ids, dataset metadata, and replay envelopes; intentionally excludes in-memory execution state, transient executor caches, and any non-persisted runtime objects."""
 
     def __init__(self, path: Path) -> None:
         self._connection = duckdb.connect(str(path))

@@ -1,14 +1,9 @@
-# non-goals  
+# Non-goals
+> Boundaries for what this project explicitly does not provide.
 
-**Scope:** Explicit boundaries for the project.  
-**Audience:** Prospective users.  
-**Guarantees:** Clear exclusion list.  
-**Non-Goals:** Justifying alternatives.  
-Why: This doc exists to record its single responsibility for review.  
-
-## Non-Goals  
-- Not a chat framework.  
-- Not optimized for prompt experimentation.  
-- Not a vector database replacement.  
-- Not a best-effort execution runtime.  
-- Not a general-purpose agent planner.  
+- not a chat framework
+- not autonomous agents
+- not interactive / low-latency
+- not a prompt playground
+- not a vector database replacement
+- not a general-purpose orchestration engine

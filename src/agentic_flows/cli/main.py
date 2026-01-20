@@ -157,54 +157,87 @@ def main() -> None:
 
     inspect_parser = subparsers.add_parser("inspect")
     inspect_subparsers = inspect_parser.add_subparsers(dest="inspect_command")
-    inspect_run_parser = inspect_subparsers.add_parser("run")
+    inspect_run_parser = inspect_subparsers.add_parser(
+        "run",
+        help=argparse.SUPPRESS,
+    )
     inspect_run_parser.add_argument("run_id")
     inspect_run_parser.add_argument("--tenant-id", required=True)
     inspect_run_parser.add_argument("--db-path", required=True)
     inspect_run_parser.add_argument("--json", action="store_true")
 
-    experimental_parser = subparsers.add_parser("experimental")
+    experimental_parser = subparsers.add_parser(
+        "experimental",
+        help=argparse.SUPPRESS,
+    )
     experimental_subparsers = experimental_parser.add_subparsers(
         dest="experimental_command"
     )
 
-    plan_parser = experimental_subparsers.add_parser("plan")
+    plan_parser = experimental_subparsers.add_parser(
+        "plan",
+        help=argparse.SUPPRESS,
+    )
     plan_parser.add_argument("manifest")
     plan_parser.add_argument("--db-path")
     plan_parser.add_argument("--json", action="store_true")
 
-    dry_run_parser = experimental_subparsers.add_parser("dry-run")
+    dry_run_parser = experimental_subparsers.add_parser(
+        "dry-run",
+        help=argparse.SUPPRESS,
+    )
     dry_run_parser.add_argument("manifest")
     dry_run_parser.add_argument("--db-path", required=True)
     dry_run_parser.add_argument("--strict-determinism", action="store_true")
     dry_run_parser.add_argument("--json", action="store_true")
 
-    unsafe_parser = experimental_subparsers.add_parser("unsafe-run")
+    unsafe_parser = experimental_subparsers.add_parser(
+        "unsafe-run",
+        help=argparse.SUPPRESS,
+    )
     unsafe_parser.add_argument("manifest")
     unsafe_parser.add_argument("--db-path", required=True)
     unsafe_parser.add_argument("--strict-determinism", action="store_true")
     unsafe_parser.add_argument("--json", action="store_true")
 
-    diff_parser = experimental_subparsers.add_parser("diff")
+    diff_parser = experimental_subparsers.add_parser(
+        "diff",
+        help=argparse.SUPPRESS,
+    )
     diff_subparsers = diff_parser.add_subparsers(dest="diff_command")
-    diff_run_parser = diff_subparsers.add_parser("run")
+    diff_run_parser = diff_subparsers.add_parser(
+        "run",
+        help=argparse.SUPPRESS,
+    )
     diff_run_parser.add_argument("run_a")
     diff_run_parser.add_argument("run_b")
     diff_run_parser.add_argument("--tenant-id", required=True)
     diff_run_parser.add_argument("--db-path", required=True)
     diff_run_parser.add_argument("--json", action="store_true")
 
-    explain_parser = experimental_subparsers.add_parser("explain")
+    explain_parser = experimental_subparsers.add_parser(
+        "explain",
+        help=argparse.SUPPRESS,
+    )
     explain_subparsers = explain_parser.add_subparsers(dest="explain_command")
-    explain_failure_parser = explain_subparsers.add_parser("failure")
+    explain_failure_parser = explain_subparsers.add_parser(
+        "failure",
+        help=argparse.SUPPRESS,
+    )
     explain_failure_parser.add_argument("run_id")
     explain_failure_parser.add_argument("--tenant-id", required=True)
     explain_failure_parser.add_argument("--db-path", required=True)
     explain_failure_parser.add_argument("--json", action="store_true")
 
-    validate_parser = experimental_subparsers.add_parser("validate")
+    validate_parser = experimental_subparsers.add_parser(
+        "validate",
+        help=argparse.SUPPRESS,
+    )
     validate_subparsers = validate_parser.add_subparsers(dest="validate_command")
-    validate_db_parser = validate_subparsers.add_parser("db")
+    validate_db_parser = validate_subparsers.add_parser(
+        "db",
+        help=argparse.SUPPRESS,
+    )
     validate_db_parser.add_argument("--db-path", required=True)
     validate_db_parser.add_argument("--json", action="store_true")
 

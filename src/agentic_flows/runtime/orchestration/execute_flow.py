@@ -111,7 +111,7 @@ def execute_flow(
     resolved_flow: ExecutionPlan | None = None,
     config: ExecutionConfig | None = None,
 ) -> FlowRunResult:
-    """Execute a flow; misuse breaks determinism and persistence guarantees."""
+    """Invariant: exactly one of manifest or resolved_flow is supplied and required execution prerequisites are present; violation raises ValueError before any execution or persistence occurs, leaving no run state or trace committed."""
     execution_config = config or ExecutionConfig(mode=RunMode.LIVE)
     if os.environ.get("AGENTIC_FLOWS_STRICT") == "1":
         if execution_config.mode in {RunMode.DRY_RUN, RunMode.UNSAFE}:

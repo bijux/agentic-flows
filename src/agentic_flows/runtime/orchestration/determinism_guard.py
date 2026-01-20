@@ -31,7 +31,7 @@ def validate_determinism(
     unordered_normalized: bool,
     determinism_level: DeterminismLevel,
 ) -> None:
-    """Validate determinism inputs; misuse breaks replay guarantees."""
+    """Input contract: environment_fingerprint is provided for the running host, seed is set when required, and unordered_normalized reflects input normalization; output guarantee: returns None when inputs satisfy the determinism_level requirements; failure semantics: raises ValueError on missing fingerprints, mismatches, or required normalization/seed violations."""
     current_fingerprint = compute_environment_fingerprint()
     if not environment_fingerprint:
         raise ValueError("environment_fingerprint is required before execution")
@@ -83,7 +83,7 @@ def replay_diff(
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
 ) -> dict[str, object]:
-    """Compute replay diff; misuse hides divergence."""
+    """Input contract: trace and plan describe the same run boundary and are finalized for comparison; output guarantee: returns a diff map of all contract mismatches across plan, environment, dataset, artifacts, evidence, and policy; failure semantics: does not raise and reports violations via the returned diff map."""
     diffs: dict[str, object] = {}
     if trace.plan_hash != plan.plan_hash:
         diffs["plan_hash"] = {

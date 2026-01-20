@@ -3,6 +3,8 @@
 
 **A deterministic, contract-first execution and replay framework** — strict invariants, reproducible runs, and traceable outputs. Build audit-ready agent workflows with stable artifacts and replayable traces.
 
+v1 scope covers deterministic execution, replay, and contract verification for offline workflows; it is intended for research engineers and platform teams who need audit-grade runs, and it is not for interactive chat systems, autonomous agents, or low-latency production serving.
+
 [![PyPI - Version](https://img.shields.io/pypi/v/agentic-flows.svg)](https://pypi.org/project/agentic-flows/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://pypi.org/project/agentic-flows/)
 [![Typing: typed (PEP 561)](https://img.shields.io/badge/typing-typed-4F8CC9.svg)](https://peps.python.org/pep-0561/)
