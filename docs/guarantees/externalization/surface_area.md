@@ -1,3 +1,0 @@
-# Surface Area
-
-Placeholder.

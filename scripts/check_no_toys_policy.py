@@ -8,19 +8,17 @@ import sys
 
 
 REQUIRED_PHRASES = (
-    "Mutable memory without provenance",
-    "Silent retries",
-    "Implicit tool calls",
-    "Non-audited randomness",
-    "In-memory execution",
+    "This doc lists rejected patterns.",
+    "Anti-patterns align with [Core](core.md).",
+    "Hidden stochastic paths violate [Invariants](../architecture/invariants.md).",
 )
 
 
 def main() -> int:
     repo_root = Path(__file__).resolve().parents[1]
-    policy_path = repo_root / "docs" / "guarantees" / "never_support.md"
+    policy_path = repo_root / "docs" / "governance" / "anti_patterns.md"
     if not policy_path.exists():
-        print("Policy doc missing: docs/guarantees/never_support.md")
+        print("Policy doc missing: docs/governance/anti_patterns.md")
         return 1
     contents = policy_path.read_text(encoding="utf-8")
     missing = [phrase for phrase in REQUIRED_PHRASES if phrase not in contents]

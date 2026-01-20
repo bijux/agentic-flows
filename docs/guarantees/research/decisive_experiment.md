@@ -1,3 +1,0 @@
-# Decisive Experiment
-
-Placeholder.

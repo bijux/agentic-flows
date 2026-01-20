@@ -1,3 +1,0 @@
-# Llm Authority
-
-Placeholder.

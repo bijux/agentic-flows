@@ -1,3 +1,0 @@
-# Anti Patterns
-
-Placeholder.

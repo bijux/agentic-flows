@@ -1,3 +1,0 @@
-# Golden Path
-
-Placeholder.

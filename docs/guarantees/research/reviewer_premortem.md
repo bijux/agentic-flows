@@ -1,3 +1,0 @@
-# Reviewer Premortem
-
-Placeholder.

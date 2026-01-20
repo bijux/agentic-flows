@@ -1,3 +1,0 @@
-# Neutral Results
-
-Placeholder.

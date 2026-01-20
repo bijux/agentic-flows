@@ -1,3 +1,0 @@
-# Formal Model
-
-Placeholder.

@@ -1,3 +1,0 @@
-# Agentic Criteria
-
-Placeholder.

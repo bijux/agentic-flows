@@ -1,3 +1,0 @@
-# Falsifiable Claim
-
-Placeholder.

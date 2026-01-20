@@ -1,3 +1,0 @@
-# Docs Voice
-
-Placeholder.

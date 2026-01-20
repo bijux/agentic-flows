@@ -1,3 +1,0 @@
-# Semver
-
-Placeholder.

@@ -1,3 +1,0 @@
-# Ablation Studies
-
-Placeholder.

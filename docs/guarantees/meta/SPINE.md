@@ -1,3 +1,0 @@
-# Spine
-
-Placeholder.

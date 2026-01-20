@@ -32,84 +32,64 @@ theme:
   favicon: assets/bijux_icon.png
 
 nav:
-  - System Guarantees: guarantees/system_guarantees.md
-  - Non-Determinism Contract: guarantees/non_determinism.md
-  - Never Support: guarantees/never_support.md
-  - Home: guarantees/index.md
-  - Architecture Overview: ARCHITECTURE.md
-  - Invariants Overview: INVARIANTS.md
-  - What This Is Not: what_this_is_not.md
-  - Getting Started:
-      - guarantees/overview/getting_started.md
-      - guarantees/overview/cli_demo.md
-  - Ontology:
-      - Core Concepts: ontology/concepts/core_concepts.md
-      - Artifact Ontology: ontology/artifact_ontology.md
-  - Semantics:
-      - Determinism: semantics/determinism.md
-      - Failures: semantics/failures.md
-      - Vocabulary: semantics/vocabulary.md
-      - Forbidden: semantics/FORBIDDEN.md
-      - Semantic Gaps: semantics/semantic_gaps.md
-      - Phase Status: semantics/PHASE_STATUS.md
-  - Contracts:
-      - Bijux Contracts: contracts/bijux_contracts.md
-      - CLI: contracts/cli/cli.md
-      - CLI Surface: contracts/interface/cli_surface.md
-      - API Overview: contracts/api/overview.md
-      - API Schema: contracts/api/schema.md
+  - Home: index.md
+  - Getting Started: overview/getting_started.md
+  - Concepts: concepts/core_concepts.md
   - Governance:
-      - core: guarantees/governance/core.md
-      - semver: guarantees/governance/semver.md
-      - anti_patterns: guarantees/governance/anti_patterns.md
-      - roadmap_ceiling: guarantees/governance/roadmap_ceiling.md
-      - positioning: guarantees/governance/positioning.md
-      - release_identity: guarantees/governance/release_identity.md
+      - core: governance/core.md
+      - semver: governance/semver.md
+      - anti_patterns: governance/anti_patterns.md
+      - roadmap_ceiling: governance/roadmap_ceiling.md
+      - positioning: governance/positioning.md
+      - release_identity: governance/release_identity.md
   - Research:
-      - agentic_criteria: guarantees/research/agentic_criteria.md
-      - agent_taxonomy: guarantees/research/agent_taxonomy.md
-      - formal_model: guarantees/research/formal_model.md
-      - falsifiable_claim: guarantees/research/falsifiable_claim.md
-      - decisive_experiment: guarantees/research/decisive_experiment.md
-      - ablation_studies: guarantees/research/ablation_studies.md
-      - neutral_results: guarantees/research/neutral_results.md
-      - reviewer_premortem: guarantees/research/reviewer_premortem.md
-      - system_schematic: guarantees/research/system_schematic.md
+      - agentic_criteria: research/agentic_criteria.md
+      - agent_taxonomy: research/agent_taxonomy.md
+      - formal_model: research/formal_model.md
+      - falsifiable_claim: research/falsifiable_claim.md
+      - decisive_experiment: research/decisive_experiment.md
+      - ablation_studies: research/ablation_studies.md
+      - neutral_results: research/neutral_results.md
+      - reviewer_premortem: research/reviewer_premortem.md
+      - system_schematic: research/system_schematic.md
   - Externalization:
-      - mpi: guarantees/externalization/mpi.md
-      - golden_path: guarantees/externalization/golden_path.md
-      - misuse_guards: guarantees/externalization/misuse_guards.md
-      - surface_area: guarantees/externalization/surface_area.md
-      - sandbox: guarantees/externalization/sandbox.md
-      - invariant_visualization: guarantees/externalization/invariant_visualization.md
-      - why_not_x: guarantees/externalization/why_not_x.md
+      - mpi: externalization/mpi.md
+      - golden_path: externalization/golden_path.md
+      - misuse_guards: externalization/misuse_guards.md
+      - surface_area: externalization/surface_area.md
+      - sandbox: externalization/sandbox.md
+      - invariant_visualization: externalization/invariant_visualization.md
+      - why_not_x: externalization/why_not_x.md
   - Docs:
-      - SPINE: guarantees/meta/SPINE.md
-      - DOCS_STYLE: guarantees/meta/DOCS_STYLE.md
-      - DOCS_VOICE: guarantees/meta/DOCS_VOICE.md
-      - NAMING: guarantees/meta/NAMING.md
-      - TRIAGE: guarantees/meta/TRIAGE.md
+      - SPINE: meta/SPINE.md
+      - DOCS_STYLE: meta/DOCS_STYLE.md
+      - DOCS_VOICE: meta/DOCS_VOICE.md
+      - NAMING: meta/NAMING.md
+      - TRIAGE: meta/TRIAGE.md
   - Architecture:
-      - architecture: guarantees/architecture/architecture.md
-      - invariants: guarantees/architecture/invariants.md
-      - spec_law: guarantees/architecture/spec-law.md
-      - non_determinism_contract: guarantees/architecture/non_determinism_contract.md
-      - abstraction_removal: guarantees/architecture/abstraction_removal.md
-      - experimental: guarantees/architecture/experimental.md
-      - llm_authority: guarantees/architecture/llm_authority.md
-      - execution_model: guarantees/architecture/execution_model.md
-      - execution_lifecycle: guarantees/architecture/execution_lifecycle.md
-      - execution_cost: guarantees/architecture/execution_cost.md
-      - pathway_limits: guarantees/architecture/pathway_limits.md
-      - conservation: guarantees/architecture/conservation.md
-      - metrics: guarantees/architecture/metrics.md
-      - negative_results: guarantees/architecture/negative_results.md
-      - design_debt: guarantees/architecture/design_debt.md
-      - replay_breaks: guarantees/architecture/replay_breaks.md
+      - architecture: architecture/architecture.md
+      - invariants: architecture/invariants.md
+      - abstraction_removal: architecture/abstraction_removal.md
+      - experimental: architecture/experimental.md
+      - llm_authority: architecture/llm_authority.md
+      - execution_model: architecture/execution_model.md
+      - execution_lifecycle: architecture/execution_lifecycle.md
+      - execution_cost: architecture/execution_cost.md
+      - pathway_limits: architecture/pathway_limits.md
+      - conservation: architecture/conservation.md
+      - metrics: architecture/metrics.md
+      - negative_results: architecture/negative_results.md
+      - design_debt: architecture/design_debt.md
+  - CLI:
+      - cli: cli/cli.md
+      - cli_surface: interface/cli_surface.md
+  - API:
+      - overview: api/overview.md
+      - schema: api/schema.md
   - Security:
-      - dependencies: guarantees/security/dependencies.md
-      - threat_model: guarantees/security/threat_model.md
-      - citation: guarantees/security/citation.md
+      - dependencies: security/dependencies.md
+      - threat_model: security/threat_model.md
+      - citation: security/citation.md
 
 strict: true
 

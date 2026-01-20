@@ -1,3 +1,0 @@
-# Triage
-
-Placeholder.

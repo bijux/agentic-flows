@@ -1,3 +1,0 @@
-# Invariant Visualization
-
-Placeholder.

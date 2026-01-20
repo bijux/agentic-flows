@@ -1,3 +1,0 @@
-# Misuse Guards
-
-Placeholder.

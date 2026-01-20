@@ -1,3 +1,0 @@
-# Negative Results
-
-Placeholder.

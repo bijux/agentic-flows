@@ -1,3 +1,0 @@
-# Docs Style
-
-Placeholder.

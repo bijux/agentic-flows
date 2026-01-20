@@ -1,3 +1,0 @@
-# Abstraction Removal
-
-Placeholder.
