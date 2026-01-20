@@ -33,8 +33,20 @@ theme:
 
 nav:
   - Home: index.md
-  - Getting Started: overview/getting_started.md
-  - Concepts: concepts/core_concepts.md
+  - Overview:
+      - getting_started: overview/getting_started.md
+      - why-agentic-flows: overview/why-agentic-flows.md
+      - mental-model: overview/mental-model.md
+      - minimal-run: overview/minimal-run.md
+      - relationship-to-agentic-proteins: overview/relationship-to-agentic-proteins.md
+      - audience: overview/audience.md
+  - Concepts:
+      - concepts: concepts/index.md
+      - core_concepts: concepts/core_concepts.md
+      - determinism: concepts/determinism.md
+      - failures: concepts/failures.md
+  - Execution:
+      - failure-paths: execution/failure-paths.md
   - Governance:
       - core: governance/core.md
       - semver: governance/semver.md

@@ -196,6 +196,9 @@ tests/          # unit / regression / e2e
 <a id="docs--resources"></a>
 ## Docs & Resources
 
+* **Overview**: [Why agentic-flows exists](https://bijux.github.io/agentic-flows/overview/why-agentic-flows/) · [Mental model](https://bijux.github.io/agentic-flows/overview/mental-model/) · [Minimal run](https://bijux.github.io/agentic-flows/overview/minimal-run/) · [Relationship to agentic-proteins](https://bijux.github.io/agentic-flows/overview/relationship-to-agentic-proteins/) · [Audience](https://bijux.github.io/agentic-flows/overview/audience/)
+* **Concepts**: [Concepts index](https://bijux.github.io/agentic-flows/concepts/) · [Determinism](https://bijux.github.io/agentic-flows/concepts/determinism/) · [Failures](https://bijux.github.io/agentic-flows/concepts/failures/)
+* **Execution**: [Failure paths](https://bijux.github.io/agentic-flows/execution/failure-paths/)
 * **Site**: https://bijux.github.io/agentic-flows/
 * **Changelog**: https://github.com/bijux/agentic-flows/blob/main/CHANGELOG.md
 * **Repository**: https://github.com/bijux/agentic-flows
