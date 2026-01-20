@@ -219,6 +219,7 @@ components:
         determinism_impact:
           $ref: '#/components/schemas/DeterminismClass'
           description: Determinism class impacted by the failure.
+          description: Determinism class impacted by the failure.
     RunMode:
       type: string
       enum:

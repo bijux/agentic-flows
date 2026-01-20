@@ -140,6 +140,7 @@ def test_unauthorized_entropy_intent(
             resolved_flow=resolved_flow,
             config=ExecutionConfig(
                 mode=RunMode.LIVE,
+                determinism_level=manifest.determinism_level,
                 verification_policy=baseline_policy,
                 execution_store=execution_store,
                 strict_determinism=True,

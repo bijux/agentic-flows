@@ -180,7 +180,10 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
     assert calls == [
         _RunCall(
             manifest=resolved.manifest,
-            config=ExecutionConfig(mode=RunMode.PLAN),
+            config=ExecutionConfig(
+                mode=RunMode.PLAN,
+                determinism_level=resolved.manifest.determinism_level,
+            ),
         )
     ]
 

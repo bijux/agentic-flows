@@ -21,7 +21,11 @@ pytestmark = pytest.mark.regression
 def test_allowed_evolution_preserves_replay(resolved_flow, execution_store) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
     plan = result.resolved_flow.plan
     trace = result.trace
@@ -37,7 +41,11 @@ def test_allowed_evolution_preserves_replay(resolved_flow, execution_store) -> N
 def test_replay_breaker_is_rejected(resolved_flow, execution_store) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
     plan = result.resolved_flow.plan
     trace = result.trace

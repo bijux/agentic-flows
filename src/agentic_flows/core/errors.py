@@ -30,6 +30,10 @@ class SemanticViolationError(RuntimeError):
     """Semantic violation; misuse breaks authority guarantees."""
 
 
+class ConfigurationError(ValueError):
+    """Configuration error; misuse breaks execution setup."""
+
+
 class FailureClass(str, Enum):
     """Failure classes; misuse breaks failure taxonomy."""
 
@@ -46,6 +50,7 @@ FAILURE_CLASS_MAP = {
     ReasoningFailure: FailureClass.STRUCTURAL,
     VerificationFailure: FailureClass.SEMANTIC,
     SemanticViolationError: FailureClass.AUTHORITY,
+    ConfigurationError: FailureClass.STRUCTURAL,
 }
 
 
@@ -64,6 +69,7 @@ __all__ = [
     "ReasoningFailure",
     "VerificationFailure",
     "SemanticViolationError",
+    "ConfigurationError",
     "FailureClass",
     "FAILURE_CLASS_MAP",
     "classify_failure",

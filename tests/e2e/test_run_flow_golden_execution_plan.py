@@ -63,7 +63,7 @@ def test_golden_execution_plan(
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN))
+    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
     payload = _normalize_for_json(asdict(result.resolved_flow.plan))
     golden_path = Path(__file__).parents[1] / "golden" / "test_execution_plan.json"
     expected = json.loads(golden_path.read_text(encoding="utf-8"))

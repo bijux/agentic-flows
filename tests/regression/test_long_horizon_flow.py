@@ -170,6 +170,7 @@ def test_long_horizon_flow_is_stable(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
         ),
@@ -202,6 +203,7 @@ def test_long_horizon_flow_is_stable(
         resolved_flow=resolved_flow_two,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
         ),

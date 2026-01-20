@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 import os
 
 from agentic_flows.core.authority import authority_token, enforce_runtime_semantics
+from agentic_flows.core.errors import ConfigurationError
 from agentic_flows.runtime.artifact_store import ArtifactStore, InMemoryArtifactStore
 from agentic_flows.runtime.budget import BudgetState, ExecutionBudget
 from agentic_flows.runtime.context import ExecutionContext, RunMode
@@ -39,6 +40,7 @@ from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.ontology import DeterminismLevel
 from agentic_flows.spec.ontology.ids import ClaimID, FlowID, RunID, TenantID
 
 
@@ -61,6 +63,7 @@ class ExecutionConfig:
     """Execution config; misuse breaks execution invariants."""
 
     mode: RunMode
+    determinism_level: DeterminismLevel | None
     verification_policy: VerificationPolicy | None = None
     artifact_store: ArtifactStore | None = None
     execution_store: ExecutionWriteStoreProtocol | None = None
@@ -76,15 +79,15 @@ class ExecutionConfig:
     @classmethod
     def from_command(cls, command: str) -> ExecutionConfig:
         if command == "plan":
-            return cls(mode=RunMode.PLAN)
+            return cls(mode=RunMode.PLAN, determinism_level=None)
         if command == "dry-run":
-            return cls(mode=RunMode.DRY_RUN)
+            return cls(mode=RunMode.DRY_RUN, determinism_level=None)
         if command == "run":
-            return cls(mode=RunMode.LIVE)
+            return cls(mode=RunMode.LIVE, determinism_level=None)
         if command == "observe":
-            return cls(mode=RunMode.OBSERVE)
+            return cls(mode=RunMode.OBSERVE, determinism_level=None)
         if command == "unsafe-run":
-            return cls(mode=RunMode.UNSAFE)
+            return cls(mode=RunMode.UNSAFE, determinism_level=None)
         raise ValueError(f"Unsupported command: {command}")
 
 
@@ -112,13 +115,18 @@ def execute_flow(
     config: ExecutionConfig | None = None,
 ) -> FlowRunResult:
     """Invariant: exactly one of manifest or resolved_flow is supplied and required execution prerequisites are present; violation raises ValueError before any execution or persistence occurs, leaving no run state or trace committed."""
-    execution_config = config or ExecutionConfig(mode=RunMode.LIVE)
+    execution_config = config or ExecutionConfig(
+        mode=RunMode.LIVE,
+        determinism_level=None,
+    )
     if os.environ.get("AGENTIC_FLOWS_STRICT") == "1":
         if execution_config.mode in {RunMode.DRY_RUN, RunMode.UNSAFE}:
             raise ValueError("AGENTIC_FLOWS_STRICT forbids best-effort execution")
         execution_config = replace(execution_config, strict_determinism=True)
     if (manifest is None) == (resolved_flow is None):
         raise ValueError("Provide exactly one of manifest or resolved_flow")
+    if execution_config.determinism_level is None:
+        raise ConfigurationError("determinism_level must be explicit")
     if resolved_flow is None:
         resolved_flow = ExecutionPlanner().resolve(manifest)
 

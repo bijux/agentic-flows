@@ -84,6 +84,7 @@ def test_budget_exhaustion_records_failure(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.DRY_RUN,
+            determinism_level=manifest.determinism_level,
             execution_store=execution_store,
             budget=ExecutionBudget(
                 step_limit=0,

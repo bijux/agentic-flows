@@ -158,6 +158,7 @@ def test_hostile_artifact_store_triggers_verification_failure(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=manifest.determinism_level,
             verification_policy=baseline_policy,
             artifact_store=artifact_store,
             execution_store=execution_store,

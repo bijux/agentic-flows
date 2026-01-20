@@ -26,6 +26,7 @@ def test_replay_rejects_policy_mismatch(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=resolved_flow.manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
         ),

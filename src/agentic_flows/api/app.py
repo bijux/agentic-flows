@@ -100,7 +100,7 @@ def run_flow(
     x_determinism_level: str | None = Header(None, alias="X-Determinism-Level"),
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
-    """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the contract."""
+    """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the declared contract."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     if (
         x_agentic_gate is None

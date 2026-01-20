@@ -67,7 +67,7 @@ def test_replay_diff_includes_artifacts_and_evidence(
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(GateID("gate-a"),),
     )
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN))
+    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
     plan = result.resolved_flow.plan
 
     trace = ExecutionTrace(

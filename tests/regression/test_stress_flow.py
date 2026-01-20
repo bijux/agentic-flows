@@ -49,5 +49,5 @@ def test_plan_mode_handles_multiple_agents(
         verification_gates=(GateID("gate-a"),),
     )
 
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN))
+    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
     assert len(result.resolved_flow.plan.steps) == len(agents)

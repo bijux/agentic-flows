@@ -19,7 +19,11 @@ pytestmark = pytest.mark.regression
 def test_temporal_drift_is_within_bounds(resolved_flow, execution_store) -> None:
     first = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
     first_summary = entropy_summary(first.trace.entropy_usage)
     first_outcome = {
@@ -29,7 +33,11 @@ def test_temporal_drift_is_within_bounds(resolved_flow, execution_store) -> None
     }
     second = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
     drift = entropy_drift(
         first_summary,

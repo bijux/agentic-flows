@@ -1,3 +1,4 @@
+# INTERNAL — SUBJECT TO CHANGE WITHOUT NOTICE
 # INTERNAL API — NOT STABLE
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
@@ -286,9 +287,6 @@ class LiveExecutor:
                         "agent_id": step.agent_id,
                     },
                 )
-                crash_step = os.environ.get("AF_CRASH_AT_STEP")
-                if crash_step is not None and int(crash_step) == step.step_index:
-                    os.kill(os.getpid(), signal.SIGKILL)
                 try:
                     context.consume_budget(steps=1)
                 except Exception as exc:
@@ -868,6 +866,9 @@ class LiveExecutor:
                 enforce_entropy_authorization()
                 flush_entropy_usage()
                 save_checkpoint(step.step_index)
+                crash_step = os.environ.get("AF_CRASH_AT_STEP")
+                if crash_step is not None and int(crash_step) == step.step_index:
+                    os.kill(os.getpid(), signal.SIGKILL)
 
             if not interrupted and policy is not None and reasoning_bundles:
                 flow_results, flow_arbitration = verification_orchestrator.verify_flow(

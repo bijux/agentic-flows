@@ -145,6 +145,7 @@ def test_step_budget_halts_flow(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=resolved_flow.manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
             budget=ExecutionBudget(
@@ -226,6 +227,7 @@ def test_token_budget_failure_is_deterministic(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=resolved_flow.manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
             budget=ExecutionBudget(
@@ -292,6 +294,7 @@ def test_artifact_step_budget_halts_flow(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=resolved_flow.manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
             budget=ExecutionBudget(
@@ -352,6 +355,7 @@ def test_evidence_budget_halts_flow(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.LIVE,
+            determinism_level=resolved_flow.manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
             budget=ExecutionBudget(

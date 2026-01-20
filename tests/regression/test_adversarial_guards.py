@@ -261,6 +261,7 @@ def test_reused_artifact_id_rejected(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=FlowRunMode.LIVE,
+            determinism_level=manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
         ),
@@ -376,6 +377,7 @@ def test_fake_evidence_id_rejected(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=FlowRunMode.LIVE,
+            determinism_level=manifest.determinism_level,
             verification_policy=baseline_policy,
             execution_store=execution_store,
         ),

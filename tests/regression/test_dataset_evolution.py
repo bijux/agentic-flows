@@ -116,7 +116,11 @@ def test_dataset_evolution_blocks_replay(
 
     run = execute_flow(
         resolved_flow=flow_v1,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=manifest_v1.determinism_level,
+            execution_store=execution_store,
+        ),
     )
 
     with pytest.raises(ValueError, match="dataset"):
@@ -126,6 +130,8 @@ def test_dataset_evolution_blocks_replay(
             tenant_id=run.trace.tenant_id,
             resolved_flow=flow_v2,
             config=ExecutionConfig(
-                mode=RunMode.DRY_RUN, execution_store=execution_store
+                mode=RunMode.DRY_RUN,
+                determinism_level=manifest_v2.determinism_level,
+                execution_store=execution_store,
             ),
         )

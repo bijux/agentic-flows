@@ -167,6 +167,7 @@ def test_strict_determinism_aborts_on_first_entropy_violation(
             resolved_flow=resolved_flow,
             config=ExecutionConfig(
                 mode=RunMode.LIVE,
+                determinism_level=manifest.determinism_level,
                 verification_policy=baseline_policy,
                 execution_store=execution_store,
                 strict_determinism=True,

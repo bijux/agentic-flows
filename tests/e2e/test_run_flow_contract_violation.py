@@ -78,7 +78,7 @@ def test_dry_run_execution_emits_trace(
 
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(mode=RunMode.DRY_RUN, determinism_level=manifest.determinism_level, execution_store=execution_store),
     )
 
     assert result.trace is not None

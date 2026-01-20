@@ -22,7 +22,11 @@ def test_duckdb_replay_envelope_hash_is_stable(
 ) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
 
     stored = execution_read_store.load_replay_envelope(

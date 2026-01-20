@@ -20,7 +20,11 @@ def test_duckdb_replay_diff_is_clean(
 ) -> None:
     result = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
 
     diff, _ = replay_with_store(
@@ -28,6 +32,10 @@ def test_duckdb_replay_diff_is_clean(
         run_id=result.run_id,
         tenant_id=result.trace.tenant_id,
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
     assert diff == {}

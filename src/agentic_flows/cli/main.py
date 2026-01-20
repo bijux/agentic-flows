@@ -7,8 +7,10 @@ import argparse
 from dataclasses import asdict, replace
 import json
 from pathlib import Path
+import sys
 
 from agentic_flows.api import ExecutionConfig, RunMode, execute_flow
+from agentic_flows.core.errors import classify_failure
 from agentic_flows.runtime.observability.execution_store import (
     DuckDBExecutionReadStore,
     DuckDBExecutionWriteStore,
@@ -309,9 +311,11 @@ def main() -> None:
         command = args.experimental_command
 
     config = ExecutionConfig.from_command(command)
+    config = replace(config, determinism_level=manifest.determinism_level)
     if getattr(args, "db_path", None):
         config = ExecutionConfig(
             mode=config.mode,
+            determinism_level=manifest.determinism_level,
             execution_store=DuckDBExecutionWriteStore(Path(args.db_path)),
         )
     if getattr(args, "strict_determinism", False):
@@ -319,7 +323,15 @@ def main() -> None:
     if getattr(args, "policy", None):
         policy = _load_policy(Path(args.policy))
         config = replace(config, verification_policy=policy)
-    result = execute_flow(manifest, config=config)
+    try:
+        result = execute_flow(manifest, config=config)
+    except Exception as exc:
+        try:
+            failure_class = classify_failure(exc)
+        except KeyError:
+            raise
+        print(f"Failure: {failure_class.value}", file=sys.stderr)
+        raise SystemExit(1) from exc
     _render_result(command, result, json_output=args.json)
 
 
@@ -549,6 +561,7 @@ def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
     write_store = DuckDBExecutionWriteStore(Path(args.db_path))
     config = ExecutionConfig(
         mode=_config_mode_for_replay(),
+        determinism_level=manifest.determinism_level,
         execution_store=write_store,
         execution_read_store=read_store,
         verification_policy=policy,
@@ -568,9 +581,12 @@ def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
             "run_id": str(result.run_id),
         }
         print(json.dumps(payload, sort_keys=True))
+        if diff:
+            raise SystemExit(1)
         return
     if diff:
         print(f"Replay diff detected: keys={', '.join(sorted(diff.keys()))}")
+        raise SystemExit(1)
     else:
         print(f"Replay clean: run_id={result.run_id}")
 

@@ -53,7 +53,7 @@ def test_replay_equivalence(
         verification_gates=(GateID("gate-a"),),
     )
 
-    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN))
+    result = execute_flow(manifest, config=ExecutionConfig(mode=RunMode.PLAN, determinism_level=manifest.determinism_level))
     plan = result.resolved_flow.plan
     trace = ExecutionTrace(
         spec_version="v1",

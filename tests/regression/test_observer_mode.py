@@ -25,7 +25,11 @@ def test_observer_mode_does_not_execute(
 
     recorded = execute_flow(
         resolved_flow=resolved_flow,
-        config=ExecutionConfig(mode=RunMode.DRY_RUN, execution_store=execution_store),
+        config=ExecutionConfig(
+            mode=RunMode.DRY_RUN,
+            determinism_level=resolved_flow.manifest.determinism_level,
+            execution_store=execution_store,
+        ),
     )
     observed = ObservedRun(
         trace=recorded.trace,
@@ -38,6 +42,7 @@ def test_observer_mode_does_not_execute(
         resolved_flow=resolved_flow,
         config=ExecutionConfig(
             mode=RunMode.OBSERVE,
+            determinism_level=resolved_flow.manifest.determinism_level,
             verification_policy=baseline_policy,
             observed_run=observed,
             execution_store=execution_store,

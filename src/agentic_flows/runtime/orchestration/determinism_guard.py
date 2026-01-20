@@ -175,6 +175,10 @@ def replay_diff(
         diffs["evidence_fingerprint"] = semantic_evidence_fingerprint(evidence_list)
         diffs["evidence_count"] = len(evidence_list)
 
+    if diffs:
+        primary = next(iter(diffs))
+        diffs["summary"] = f"Replay rejected: {primary}"
+
     return diffs
 
 

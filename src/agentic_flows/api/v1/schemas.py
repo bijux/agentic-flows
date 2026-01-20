@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictStr
 
 
 class FlowRunRequest(BaseModel):
@@ -28,13 +28,10 @@ class FlowRunResponse(BaseModel):
     run_id: StrictStr
     flow_id: StrictStr
     status: Literal["completed", "failed", "cancelled"]
-    determinism_class: Literal[
-        "structural",
-        "environmental",
-        "stochastic",
-        "human",
-        "external",
-    ]
+    determinism_class: StrictStr | None = Field(
+        default=None,
+        description="Determinism class classification when available.",
+    )
     replay_acceptability: Literal[
         "exact_match",
         "invariant_preserving",

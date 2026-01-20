@@ -21,6 +21,7 @@ def test_failure_taxonomy_is_exhaustive() -> None:
         "ReasoningFailure",
         "VerificationFailure",
         "SemanticViolationError",
+        "ConfigurationError",
     }
     assert {cls.__name__ for cls in FAILURE_CLASS_MAP} == expected
 
