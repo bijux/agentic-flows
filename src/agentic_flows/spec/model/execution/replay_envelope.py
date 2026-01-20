@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for spec/model/execution/replay_envelope.py."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,7 +10,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ReplayEnvelope:
-    """Envelope equality means replay thresholds are identical; inequality implies replay acceptability changes, so diffs are rejected; the envelope exists separately from the trace to isolate contract thresholds from observed execution state."""
+    """Immutable at instantiation; any field mutation or threshold edits are forbidden after creation."""
 
     spec_version: str
     min_claim_overlap: float

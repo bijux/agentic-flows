@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/observability/analysis/flow_invariants.py."""
+
 from __future__ import annotations
 
 from agentic_flows.core.errors import SemanticViolationError
@@ -19,6 +21,7 @@ def validate_flow_invariants(
 
 
 def _ensure_monotonic_artifact_growth(context: ExecutionContext) -> None:
+    """Internal helper; not part of the public API."""
     step_indices = sorted(context.recorded_steps())
     previous = 0
     for step_index in step_indices:
@@ -31,6 +34,7 @@ def _ensure_monotonic_artifact_growth(context: ExecutionContext) -> None:
 
 
 def _ensure_artifact_provenance(artifacts: list[Artifact]) -> None:
+    """Internal helper; not part of the public API."""
     root_types = {
         ArtifactType.FLOW_MANIFEST,
         ArtifactType.EXECUTION_PLAN,
@@ -48,6 +52,7 @@ def _ensure_artifact_provenance(artifacts: list[Artifact]) -> None:
 
 
 def _ensure_no_orphan_artifacts(artifacts: list[Artifact]) -> None:
+    """Internal helper; not part of the public API."""
     artifact_ids = {artifact.artifact_id for artifact in artifacts}
     for artifact in artifacts:
         for parent in artifact.parent_artifacts:

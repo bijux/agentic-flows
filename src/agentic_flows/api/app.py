@@ -29,6 +29,7 @@ app = FastAPI(
 
 @app.middleware("http")
 async def method_guard(request: Request, call_next) -> JSONResponse:
+    """Reject disallowed HTTP methods and return a 405 with an Allow header."""
     scope = request.scope
     if scope.get("type") == "http":
         matched = False
@@ -51,6 +52,7 @@ async def method_guard(request: Request, call_next) -> JSONResponse:
 
 @app.exception_handler(RequestValidationError)
 def handle_validation_error(_: Request, __: RequestValidationError) -> JSONResponse:
+    """Return a structural failure envelope for request validation errors."""
     payload = FailureEnvelope(
         failure_class="structural",
         reason_code="contradiction_detected",
@@ -68,6 +70,7 @@ def handle_validation_error(_: Request, __: RequestValidationError) -> JSONRespo
 def handle_starlette_http_exception(
     _: Request, exc: StarletteHTTPException
 ) -> JSONResponse:
+    """Return a structural failure envelope for parse errors or pass through non-400s."""
     if exc.status_code != status.HTTP_400_BAD_REQUEST:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
     payload = FailureEnvelope(
@@ -86,12 +89,14 @@ def handle_starlette_http_exception(
 @app.get("/health")
 @app.get("/api/v1/health")
 def health() -> dict[str, str]:
+    """Provide a lightweight liveness signal for health checks."""
     return {"status": "ok"}
 
 
 @app.get("/ready")
 @app.get("/api/v1/ready")
 def ready() -> dict[str, str]:
+    """Provide a readiness signal without performing deep dependency checks."""
     return {"status": "ok"}
 
 

@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for spec/contracts/flow_contract.py."""
+
 from __future__ import annotations
 
 from collections import defaultdict, deque
@@ -108,6 +110,7 @@ def validate(manifest: FlowManifest) -> None:
 
 
 def _require_tuple_of_str(field: str, value: Iterable[str]) -> None:
+    """Internal helper; not part of the public API."""
     if not isinstance(value, tuple):
         raise ValueError(f"{field} must be a tuple of strings")
     if not all(isinstance(item, str) and item.strip() for item in value):
@@ -115,6 +118,7 @@ def _require_tuple_of_str(field: str, value: Iterable[str]) -> None:
 
 
 def _require_enum(field: str, value: object, enum_type: type) -> None:
+    """Internal helper; not part of the public API."""
     if not isinstance(value, enum_type):
         raise ValueError(f"{field} must be a valid {enum_type.__name__}")
 

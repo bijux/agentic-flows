@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for spec/model/flow_manifest.py."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_budget import EntropyBudget
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.artifact.entropy_budget import EntropyBudget
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
     FlowState,

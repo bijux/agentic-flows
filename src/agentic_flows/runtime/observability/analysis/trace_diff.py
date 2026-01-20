@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/observability/analysis/trace_diff.py."""
+
 from __future__ import annotations
 
 from agentic_flows.runtime.observability.classification.determinism_classification import (
@@ -102,6 +104,7 @@ def render_semantic_diff(diff: dict[str, object]) -> str:
 def _event_signature(
     trace: ExecutionTrace, acceptability: ReplayAcceptability
 ) -> list[tuple[object, ...]]:
+    """Internal helper; not part of the public API."""
     if acceptability == ReplayAcceptability.EXACT_MATCH:
         return [
             (event.event_type, event.step_index, event.payload_hash)
@@ -118,6 +121,7 @@ def _event_signature(
 
 
 def _dataset_payload(dataset) -> dict[str, object]:
+    """Internal helper; not part of the public API."""
     return {
         "dataset_id": dataset.dataset_id,
         "tenant_id": dataset.tenant_id,
@@ -128,6 +132,7 @@ def _dataset_payload(dataset) -> dict[str, object]:
 
 
 def _envelope_payload(envelope) -> dict[str, object]:
+    """Internal helper; not part of the public API."""
     return {
         "min_claim_overlap": envelope.min_claim_overlap,
         "max_contradiction_delta": envelope.max_contradiction_delta,
@@ -138,6 +143,7 @@ def _statistical_envelope_diff(
     expected: ExecutionTrace,
     observed: ExecutionTrace,
 ) -> dict[str, object]:
+    """Internal helper; not part of the public API."""
     diffs: dict[str, object] = {}
     expected_claims = set(expected.claim_ids)
     observed_claims = set(observed.claim_ids)

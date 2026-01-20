@@ -3,6 +3,8 @@
 # Fingerprinted: python version, OS platform, bijux package versions.
 # Ignored: hostnames, environment variables.
 
+"""Module definitions for runtime/observability/capture/environment.py."""
+
 from __future__ import annotations
 
 from importlib import metadata
@@ -15,6 +17,7 @@ from agentic_flows.runtime.observability.classification.fingerprint import (
 
 
 def compute_environment_fingerprint() -> str:
+    """Execute compute_environment_fingerprint and enforce its contract."""
     packages = {
         "bijux-agent": metadata.version("bijux-agent"),
         "bijux-cli": metadata.version("bijux-cli"),

@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/orchestration/determinism_guard.py."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -84,7 +86,7 @@ def replay_diff(
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
 ) -> dict[str, object]:
-    """Input contract: trace and plan describe the same run boundary and are finalized for comparison; output guarantee: returns a diff map of all contract mismatches across plan, environment, dataset, artifacts, evidence, and policy; failure semantics: does not raise and reports violations via the returned diff map."""
+    """Input contract: trace and plan describe the same run boundary and are finalized for comparison; output guarantee: returns a diff map of all contract mismatches across plan, environment, dataset, artifact, evidence, and policy; failure semantics: does not raise and reports violations via the returned diff map."""
     diffs: dict[str, object] = {}
     if trace.plan_hash != plan.plan_hash:
         diffs["plan_hash"] = {
@@ -186,6 +188,7 @@ def replay_diff(
 def _missing_step_end(
     events: Iterable[ExecutionEvent], steps: Iterable[object]
 ) -> set[int]:
+    """Internal helper; not part of the public API."""
     expected_steps = {step.step_index for step in steps}
     ended = {
         event.step_index for event in events if event.event_type == EventType.STEP_END
@@ -195,6 +198,7 @@ def _missing_step_end(
 
 
 def _failed_steps(events: Iterable[ExecutionEvent]) -> set[int]:
+    """Internal helper; not part of the public API."""
     failure_events = {
         EventType.REASONING_FAILED,
         EventType.RETRIEVAL_FAILED,
@@ -205,6 +209,7 @@ def _failed_steps(events: Iterable[ExecutionEvent]) -> set[int]:
 
 
 def _human_intervention_events(events: Iterable[ExecutionEvent]) -> list[int]:
+    """Internal helper; not part of the public API."""
     return [
         event.event_index
         for event in events
@@ -213,7 +218,7 @@ def _human_intervention_events(events: Iterable[ExecutionEvent]) -> list[int]:
 
 
 def semantic_artifact_fingerprint(artifacts: Iterable[Artifact]) -> str:
-    """Fingerprint artifacts; misuse breaks replay comparison."""
+    """Fingerprint artifact; misuse breaks replay comparison."""
     normalized = sorted(
         artifacts,
         key=lambda item: (
@@ -257,6 +262,7 @@ def _partition_diffs(
     # ReplayAcceptability.EXACT_MATCH: triggers on any divergence; acceptable in production: yes.
     # ReplayAcceptability.INVARIANT_PRESERVING: triggers when only invariant-safe deltas exist; acceptable in production: yes.
     # ReplayAcceptability.STATISTICALLY_BOUNDED: triggers when bounded statistical drift is present; acceptable in production: depends on policy.
+    """Internal helper; not part of the public API."""
     if not diffs:
         return {}, {}
     allowed: set[str] = set()
@@ -277,6 +283,7 @@ def _partition_diffs(
 
 
 def _dataset_payload(dataset) -> dict[str, object]:
+    """Internal helper; not part of the public API."""
     return {
         "dataset_id": dataset.dataset_id,
         "tenant_id": dataset.tenant_id,
@@ -287,6 +294,7 @@ def _dataset_payload(dataset) -> dict[str, object]:
 
 
 def _envelope_payload(envelope) -> dict[str, object]:
+    """Internal helper; not part of the public API."""
     return {
         "min_claim_overlap": envelope.min_claim_overlap,
         "max_contradiction_delta": envelope.max_contradiction_delta,

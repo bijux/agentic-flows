@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/execution/reasoning_executor.py."""
+
 from __future__ import annotations
 
 from dataclasses import asdict
@@ -17,7 +19,10 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 
 
 class ReasoningExecutor:
+    """Behavioral contract for ReasoningExecutor."""
+
     def execute(self, step: ResolvedStep, context: ExecutionContext) -> ReasoningBundle:
+        """Execute execute and enforce its contract."""
         if not hasattr(bijux_rar, "reason"):
             raise RuntimeError("bijux_rar.reason is required for reasoning")
 
@@ -35,6 +40,7 @@ class ReasoningExecutor:
 
     @staticmethod
     def bundle_hash(bundle: ReasoningBundle) -> str:
+        """Execute bundle_hash and enforce its contract."""
         payload = json.dumps(
             asdict(bundle), sort_keys=True, separators=(",", ":"), ensure_ascii=True
         )
@@ -45,6 +51,7 @@ class ReasoningExecutor:
         agent_outputs: list[Artifact],
         retrieved_evidence: list[RetrievedEvidence],
     ) -> int:
+        """Internal helper; not part of the public API."""
         payload = json.dumps(
             {
                 "artifact_hashes": [

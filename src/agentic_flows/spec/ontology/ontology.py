@@ -46,6 +46,7 @@ class EventType(str, Enum):
     """Execution event types; misuse breaks trace invariants."""
 
     def _generate_next_value_(name, start, count, last_values):  # noqa: N805
+        """Internal helper; not part of the public API."""
         return name
 
     STEP_START = auto()

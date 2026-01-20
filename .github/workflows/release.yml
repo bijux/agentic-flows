@@ -31,12 +31,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox build twine
 
-      - name: Build distribution artifacts
+      - name: Build distribution artifact
         run: make build
 
       - name: Publish to PyPI (Trusted Publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: artifacts/build
+          packages-dir: artifact/build
           attestations: true
           skip-existing: true

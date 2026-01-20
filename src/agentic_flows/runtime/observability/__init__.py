@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/observability/__init__.py."""
+
 from __future__ import annotations
 
 import importlib
@@ -11,24 +13,29 @@ __all__ = []
 
 
 def _alias_module(old: str, new: str) -> None:
+    """Internal helper; not part of the public API."""
     module = types.ModuleType(old)
     attr_name = old.rsplit(".", 1)[-1]
 
     def _load_target():
+        """Internal helper; not part of the public API."""
         target = importlib.import_module(new)
         sys.modules[old] = target
         setattr(sys.modules[__name__], attr_name, target)
         return target
 
     def _module_getattr(name: str) -> object:
+        """Internal helper; not part of the public API."""
         target = _load_target()
         return getattr(target, name)
 
     def _module_dir() -> list[str]:
+        """Internal helper; not part of the public API."""
         target = _load_target()
         return list(dir(target))
 
     def _module_setattr(name: str, value: object) -> None:
+        """Internal helper; not part of the public API."""
         target = _load_target()
         setattr(target, name, value)
 

@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for spec/model/execution/execution_trace.py."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.execution_event import ExecutionEvent
-from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.model.artifact.entropy_usage import EntropyUsage
+from agentic_flows.spec.model.datasets.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.execution.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.identifiers.execution_event import ExecutionEvent
+from agentic_flows.spec.model.identifiers.tool_invocation import ToolInvocation
 from agentic_flows.spec.ontology import (
     DeterminismLevel,
     FlowState,
@@ -28,7 +30,7 @@ from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 @dataclass(frozen=True)
 class ExecutionTrace:
-    """Immutable execution trace; mutation breaks replay trust."""
+    """Immutable after finalize; any post-finalize field mutation or event/tool/evidence edits are forbidden."""
 
     spec_version: str
     flow_id: FlowID
@@ -54,12 +56,14 @@ class ExecutionTrace:
     finalized: bool
 
     def finalize(self) -> ExecutionTrace:
+        """Execute finalize and enforce its contract."""
         if object.__getattribute__(self, "finalized"):
             raise RuntimeError("ExecutionTrace already finalized")
         object.__setattr__(self, "finalized", True)
         return self
 
     def __getattribute__(self, name: str):
+        """Internal helper; not part of the public API."""
         if name in {
             "finalize",
             "__class__",
@@ -73,6 +77,7 @@ class ExecutionTrace:
         return object.__getattribute__(self, name)
 
     def __repr__(self) -> str:
+        """Internal helper; not part of the public API."""
         summary = (
             f"flow_id={self.flow_id}",
             f"tenant_id={self.tenant_id}",
@@ -92,6 +97,7 @@ class ExecutionTrace:
         return f"ExecutionTrace({', '.join(summary)})"
 
     def __str__(self) -> str:
+        """Internal helper; not part of the public API."""
         return self.__repr__()
 
 

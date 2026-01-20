@@ -233,11 +233,11 @@ api-clean:
 	@echo "✔ Done"
 
 ##@ API
-api:            ## Run full API workflow (install → lint → test with Schemathesis); artifacts in artifacts/api/**
+api:            ## Run full API workflow (install → lint → test with Schemathesis); artifact in artifact/api/**
 api-install:    ## Install API toolchain (Python deps + sandboxed Node deps)
-api-lint:       ## Validate all OpenAPI specs; logs to artifacts/api/lint/*.log
-api-test:       ## Start server, wait for /health, run Schemathesis; logs & JUnit to artifacts/api/**
+api-lint:       ## Validate all OpenAPI specs; logs to artifact/api/lint/*.log
+api-test:       ## Start server, wait for /health, run Schemathesis; logs & JUnit to artifact/api/**
 api-serve:      ## Serve API in the foreground (dev)
-api-serve-bg:   ## Serve API in the background; PID to artifacts/api/server.pid
+api-serve-bg:   ## Serve API in the background; PID to artifact/api/server.pid
 api-stop:       ## Stop background API (if running)
-api-clean:      ## Remove all API artifacts
+api-clean:      ## Remove all API artifact

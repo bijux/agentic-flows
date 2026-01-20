@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/artifact_store.py."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -15,6 +17,8 @@ from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
 
 
 class ArtifactStore(ABC):
+    """Behavioral contract for ArtifactStore."""
+
     @abstractmethod
     def create(
         self,
@@ -28,19 +32,25 @@ class ArtifactStore(ABC):
         content_hash: ContentHash,
         scope: ArtifactScope,
     ) -> Artifact:
+        """Execute create and enforce its contract."""
         raise NotImplementedError
 
     @abstractmethod
     def save(self, artifact: Artifact) -> None:
+        """Execute save and enforce its contract."""
         raise NotImplementedError
 
     @abstractmethod
     def load(self, artifact_id: ArtifactID, *, tenant_id: TenantID) -> Artifact:
+        """Execute load and enforce its contract."""
         raise NotImplementedError
 
 
 class InMemoryArtifactStore(ArtifactStore):
+    """Behavioral contract for InMemoryArtifactStore."""
+
     def __init__(self) -> None:
+        """Internal helper; not part of the public API."""
         self._items: dict[tuple[TenantID, ArtifactID], Artifact] = {}
 
     def create(
@@ -55,6 +65,7 @@ class InMemoryArtifactStore(ArtifactStore):
         content_hash: ContentHash,
         scope: ArtifactScope,
     ) -> Artifact:
+        """Execute create and enforce its contract."""
         artifact = Artifact(
             spec_version=spec_version,
             artifact_id=artifact_id,
@@ -69,6 +80,7 @@ class InMemoryArtifactStore(ArtifactStore):
         return artifact
 
     def save(self, artifact: Artifact) -> None:
+        """Execute save and enforce its contract."""
         key = (artifact.tenant_id, artifact.artifact_id)
         existing = self._items.get(key)
         if existing is not None:
@@ -76,6 +88,7 @@ class InMemoryArtifactStore(ArtifactStore):
         self._items[key] = artifact
 
     def load(self, artifact_id: ArtifactID, *, tenant_id: TenantID) -> Artifact:
+        """Execute load and enforce its contract."""
         key = (tenant_id, artifact_id)
         if key not in self._items:
             raise KeyError(f"Artifact not found: {artifact_id}")
@@ -83,6 +96,8 @@ class InMemoryArtifactStore(ArtifactStore):
 
 
 class HostileArtifactStore(ArtifactStore):
+    """Behavioral contract for HostileArtifactStore."""
+
     def __init__(
         self,
         *,
@@ -91,6 +106,7 @@ class HostileArtifactStore(ArtifactStore):
         drop_rate: float = 0.2,
         corruption_rate: float = 0.2,
     ) -> None:
+        """Internal helper; not part of the public API."""
         self._seed = seed
         self._max_delay = max_delay
         self._drop_rate = drop_rate
@@ -110,6 +126,7 @@ class HostileArtifactStore(ArtifactStore):
         content_hash: ContentHash,
         scope: ArtifactScope,
     ) -> Artifact:
+        """Execute create and enforce its contract."""
         artifact = Artifact(
             spec_version=spec_version,
             artifact_id=artifact_id,
@@ -124,6 +141,7 @@ class HostileArtifactStore(ArtifactStore):
         return artifact
 
     def save(self, artifact: Artifact) -> None:
+        """Execute save and enforce its contract."""
         key = (artifact.tenant_id, artifact.artifact_id)
         existing = self._items.get(key)
         if existing is not None:
@@ -151,6 +169,7 @@ class HostileArtifactStore(ArtifactStore):
         self._items[key] = stored
 
     def load(self, artifact_id: ArtifactID, *, tenant_id: TenantID) -> Artifact:
+        """Execute load and enforce its contract."""
         self._tick()
         key = (tenant_id, artifact_id)
         if key in self._pending:
@@ -165,12 +184,14 @@ class HostileArtifactStore(ArtifactStore):
         return self._items[key]
 
     def _tick(self) -> None:
+        """Internal helper; not part of the public API."""
         for key, (artifact, delay) in list(self._pending.items()):
             if delay <= 0:
                 self._items[key] = artifact
                 self._pending.pop(key, None)
 
     def _decision(self, artifact_id: ArtifactID) -> dict[str, object]:
+        """Internal helper; not part of the public API."""
         payload = f"{self._seed}:{artifact_id}"
         digest = self._hash_payload(payload)
         bucket = int(digest[:8], 16) % 100
@@ -185,4 +206,5 @@ class HostileArtifactStore(ArtifactStore):
 
     @staticmethod
     def _hash_payload(payload: str) -> str:
+        """Internal helper; not part of the public API."""
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()

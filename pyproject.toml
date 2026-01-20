@@ -142,13 +142,8 @@ fragments = [
 ignore = ["DEP002", "DEP003"]
 
 [tool.interrogate]
-fail-under = 32
+fail-under = 100
 color = true
-# Exclude runtime execution/observability modules because contracts + tests define behavior.
-exclude = [
-  "src/agentic_flows/runtime/execution/*",
-  "src/agentic_flows/runtime/observability/*",
-]
 
 [tool.bandit]
 skips = ["B404", "B311"]

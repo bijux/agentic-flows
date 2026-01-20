@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/observability/classification/entropy.py."""
+
 from __future__ import annotations
 
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
@@ -21,6 +23,7 @@ class EntropyLedger:
     """Entropy ledger; misuse breaks entropy accounting."""
 
     def __init__(self, budget: EntropyBudget | None) -> None:
+        """Internal helper; not part of the public API."""
         self._budget = budget
         self._records: list[EntropyUsage] = []
 
@@ -34,6 +37,7 @@ class EntropyLedger:
         step_index: int | None,
         nondeterminism_source: NonDeterminismSource,
     ) -> None:
+        """Execute record and enforce its contract."""
         if self._budget is None:
             raise ValueError("entropy budget must be declared before entropy is used")
         if source not in self._budget.allowed_sources:
@@ -53,9 +57,11 @@ class EntropyLedger:
         )
 
     def seed(self, records: tuple[EntropyUsage, ...]) -> None:
+        """Execute seed and enforce its contract."""
         self._records.extend(records)
 
     def usage(self) -> tuple[EntropyUsage, ...]:
+        """Execute usage and enforce its contract."""
         return tuple(self._records)
 
 

@@ -4,6 +4,8 @@
 # This implementation is provisional.
 # Semantic authority lives in docs/guarantees/system_guarantees.md.
 # Code must change to match semantics, never the reverse.
+"""Module definitions for __init__.py."""
+
 from __future__ import annotations
 
 from agentic_flows.api import FlowManifest, RunMode, execute_flow

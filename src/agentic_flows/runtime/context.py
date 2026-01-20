@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/context.py."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -48,6 +50,8 @@ class RunMode(str, Enum):
 
 @dataclass(frozen=True)
 class ExecutionContext:
+    """Behavioral contract for ExecutionContext."""
+
     authority: AuthorityToken
     seed: str | None
     environment_fingerprint: EnvironmentFingerprint
@@ -81,20 +85,25 @@ class ExecutionContext:
     def record_evidence(
         self, step_index: int, evidence: list[RetrievedEvidence]
     ) -> None:
+        """Execute record_evidence and enforce its contract."""
         self._step_evidence[step_index] = tuple(evidence)
 
     def record_artifacts(self, step_index: int, artifacts: list[Artifact]) -> None:
+        """Execute record_artifacts and enforce its contract."""
         for artifact in artifacts:
             self.artifact_store.load(artifact.artifact_id, tenant_id=self.tenant_id)
         self._step_artifacts[step_index] = tuple(artifacts)
 
     def evidence_for_step(self, step_index: int) -> tuple[RetrievedEvidence, ...]:
+        """Execute evidence_for_step and enforce its contract."""
         return self._step_evidence.get(step_index, ())
 
     def artifacts_for_step(self, step_index: int) -> tuple[Artifact, ...]:
+        """Execute artifacts_for_step and enforce its contract."""
         return self._step_artifacts.get(step_index, ())
 
     def recorded_steps(self) -> tuple[int, ...]:
+        """Execute recorded_steps and enforce its contract."""
         return tuple(self._step_artifacts.keys())
 
     def consume_budget(
@@ -105,17 +114,21 @@ class ExecutionContext:
         artifacts: int = 0,
         trace_events: int = 0,
     ) -> None:
+        """Execute consume_budget and enforce its contract."""
         self.budget.consume(steps=steps, tokens=tokens, artifacts=artifacts)
         if trace_events:
             self.budget.consume_trace_events(trace_events)
 
     def start_step_budget(self) -> None:
+        """Execute start_step_budget and enforce its contract."""
         self.budget.start_step()
 
     def consume_step_artifacts(self, artifacts: int) -> None:
+        """Execute consume_step_artifacts and enforce its contract."""
         self.budget.consume_step_artifacts(artifacts)
 
     def consume_evidence_budget(self, evidence_items: int) -> None:
+        """Execute consume_evidence_budget and enforce its contract."""
         self.budget.consume_evidence(evidence_items)
 
     def record_entropy(
@@ -127,6 +140,7 @@ class ExecutionContext:
         step_index: int | None,
         nondeterminism_source: NonDeterminismSource,
     ) -> None:
+        """Execute record_entropy and enforce its contract."""
         self.entropy.record(
             tenant_id=self.tenant_id,
             source=source,
@@ -137,12 +151,15 @@ class ExecutionContext:
         )
 
     def entropy_usage(self) -> tuple[EntropyUsage, ...]:
+        """Execute entropy_usage and enforce its contract."""
         return self.entropy.usage()
 
     def cancel(self) -> None:
+        """Execute cancel and enforce its contract."""
         object.__setattr__(self, "_cancelled", True)
 
     def is_cancelled(self) -> bool:
+        """Execute is_cancelled and enforce its contract."""
         return object.__getattribute__(self, "_cancelled")
 
 

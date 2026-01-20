@@ -4,6 +4,8 @@
 # Agent execution is the only place bijux-agent may be invoked.
 # Allowed: seeded agent execution with explicit inputs and seeded randomness.
 # Forbidden: I/O, network access, retrieval, vector search, reasoning, or memory writes.
+"""Module definitions for runtime/execution/agent_executor.py."""
+
 from __future__ import annotations
 
 import hashlib
@@ -24,10 +26,14 @@ from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
 
 
 class AgentExecutor:
+    """Behavioral contract for AgentExecutor."""
+
     def __init__(self) -> None:
+        """Internal helper; not part of the public API."""
         self._state_tracker: ExecutionStateTracker | None = None
 
     def execute(self, step: ResolvedStep, context: ExecutionContext) -> list[Artifact]:
+        """Execute execute and enforce its contract."""
         if self._state_tracker is None:
             self._state_tracker = ExecutionStateTracker(context.seed)
         seed = deterministic_seed(step.step_index, step.inputs_fingerprint)
@@ -54,6 +60,7 @@ class AgentExecutor:
         outputs: Any,
         context: ExecutionContext,
     ) -> list[Artifact]:
+        """Internal helper; not part of the public API."""
         if not isinstance(outputs, list):
             raise ValueError("agent outputs must be a list")
 
@@ -96,6 +103,7 @@ class AgentExecutor:
         artifacts: list[Artifact],
         context: ExecutionContext,
     ) -> Artifact:
+        """Internal helper; not part of the public API."""
         state_hash = self._state_tracker.advance(step)
         return context.artifact_store.create(
             spec_version="v1",
@@ -110,5 +118,6 @@ class AgentExecutor:
 
     @staticmethod
     def _hash_content(content: Any) -> str:
+        """Internal helper; not part of the public API."""
         payload = str(content).encode("utf-8")
         return hashlib.sha256(payload).hexdigest()

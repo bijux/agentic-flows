@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for core/authority.py."""
+
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
@@ -32,15 +34,21 @@ Mode = Literal["plan", "dry-run", "live", "observe", "unsafe"]
 
 
 class _Event(Protocol):
+    """Internal helper type; not part of the public API."""
+
     event_type: EventType
 
 
 class _Trace(Protocol):
+    """Internal helper type; not part of the public API."""
+
     finalized: bool
     events: Sequence[_Event]
 
 
 class _RunResult(Protocol):
+    """Internal helper type; not part of the public API."""
+
     trace: _Trace | None
     verification_results: Sequence[object]
     verification_arbitrations: Sequence[VerificationArbitration]
@@ -164,6 +172,7 @@ def baseline_violations(
 
 
 def _require_trace_finalized(result: _RunResult) -> None:
+    """Internal helper; not part of the public API."""
     if result.trace is None:
         raise SemanticViolationError("execution trace must be returned for execution")
     if not result.trace.finalized:
@@ -171,6 +180,7 @@ def _require_trace_finalized(result: _RunResult) -> None:
 
 
 def _require_verification_once_per_step(result: _RunResult) -> None:
+    """Internal helper; not part of the public API."""
     reasoning_bundle_ids = {
         bundle.bundle_id
         for bundle in result.reasoning_bundles
@@ -198,6 +208,7 @@ def _require_verification_once_per_step(result: _RunResult) -> None:
 
 
 def _has_event(events: Iterable[_Event], failure_events: set[EventType]) -> bool:
+    """Internal helper; not part of the public API."""
     return any(event.event_type in failure_events for event in events)
 
 

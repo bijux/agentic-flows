@@ -80,7 +80,7 @@ _MIGRATIONS = (
     (
         1,
         """
-        CREATE TABLE IF NOT EXISTS artifacts (
+        CREATE TABLE IF NOT EXISTS artifact (
             artifact_id TEXT PRIMARY KEY,
             spec_version TEXT NOT NULL,
             artifact_type TEXT NOT NULL,
@@ -151,14 +151,14 @@ class SqliteArtifactStore(ArtifactStore):
             artifact.scope.value,
         )
         cursor = self._connection.execute(
-            "SELECT 1 FROM artifacts WHERE artifact_id = ?",
+            "SELECT 1 FROM artifact WHERE artifact_id = ?",
             (str(artifact.artifact_id),),
         )
         if cursor.fetchone() is not None:
             raise ValueError("Artifact IDs must be unique per run")
         self._connection.execute(
             """
-            INSERT INTO artifacts (
+            INSERT INTO artifact (
                 artifact_id,
                 spec_version,
                 artifact_type,
@@ -177,7 +177,7 @@ class SqliteArtifactStore(ArtifactStore):
             """
             SELECT spec_version, artifact_type, producer, parent_artifacts,
                    content_hash, scope
-            FROM artifacts WHERE artifact_id = ?
+            FROM artifact WHERE artifact_id = ?
             """,
             (str(artifact_id),),
         )

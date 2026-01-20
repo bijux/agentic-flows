@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for core/verification_rules.py."""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
@@ -32,12 +34,15 @@ class RuleRegistry:
     """Rule registry; misuse breaks rule enforcement."""
 
     def __init__(self) -> None:
+        """Internal helper; not part of the public API."""
         self._rules: dict[RuleID, tuple[RuleEvaluator, RuleMetadata]] = {}
 
     def register(self, evaluator: RuleEvaluator, metadata: RuleMetadata) -> None:
+        """Execute register and enforce its contract."""
         self._rules[metadata.rule_id] = (evaluator, metadata)
 
     def metadata(self, rule_id: RuleID) -> RuleMetadata:
+        """Execute metadata and enforce its contract."""
         if rule_id not in self._rules:
             raise ValueError(f"verification rule not registered: {rule_id}")
         return self._rules[rule_id][1]
@@ -51,6 +56,7 @@ class RuleRegistry:
         *,
         include_baseline: bool = True,
     ) -> tuple[list[RuleID], int, list[RuleID]]:
+        """Execute evaluate and enforce its contract."""
         violations: list[RuleID] = []
         randomness_violations: list[RuleID] = []
         total_cost = 0
@@ -97,6 +103,7 @@ def default_rule_registry() -> RuleRegistry:
 
 
 def _meta(rule_id: str, cost: int) -> RuleMetadata:
+    """Internal helper; not part of the public API."""
     return RuleMetadata(
         rule_id=RuleID(rule_id),
         randomness=VerificationRandomness.DETERMINISTIC,
@@ -109,6 +116,7 @@ def _claim_requires_evidence(
     _evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     return all(claim.supported_by for claim in reasoning.claims)
 
 
@@ -117,6 +125,7 @@ def _confidence_in_range(
     _evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     return all(0.0 <= claim.confidence <= 1.0 for claim in reasoning.claims)
 
 
@@ -125,6 +134,7 @@ def _unique_claim_ids(
     _evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     claim_ids = [claim.claim_id for claim in reasoning.claims]
     return len(set(claim_ids)) == len(claim_ids)
 
@@ -134,6 +144,7 @@ def _bundle_evidence_ids_match_inputs(
     evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     evidence_ids = {item.evidence_id for item in evidence}
     return set(reasoning.evidence_ids) == evidence_ids
 
@@ -143,6 +154,7 @@ def _claim_supports_known_evidence(
     evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     evidence_ids = {item.evidence_id for item in evidence}
     return all(
         evidence_id in evidence_ids
@@ -156,6 +168,7 @@ def _claim_mentions_evidence_id(
     evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     evidence_map = {item.evidence_id: item for item in evidence}
     for claim in reasoning.claims:
         for evidence_id in claim.supported_by:
@@ -172,6 +185,7 @@ def _claim_mentions_evidence_hash(
     evidence: Sequence[RetrievedEvidence],
     _artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     evidence_map = {item.evidence_id: item for item in evidence}
     for claim in reasoning.claims:
         for evidence_id in claim.supported_by:
@@ -188,6 +202,7 @@ def _claim_mentions_artifact_hash(
     _evidence: Sequence[RetrievedEvidence],
     artifacts: Sequence[Artifact],
 ) -> bool:
+    """Internal helper; not part of the public API."""
     if not artifacts:
         return True
     artifact_hashes = {artifact.content_hash for artifact in artifacts}
@@ -198,6 +213,7 @@ def _claim_mentions_artifact_hash(
 
 
 def _randomness_rank(randomness: VerificationRandomness) -> int:
+    """Internal helper; not part of the public API."""
     return {
         VerificationRandomness.DETERMINISTIC: 0,
         VerificationRandomness.SAMPLED: 1,

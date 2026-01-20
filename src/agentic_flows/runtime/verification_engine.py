@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
-# Verification must never call agents or modify artifacts; epistemic truth is delegated to authority.
+# Verification must never call agents or modify artifact; epistemic truth is delegated to authority.
+"""Module definitions for runtime/verification_engine.py."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -39,7 +41,9 @@ class VerificationEngine(Protocol):
         evidence: list[RetrievedEvidence],
         artifacts: list[Artifact],
         policy: VerificationPolicy,
-    ) -> VerificationResult: ...
+    ) -> VerificationResult:
+        """Execute verify and enforce its contract."""
+        ...
 
 
 class FlowVerificationEngine(Protocol):
@@ -51,7 +55,9 @@ class FlowVerificationEngine(Protocol):
         self,
         reasoning_bundles: list[ReasoningBundle],
         policy: VerificationPolicy,
-    ) -> VerificationResult: ...
+    ) -> VerificationResult:
+        """Execute verify_flow and enforce its contract."""
+        ...
 
 
 @dataclass(frozen=True)
@@ -67,6 +73,7 @@ class ContentVerificationEngine:
         artifacts: list[Artifact],
         policy: VerificationPolicy,
     ) -> VerificationResult:
+        """Execute verify and enforce its contract."""
         result = evaluate_verification(reasoning, evidence, artifacts, policy)
         randomness = _max_rule_randomness(policy.rules)
         return VerificationResult(
@@ -96,6 +103,7 @@ class SignatureVerificationEngine:
         artifacts: list[Artifact],
         policy: VerificationPolicy,
     ) -> VerificationResult:
+        """Execute verify and enforce its contract."""
         return VerificationResult(
             spec_version="v1",
             engine_id=self.engine_id,
@@ -121,6 +129,7 @@ class ContradictionVerificationEngine:
         reasoning_bundles: list[ReasoningBundle],
         policy: VerificationPolicy,
     ) -> VerificationResult:
+        """Execute verify_flow and enforce its contract."""
         violations = _detect_contradictions(reasoning_bundles)
         status = "PASS"
         reason = "no_contradictions"
@@ -145,6 +154,7 @@ class ContradictionVerificationEngine:
 def _detect_contradictions(
     bundles: list[ReasoningBundle],
 ) -> tuple[RuleID, ...]:
+    """Internal helper; not part of the public API."""
     statements: dict[str, list[float]] = {}
     negatives: set[str] = set()
     circular = False
@@ -180,6 +190,7 @@ def _detect_contradictions(
 
 
 def _normalize_statement(statement: str) -> str:
+    """Internal helper; not part of the public API."""
     return " ".join(statement.lower().strip().split())
 
 
@@ -192,6 +203,7 @@ class VerificationOrchestrator:
         bundle_engines: tuple[VerificationEngine, ...] | None = None,
         flow_engines: tuple[FlowVerificationEngine, ...] | None = None,
     ) -> None:
+        """Internal helper; not part of the public API."""
         self._bundle_engines = bundle_engines or (
             ContentVerificationEngine(),
             SignatureVerificationEngine(),
@@ -205,6 +217,7 @@ class VerificationOrchestrator:
         artifacts: list[Artifact],
         policy: VerificationPolicy,
     ) -> tuple[list[VerificationResult], VerificationArbitration]:
+        """Execute verify_bundle and enforce its contract."""
         results = [
             engine.verify(reasoning, evidence, artifacts, policy)
             for engine in self._bundle_engines
@@ -217,6 +230,7 @@ class VerificationOrchestrator:
         reasoning_bundles: list[ReasoningBundle],
         policy: VerificationPolicy,
     ) -> tuple[list[VerificationResult], VerificationArbitration]:
+        """Execute verify_flow and enforce its contract."""
         results = [
             engine.verify_flow(reasoning_bundles, policy)
             for engine in self._flow_engines
@@ -228,6 +242,7 @@ class VerificationOrchestrator:
 def _arbitrate(
     results: list[VerificationResult], policy: VerificationPolicy
 ) -> VerificationArbitration:
+    """Internal helper; not part of the public API."""
     arbitration_policy = policy.arbitration_policy
     rule = arbitration_policy.rule
     statuses = [result.status for result in results]
@@ -278,6 +293,7 @@ def _arbitrate(
 
 
 def _max_rule_randomness(rules: tuple[object, ...]) -> VerificationRandomness:
+    """Internal helper; not part of the public API."""
     if not rules:
         return VerificationRandomness.DETERMINISTIC
     return max(
@@ -289,12 +305,14 @@ def _max_rule_randomness(rules: tuple[object, ...]) -> VerificationRandomness:
 def _max_result_randomness(
     results: list[VerificationResult],
 ) -> VerificationRandomness:
+    """Internal helper; not part of the public API."""
     if not results:
         return VerificationRandomness.DETERMINISTIC
     return max((result.randomness for result in results), key=_randomness_rank)
 
 
 def _randomness_rank(randomness: VerificationRandomness) -> int:
+    """Internal helper; not part of the public API."""
     order = {
         VerificationRandomness.DETERMINISTIC: 0,
         VerificationRandomness.SAMPLED: 1,
@@ -306,6 +324,7 @@ def _randomness_rank(randomness: VerificationRandomness) -> int:
 def _randomness_exceeds(
     observed: VerificationRandomness, tolerance: VerificationRandomness
 ) -> bool:
+    """Internal helper; not part of the public API."""
     return _randomness_rank(observed) > _randomness_rank(tolerance)
 
 

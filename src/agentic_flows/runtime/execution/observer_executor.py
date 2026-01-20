@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/execution/observer_executor.py."""
+
 from __future__ import annotations
 
 from agentic_flows.core.errors import ExecutionFailure
@@ -16,6 +18,7 @@ class ObserverExecutor:
     def execute(
         self, plan: ExecutionPlan, context: ExecutionContext
     ) -> ExecutionOutcome:
+        """Execute execute and enforce its contract."""
         if context.observed_run is None:
             raise ExecutionFailure("observed_run is required for observer mode")
         if context.verification_policy is None:

@@ -3,6 +3,8 @@
 # Never persists: in-memory executor state, transient runtime caches, or raw tool sessions.
 # Incorrect assumption: live process environment variables are persisted.
 
+"""Module definitions for runtime/observability/storage/execution_store.py."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -72,9 +74,10 @@ SCHEMA_HASH_PATH = Path(__file__).resolve().parents[1] / "schema.hash"
 
 
 class DuckDBExecutionStore:
-    """Persists runs, steps, events, artifacts, evidence, entropy usage, tool invocations, claim ids, dataset metadata, and replay envelopes; intentionally excludes in-memory execution state, transient executor caches, and any non-persisted runtime objects."""
+    """Persists runs, steps, events, artifact, evidence, entropy usage, tool invocations, claim ids, dataset metadata, and replay envelopes; intentionally excludes in-memory execution state, transient executor caches, and any non-persisted runtime objects."""
 
     def __init__(self, path: Path) -> None:
+        """Internal helper; not part of the public API."""
         self._connection = duckdb.connect(str(path))
         self._migrate()
 
@@ -84,6 +87,7 @@ class DuckDBExecutionStore:
         plan: ExecutionSteps,
         mode: RunMode,
     ) -> RunID:
+        """Execute begin_run and enforce its contract."""
         run_id = RunID(str(uuid4()))
         created_at = datetime.now(tz=UTC).isoformat()
         self._connection.execute(
@@ -148,6 +152,7 @@ class DuckDBExecutionStore:
         return run_id
 
     def finalize_run(self, *, run_id: RunID, trace: ExecutionTrace) -> None:
+        """Execute finalize_run and enforce its contract."""
         self._connection.execute(
             """
             UPDATE runs
@@ -195,6 +200,7 @@ class DuckDBExecutionStore:
         plan: ExecutionSteps,
         mode: RunMode,
     ) -> RunID:
+        """Execute save_run and enforce its contract."""
         run_id = self.begin_run(plan=plan, mode=mode)
         if trace is not None:
             self.finalize_run(run_id=run_id, trace=trace)
@@ -203,6 +209,7 @@ class DuckDBExecutionStore:
     def save_steps(
         self, *, run_id: RunID, tenant_id: TenantID, plan: ExecutionSteps
     ) -> None:
+        """Execute save_steps and enforce its contract."""
         for step in plan.steps:
             self._connection.execute(
                 """
@@ -254,6 +261,7 @@ class DuckDBExecutionStore:
         tenant_id: TenantID,
         events: tuple[ExecutionEvent, ...],
     ) -> None:
+        """Execute save_events and enforce its contract."""
         for event in events:
             payload = event.payload or {}
             self._connection.execute(
@@ -295,6 +303,7 @@ class DuckDBExecutionStore:
         step_index: int,
         event_index: int,
     ) -> None:
+        """Execute save_checkpoint and enforce its contract."""
         self._connection.execute(
             """
             INSERT OR REPLACE INTO run_checkpoints (
@@ -317,6 +326,7 @@ class DuckDBExecutionStore:
         self._connection.commit()
 
     def save_artifacts(self, *, run_id: RunID, artifacts: list[Artifact]) -> None:
+        """Execute save_artifacts and enforce its contract."""
         for artifact in artifacts:
             self._connection.execute(
                 """
@@ -368,6 +378,7 @@ class DuckDBExecutionStore:
         evidence: list[RetrievedEvidence],
         starting_index: int,
     ) -> None:
+        """Execute append_evidence and enforce its contract."""
         for offset, item in enumerate(evidence):
             self._connection.execute(
                 """
@@ -405,6 +416,7 @@ class DuckDBExecutionStore:
         usage: tuple[EntropyUsage, ...],
         starting_index: int,
     ) -> None:
+        """Execute append_entropy_usage and enforce its contract."""
         for offset, item in enumerate(usage):
             self._connection.execute(
                 """
@@ -445,6 +457,7 @@ class DuckDBExecutionStore:
         tool_invocations: tuple[ToolInvocation, ...],
         starting_index: int,
     ) -> None:
+        """Execute append_tool_invocations and enforce its contract."""
         for offset, item in enumerate(tool_invocations):
             self._connection.execute(
                 """
@@ -480,6 +493,7 @@ class DuckDBExecutionStore:
     def append_claim_ids(
         self, *, run_id: RunID, tenant_id: TenantID, claim_ids: tuple[ClaimID, ...]
     ) -> None:
+        """Execute append_claim_ids and enforce its contract."""
         for claim_id in claim_ids:
             self._connection.execute(
                 """
@@ -491,6 +505,7 @@ class DuckDBExecutionStore:
         self._connection.commit()
 
     def register_dataset(self, dataset: DatasetDescriptor) -> None:
+        """Execute register_dataset and enforce its contract."""
         validate_dataset_descriptor(dataset)
         self._assert_dvc_dataset(dataset)
         existing = self._connection.execute(
@@ -555,6 +570,7 @@ class DuckDBExecutionStore:
         self._connection.commit()
 
     def load_trace(self, run_id: RunID, *, tenant_id: TenantID) -> ExecutionTrace:
+        """Execute load_trace and enforce its contract."""
         run_row = self._connection.execute(
             """
             SELECT
@@ -634,6 +650,7 @@ class DuckDBExecutionStore:
     def load_replay_envelope(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> ReplayEnvelope:
+        """Execute load_replay_envelope and enforce its contract."""
         row = self._connection.execute(
             """
             SELECT replay_envelope_min_claim_overlap,
@@ -654,6 +671,7 @@ class DuckDBExecutionStore:
     def load_dataset_descriptor(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> DatasetDescriptor:
+        """Execute load_dataset_descriptor and enforce its contract."""
         row = self._connection.execute(
             """
             SELECT dataset_id, dataset_version, dataset_state, dataset_hash, dataset_storage_uri
@@ -677,36 +695,43 @@ class DuckDBExecutionStore:
     def load_events(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ExecutionEvent, ...]:
+        """Execute load_events and enforce its contract."""
         return self._load_events(run_id, tenant_id=tenant_id)
 
     def load_artifacts(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[Artifact, ...]:
+        """Execute load_artifacts and enforce its contract."""
         return self._load_artifacts(run_id, tenant_id=tenant_id)
 
     def load_evidence(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[RetrievedEvidence, ...]:
+        """Execute load_evidence and enforce its contract."""
         return self._load_evidence(run_id, tenant_id=tenant_id)
 
     def load_tool_invocations(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ToolInvocation, ...]:
+        """Execute load_tool_invocations and enforce its contract."""
         return self._load_tool_invocations(run_id, tenant_id=tenant_id)
 
     def load_entropy_usage(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[EntropyUsage, ...]:
+        """Execute load_entropy_usage and enforce its contract."""
         return self._load_entropy_usage(run_id, tenant_id=tenant_id)
 
     def load_claim_ids(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ClaimID, ...]:
+        """Execute load_claim_ids and enforce its contract."""
         return self._load_claim_ids(run_id, tenant_id=tenant_id)
 
     def load_checkpoint(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[int, int] | None:
+        """Execute load_checkpoint and enforce its contract."""
         row = self._connection.execute(
             """
             SELECT step_index, event_index
@@ -722,6 +747,7 @@ class DuckDBExecutionStore:
     def _load_events(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ExecutionEvent, ...]:
+        """Internal helper; not part of the public API."""
         rows = self._connection.execute(
             """
             SELECT
@@ -755,6 +781,7 @@ class DuckDBExecutionStore:
     def _load_artifacts(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[Artifact, ...]:
+        """Internal helper; not part of the public API."""
         parent_rows = self._connection.execute(
             """
             SELECT artifact_id, parent_artifact_id
@@ -791,6 +818,7 @@ class DuckDBExecutionStore:
     def _load_evidence(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[RetrievedEvidence, ...]:
+        """Internal helper; not part of the public API."""
         rows = self._connection.execute(
             """
             SELECT evidence_id, determinism, source_uri, content_hash, score, vector_contract_id
@@ -817,6 +845,7 @@ class DuckDBExecutionStore:
     def _load_tool_invocations(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ToolInvocation, ...]:
+        """Internal helper; not part of the public API."""
         rows = self._connection.execute(
             """
             SELECT tool_id, determinism_level, inputs_fingerprint, outputs_fingerprint, duration, outcome
@@ -841,6 +870,7 @@ class DuckDBExecutionStore:
     def _load_entropy_usage(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[EntropyUsage, ...]:
+        """Internal helper; not part of the public API."""
         rows = self._connection.execute(
             """
             SELECT
@@ -878,6 +908,7 @@ class DuckDBExecutionStore:
     def _load_claim_ids(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ClaimID, ...]:
+        """Internal helper; not part of the public API."""
         rows = self._connection.execute(
             """
             SELECT claim_id FROM claims
@@ -889,12 +920,14 @@ class DuckDBExecutionStore:
 
     @staticmethod
     def _scope_type(scope: StepID | FlowID) -> str:
+        """Internal helper; not part of the public API."""
         return "step" if isinstance(scope, StepID) else "flow"
 
     @staticmethod
     def _load_nondeterminism_source(
         *, source: EntropySource, authorized: bool, scope_id: str, scope_type: str
     ) -> NonDeterminismSource:
+        """Internal helper; not part of the public API."""
         if scope_type == "step":
             scope: StepID | FlowID = StepID(scope_id)
         else:
@@ -908,6 +941,7 @@ class DuckDBExecutionStore:
     def _load_child_flow_ids(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[FlowID, ...]:
+        """Internal helper; not part of the public API."""
         rows = self._connection.execute(
             """
             SELECT child_flow_id FROM run_children
@@ -918,6 +952,7 @@ class DuckDBExecutionStore:
         return tuple(FlowID(row[0]) for row in rows)
 
     def _assert_dvc_dataset(self, dataset: DatasetDescriptor) -> None:
+        """Internal helper; not part of the public API."""
         if dataset.dataset_state is not DatasetState.FROZEN:
             return
         if dataset.storage_uri.startswith("file://"):
@@ -937,6 +972,7 @@ class DuckDBExecutionStore:
             )
 
     def _persist_entropy_budget(self, run_id: RunID, plan: ExecutionSteps) -> None:
+        """Internal helper; not part of the public API."""
         budget = plan.entropy_budget
         for source in budget.allowed_sources:
             self._connection.execute(
@@ -970,6 +1006,7 @@ class DuckDBExecutionStore:
             )
 
     def _migrate(self) -> None:
+        """Internal helper; not part of the public API."""
         self._connection.execute(
             """
             CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -1024,6 +1061,7 @@ class DuckDBExecutionStore:
         self._assert_schema_contract(latest_version)
 
     def _assert_schema_contract(self, latest_version: int) -> None:
+        """Internal helper; not part of the public API."""
         contract_payload = schema_contracts.load_schema_contract(SCHEMA_CONTRACT_PATH)
         contract_hash = schema_contracts.hash_payload(contract_payload)
         expected_hash = schema_contracts.load_schema_hash(SCHEMA_HASH_PATH)
@@ -1062,18 +1100,22 @@ class DuckDBExecutionStore:
 
     @staticmethod
     def _hash_payload(payload: str) -> str:
+        """Internal helper; not part of the public API."""
         return schema_contracts.hash_payload(payload)
 
     @staticmethod
     def _load_schema_contract() -> str:
+        """Internal helper; not part of the public API."""
         return schema_contracts.load_schema_contract(SCHEMA_CONTRACT_PATH)
 
     @staticmethod
     def _load_schema_hash() -> str:
+        """Internal helper; not part of the public API."""
         return schema_contracts.load_schema_hash(SCHEMA_HASH_PATH)
 
     @staticmethod
     def _load_migrations() -> dict[int, str]:
+        """Internal helper; not part of the public API."""
         if not MIGRATIONS_DIR.exists():
             raise RuntimeError("Migration directory missing.")
         migrations: dict[int, str] = {}
@@ -1087,19 +1129,23 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
     """DuckDB write store; misuse breaks append-only guarantees."""
 
     def __init__(self, path: Path) -> None:
+        """Internal helper; not part of the public API."""
         self.path = path
         self._store = DuckDBExecutionStore(path)
         self._connection = self._store._connection
 
     def begin_run(self, *, plan: ExecutionSteps, mode: RunMode) -> RunID:
+        """Execute begin_run and enforce its contract."""
         return self._store.begin_run(plan=plan, mode=mode)
 
     def finalize_run(self, *, run_id: RunID, trace: ExecutionTrace) -> None:
+        """Execute finalize_run and enforce its contract."""
         self._store.finalize_run(run_id=run_id, trace=trace)
 
     def save_steps(
         self, *, run_id: RunID, tenant_id: TenantID, plan: ExecutionSteps
     ) -> None:
+        """Execute save_steps and enforce its contract."""
         self._store.save_steps(run_id=run_id, tenant_id=tenant_id, plan=plan)
 
     def save_checkpoint(
@@ -1110,6 +1156,7 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
         step_index: int,
         event_index: int,
     ) -> None:
+        """Execute save_checkpoint and enforce its contract."""
         self._store.save_checkpoint(
             run_id=run_id,
             tenant_id=tenant_id,
@@ -1124,9 +1171,11 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
         tenant_id: TenantID,
         events: tuple[ExecutionEvent, ...],
     ) -> None:
+        """Execute save_events and enforce its contract."""
         self._store.save_events(run_id=run_id, tenant_id=tenant_id, events=events)
 
     def save_artifacts(self, *, run_id: RunID, artifacts: list[Artifact]) -> None:
+        """Execute save_artifacts and enforce its contract."""
         self._store.save_artifacts(run_id=run_id, artifacts=artifacts)
 
     def append_evidence(
@@ -1136,6 +1185,7 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
         evidence: list[RetrievedEvidence],
         starting_index: int,
     ) -> None:
+        """Execute append_evidence and enforce its contract."""
         self._store.append_evidence(
             run_id=run_id, evidence=evidence, starting_index=starting_index
         )
@@ -1147,6 +1197,7 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
         usage: tuple[EntropyUsage, ...],
         starting_index: int,
     ) -> None:
+        """Execute append_entropy_usage and enforce its contract."""
         self._store.append_entropy_usage(
             run_id=run_id, usage=usage, starting_index=starting_index
         )
@@ -1159,6 +1210,7 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
         tool_invocations: tuple[ToolInvocation, ...],
         starting_index: int,
     ) -> None:
+        """Execute append_tool_invocations and enforce its contract."""
         self._store.append_tool_invocations(
             run_id=run_id,
             tenant_id=tenant_id,
@@ -1169,15 +1221,18 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
     def append_claim_ids(
         self, *, run_id: RunID, tenant_id: TenantID, claim_ids: tuple[ClaimID, ...]
     ) -> None:
+        """Execute append_claim_ids and enforce its contract."""
         self._store.append_claim_ids(
             run_id=run_id, tenant_id=tenant_id, claim_ids=claim_ids
         )
 
     def register_dataset(self, dataset: DatasetDescriptor) -> None:
+        """Execute register_dataset and enforce its contract."""
         self._store.register_dataset(dataset)
 
     @staticmethod
     def _hash_payload(payload: str) -> str:
+        """Internal helper; not part of the public API."""
         return DuckDBExecutionStore._hash_payload(payload)
 
 
@@ -1185,55 +1240,66 @@ class DuckDBExecutionReadStore(ExecutionReadStoreProtocol):
     """DuckDB read store; misuse breaks replay analysis."""
 
     def __init__(self, path: Path) -> None:
+        """Internal helper; not part of the public API."""
         self._store = DuckDBExecutionStore(path)
         self._connection = self._store._connection
 
     def load_trace(self, run_id: RunID, *, tenant_id: TenantID) -> ExecutionTrace:
+        """Execute load_trace and enforce its contract."""
         return self._store.load_trace(run_id, tenant_id=tenant_id)
 
     def load_events(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ExecutionEvent, ...]:
+        """Execute load_events and enforce its contract."""
         return self._store.load_events(run_id, tenant_id=tenant_id)
 
     def load_artifacts(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[Artifact, ...]:
+        """Execute load_artifacts and enforce its contract."""
         return self._store.load_artifacts(run_id, tenant_id=tenant_id)
 
     def load_evidence(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[RetrievedEvidence, ...]:
+        """Execute load_evidence and enforce its contract."""
         return self._store.load_evidence(run_id, tenant_id=tenant_id)
 
     def load_tool_invocations(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ToolInvocation, ...]:
+        """Execute load_tool_invocations and enforce its contract."""
         return self._store.load_tool_invocations(run_id, tenant_id=tenant_id)
 
     def load_entropy_usage(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[EntropyUsage, ...]:
+        """Execute load_entropy_usage and enforce its contract."""
         return self._store.load_entropy_usage(run_id, tenant_id=tenant_id)
 
     def load_claim_ids(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[ClaimID, ...]:
+        """Execute load_claim_ids and enforce its contract."""
         return self._store.load_claim_ids(run_id, tenant_id=tenant_id)
 
     def load_checkpoint(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> tuple[int, int] | None:
+        """Execute load_checkpoint and enforce its contract."""
         return self._store.load_checkpoint(run_id, tenant_id=tenant_id)
 
     def load_replay_envelope(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> ReplayEnvelope:
+        """Execute load_replay_envelope and enforce its contract."""
         return self._store.load_replay_envelope(run_id, tenant_id=tenant_id)
 
     def load_dataset_descriptor(
         self, run_id: RunID, *, tenant_id: TenantID
     ) -> DatasetDescriptor:
+        """Execute load_dataset_descriptor and enforce its contract."""
         return self._store.load_dataset_descriptor(run_id, tenant_id=tenant_id)
 
 

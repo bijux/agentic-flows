@@ -3,6 +3,8 @@
 # Copyright © 2025 Bijan Mousavi
 # INTERNAL CORE — CHANGES REQUIRE REPLAY REVIEW
 
+"""Module definitions for runtime/orchestration/execute_flow.py."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -82,6 +84,7 @@ class ExecutionConfig:
 
     @classmethod
     def from_command(cls, command: str) -> ExecutionConfig:
+        """Execute from_command and enforce its contract."""
         if command == "plan":
             return cls(mode=RunMode.PLAN, determinism_level=None)
         if command == "dry-run":
@@ -285,6 +288,7 @@ def execute_flow(
 
 
 def _derive_seed_token(plan: ExecutionSteps) -> str | None:
+    """Internal helper; not part of the public API."""
     if not plan.steps:
         return None
     for step in plan.steps:
@@ -294,6 +298,7 @@ def _derive_seed_token(plan: ExecutionSteps) -> str | None:
 
 
 def _persist_run(result: FlowRunResult, config: ExecutionConfig) -> FlowRunResult:
+    """Internal helper; not part of the public API."""
     store = config.execution_store
     if store is None:
         raise ValueError("execution_store is required for persisted runs")
@@ -344,6 +349,7 @@ def _persist_run(result: FlowRunResult, config: ExecutionConfig) -> FlowRunResul
 
 
 def _resolve_read_store(config: ExecutionConfig) -> ExecutionReadStoreProtocol:
+    """Internal helper; not part of the public API."""
     if config.execution_read_store is not None:
         return config.execution_read_store
     if isinstance(config.execution_store, DuckDBExecutionWriteStore):
@@ -357,6 +363,7 @@ def _load_resume_state(
     run_id: RunID,
     tenant_id: TenantID,
 ) -> ResumeState:
+    """Internal helper; not part of the public API."""
     events = store.load_events(run_id, tenant_id=tenant_id)
     artifacts = store.load_artifacts(run_id, tenant_id=tenant_id)
     evidence = store.load_evidence(run_id, tenant_id=tenant_id)

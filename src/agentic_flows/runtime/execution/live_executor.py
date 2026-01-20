@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/execution/live_executor.py."""
+
 from __future__ import annotations
 
 from contextlib import suppress
@@ -60,6 +62,8 @@ from agentic_flows.spec.ontology.public import EventType
 
 @dataclass
 class _PhaseState:
+    """Internal helper type; not part of the public API."""
+
     recorder: object
     event_index: int
     artifacts: list[Artifact]
@@ -73,6 +77,7 @@ class _PhaseState:
 
 
 def _notify_stage(context: ExecutionContext, stage: str, phase: str) -> None:
+    """Internal helper; not part of the public API."""
     hook_name = f"on_stage_{phase}"
     for observer in context.observers:
         hook = getattr(observer, hook_name, None)
@@ -94,15 +99,19 @@ _EVENT_CAUSALITY = {
 
 
 def _causality_tag(event_type: EventType) -> CausalityTag:
+    """Internal helper; not part of the public API."""
     return _EVENT_CAUSALITY.get(event_type, CausalityTag.AGENT)
 
 
 class LiveExecutor:
+    """Behavioral contract for LiveExecutor."""
+
     def execute(
         self,
         plan: ExecutionPlan,
         context: ExecutionContext,
     ) -> ExecutionOutcome:
+        """Execute execute and enforce its contract."""
         _notify_stage(context, "planning", "start")
         steps_plan = self._planning_phase(plan)
         _notify_stage(context, "planning", "end")
@@ -116,11 +125,13 @@ class LiveExecutor:
 
     @staticmethod
     def _planning_phase(plan: ExecutionPlan):
+        """Internal helper; not part of the public API."""
         steps_plan = plan.plan
         enforce_flow_boundary(steps_plan)
         return steps_plan
 
     def _execution_phase(self, steps_plan, context: ExecutionContext) -> _PhaseState:
+        """Internal helper; not part of the public API."""
         recorder = context.trace_recorder
         event_index = context.starting_event_index
         artifacts: list[Artifact] = list(context.initial_artifacts)
@@ -148,6 +159,7 @@ class LiveExecutor:
         def record_event(
             event_type: EventType, step_index: int, payload: dict[str, object]
         ) -> None:
+            """Execute record_event and enforce its contract."""
             nonlocal event_index
             payload["event_type"] = event_type.value
             event = ExecutionEvent(
@@ -177,6 +189,7 @@ class LiveExecutor:
             event_index += 1
 
         def record_tool_invocation(invocation: ToolInvocation) -> None:
+            """Execute record_tool_invocation and enforce its contract."""
             nonlocal tool_invocation_index
             tool_invocations.append(invocation)
             if context.execution_store is not None and context.run_id is not None:
@@ -189,6 +202,7 @@ class LiveExecutor:
             tool_invocation_index += 1
 
         def record_evidence(items: list[RetrievedEvidence]) -> None:
+            """Execute record_evidence and enforce its contract."""
             nonlocal evidence_index
             if not items:
                 return
@@ -201,6 +215,7 @@ class LiveExecutor:
             evidence_index += len(items)
 
         def record_artifacts(items: list[Artifact]) -> None:
+            """Execute record_artifacts and enforce its contract."""
             if not items:
                 return
             if context.execution_store is not None and context.run_id is not None:
@@ -209,6 +224,7 @@ class LiveExecutor:
                 )
 
         def record_claims(claims: tuple[ClaimID, ...]) -> None:
+            """Execute record_claims and enforce its contract."""
             if not claims:
                 return
             if context.execution_store is not None and context.run_id is not None:
@@ -219,6 +235,7 @@ class LiveExecutor:
                 )
 
         def flush_entropy_usage() -> None:
+            """Execute flush_entropy_usage and enforce its contract."""
             nonlocal entropy_index
             if context.execution_store is None or context.run_id is None:
                 return
@@ -234,6 +251,7 @@ class LiveExecutor:
             entropy_index = len(usage)
 
         def enforce_entropy_authorization() -> None:
+            """Execute enforce_entropy_authorization and enforce its contract."""
             nonlocal entropy_checked_index
             usage = context.entropy_usage()
             if len(usage) <= entropy_checked_index:
@@ -249,6 +267,7 @@ class LiveExecutor:
                     )
 
         def save_checkpoint(step_index: int) -> None:
+            """Execute save_checkpoint and enforce its contract."""
             if context.execution_store is None or context.run_id is None:
                 return
             context.execution_store.save_checkpoint(
@@ -261,6 +280,7 @@ class LiveExecutor:
         previous_handler = signal.getsignal(signal.SIGINT)
 
         def _handle_interrupt(_signum, _frame) -> None:
+            """Internal helper; not part of the public API."""
             context.cancel()
 
         signal.signal(signal.SIGINT, _handle_interrupt)
@@ -910,6 +930,7 @@ class LiveExecutor:
         context: ExecutionContext,
         state: _PhaseState,
     ) -> ExecutionOutcome:
+        """Internal helper; not part of the public API."""
         if state.interrupted:
             raise ExecutionFailure("execution interrupted")
 
@@ -974,6 +995,7 @@ class LiveExecutor:
 
     @staticmethod
     def _resolver_id_from_metadata(metadata: tuple[tuple[str, str], ...]) -> str:
+        """Internal helper; not part of the public API."""
         for key, value in metadata:
             if key == "resolver_id":
                 return value

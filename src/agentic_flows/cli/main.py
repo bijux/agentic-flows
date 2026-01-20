@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for cli/main.py."""
+
 from __future__ import annotations
 
 import argparse
@@ -57,6 +59,7 @@ from agentic_flows.spec.ontology.public import (
 
 
 def _load_manifest(path: Path) -> FlowManifest:
+    """Internal helper; not part of the public API."""
     raw_contents = path.read_text(encoding="utf-8")
     payload = json.loads(raw_contents)
     allowed_keys = {
@@ -124,6 +127,7 @@ def _load_manifest(path: Path) -> FlowManifest:
 
 
 def _load_policy(path: Path) -> VerificationPolicy:
+    """Internal helper; not part of the public API."""
     raw_contents = path.read_text(encoding="utf-8")
     payload = json.loads(raw_contents)
     arbitration = payload["arbitration_policy"]
@@ -170,6 +174,7 @@ EXIT_CONTRACT_VIOLATION = 2
 
 
 def main() -> None:
+    """Execute main and enforce its contract."""
     parser = argparse.ArgumentParser(
         prog="agentic-flows",
         description=(
@@ -374,6 +379,7 @@ def main() -> None:
 
 
 def _render_result(command: str, result, *, json_output: bool) -> None:
+    """Internal helper; not part of the public API."""
     if json_output:
         _render_json_result(command, result)
         return
@@ -381,6 +387,7 @@ def _render_result(command: str, result, *, json_output: bool) -> None:
 
 
 def _render_json_result(command: str, result) -> None:
+    """Internal helper; not part of the public API."""
     if command == "plan":
         payload = asdict(result.resolved_flow.plan)
         print(json.dumps(payload, sort_keys=True))
@@ -456,7 +463,7 @@ def _render_json_result(command: str, result) -> None:
             "replay_confidence": _replay_confidence(
                 result.resolved_flow.plan.replay_acceptability
             ),
-            "artifacts": artifact_list,
+            "artifact": artifact_list,
             "retrieval_requests": retrieval_requests,
             "retrieval_evidence": evidence_list,
             "reasoning_claims": claims_list,
@@ -468,6 +475,7 @@ def _render_json_result(command: str, result) -> None:
 
 
 def _render_human_result(command: str, result) -> None:
+    """Internal helper; not part of the public API."""
     if command == "plan":
         plan = result.resolved_flow.plan
         print(
@@ -479,7 +487,7 @@ def _render_human_result(command: str, result) -> None:
         trace = result.trace
         print(
             f"Dry-run trace: run_id={result.run_id} events={len(trace.events)} "
-            f"artifacts={len(result.artifacts)}"
+            f"artifact={len(result.artifacts)}"
         )
         determinism_class = determinism_classes_for_trace(trace) if trace else []
         summary = ", ".join(determinism_class) if determinism_class else "unknown"
@@ -490,7 +498,7 @@ def _render_human_result(command: str, result) -> None:
         entropy_count = len(trace.entropy_usage) if trace is not None else 0
         print(
             f"Run complete: run_id={result.run_id} steps={len(result.resolved_flow.plan.steps)} "
-            f"artifacts={len(result.artifacts)} evidence={len(result.evidence)} "
+            f"artifact={len(result.artifacts)} evidence={len(result.evidence)} "
             f"entropy_entries={entropy_count}"
         )
         determinism_class = determinism_classes_for_trace(trace) if trace else []
@@ -501,6 +509,7 @@ def _render_human_result(command: str, result) -> None:
 
 
 def _normalize_for_json(value):
+    """Internal helper; not part of the public API."""
     if isinstance(value, tuple):
         return [_normalize_for_json(item) for item in value]
     if isinstance(value, list):
@@ -513,6 +522,7 @@ def _normalize_for_json(value):
 
 
 def _inspect_run(args: argparse.Namespace, *, json_output: bool) -> None:
+    """Internal helper; not part of the public API."""
     store = DuckDBExecutionReadStore(Path(args.db_path))
     trace = store.load_trace(RunID(args.run_id), tenant_id=TenantID(args.tenant_id))
     if json_output:
@@ -527,6 +537,7 @@ def _inspect_run(args: argparse.Namespace, *, json_output: bool) -> None:
 
 
 def _diff_runs(args: argparse.Namespace, *, json_output: bool) -> None:
+    """Internal helper; not part of the public API."""
     store = DuckDBExecutionReadStore(Path(args.db_path))
     tenant_id = TenantID(args.tenant_id)
     trace_a = store.load_trace(RunID(args.run_a), tenant_id=tenant_id)
@@ -544,6 +555,7 @@ def _diff_runs(args: argparse.Namespace, *, json_output: bool) -> None:
 
 
 def _explain_failure(args: argparse.Namespace, *, json_output: bool) -> None:
+    """Internal helper; not part of the public API."""
     store = DuckDBExecutionReadStore(Path(args.db_path))
     trace = store.load_trace(RunID(args.run_id), tenant_id=TenantID(args.tenant_id))
     failure_events = [
@@ -579,6 +591,7 @@ def _explain_failure(args: argparse.Namespace, *, json_output: bool) -> None:
 
 
 def _validate_db(args: argparse.Namespace, *, json_output: bool) -> None:
+    """Internal helper; not part of the public API."""
     DuckDBExecutionReadStore(Path(args.db_path))
     if json_output:
         print(json.dumps({"status": "ok"}, sort_keys=True))
@@ -587,6 +600,7 @@ def _validate_db(args: argparse.Namespace, *, json_output: bool) -> None:
 
 
 def _replay_confidence(acceptability: ReplayAcceptability) -> str:
+    """Internal helper; not part of the public API."""
     if acceptability == ReplayAcceptability.EXACT_MATCH:
         return "exact"
     if acceptability == ReplayAcceptability.INVARIANT_PRESERVING:
@@ -597,6 +611,7 @@ def _replay_confidence(acceptability: ReplayAcceptability) -> str:
 
 
 def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
+    """Internal helper; not part of the public API."""
     manifest = _load_manifest(Path(args.manifest))
     policy = _load_policy(Path(args.policy))
     planner = ExecutionPlanner()
@@ -639,4 +654,5 @@ def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
 
 
 def _config_mode_for_replay() -> RunMode:
+    """Internal helper; not part of the public API."""
     return RunMode.LIVE

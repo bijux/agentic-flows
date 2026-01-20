@@ -1,11 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for spec/model/reasoning_bundle.py."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
+from agentic_flows.spec.model.artifact.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.ontology.ids import AgentID, BundleID, EvidenceID
 

@@ -4,6 +4,8 @@
 # Dry-run exists to generate repeatable traces when inputs are fixed, without invoking any agent logic.
 # It must remain intelligence-free: no tools, no network, no retrieval, no reasoning code.
 # Forbidden: calling bijux-agent, bijux-rag, bijux-rar, bijux-vex, or any external side effects.
+"""Module definitions for runtime/execution/dry_run_executor.py."""
+
 from __future__ import annotations
 
 from contextlib import suppress
@@ -32,13 +34,17 @@ from agentic_flows.spec.ontology.public import EventType
 
 
 def _causality_tag(event_type: EventType) -> CausalityTag:
+    """Internal helper; not part of the public API."""
     return CausalityTag.AGENT
 
 
 class DryRunExecutor:
+    """Behavioral contract for DryRunExecutor."""
+
     def execute(
         self, plan: ExecutionPlan, context: ExecutionContext
     ) -> ExecutionOutcome:
+        """Execute execute and enforce its contract."""
         steps_plan = plan.plan
         enforce_flow_boundary(steps_plan)
         recorder = context.trace_recorder
@@ -176,6 +182,7 @@ class DryRunExecutor:
 
     @staticmethod
     def _resolver_id_from_metadata(metadata: tuple[tuple[str, str], ...]) -> str:
+        """Internal helper; not part of the public API."""
         for key, value in metadata:
             if key == "resolver_id":
                 return value

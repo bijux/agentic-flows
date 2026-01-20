@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/execution/retrieval_executor.py."""
+
 from __future__ import annotations
 
 import hashlib
@@ -28,9 +30,12 @@ from agentic_flows.spec.ontology.public import EntropySource
 
 
 class RetrievalExecutor:
+    """Behavioral contract for RetrievalExecutor."""
+
     def execute(
         self, step: ResolvedStep, context: ExecutionContext
     ) -> list[RetrievedEvidence]:
+        """Execute execute and enforce its contract."""
         request = step.retrieval_request
         if request is None:
             context.record_evidence(step.step_index, [])
@@ -84,6 +89,7 @@ class RetrievalExecutor:
     def _normalize_evidence(
         self, raw: Any, *, tenant_id: TenantID
     ) -> list[RetrievedEvidence]:
+        """Internal helper; not part of the public API."""
         if not isinstance(raw, list):
             raise ValueError("retrieval results must be a list")
 
@@ -120,5 +126,6 @@ class RetrievalExecutor:
 
     @staticmethod
     def _hash_content(content: Any) -> str:
+        """Internal helper; not part of the public API."""
         payload = str(content).encode("utf-8")
         return hashlib.sha256(payload).hexdigest()

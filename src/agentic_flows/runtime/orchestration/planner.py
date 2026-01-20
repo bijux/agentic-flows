@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for runtime/orchestration/planner.py."""
+
 from __future__ import annotations
 
 from importlib.metadata import PackageNotFoundError, version
@@ -44,11 +46,14 @@ from agentic_flows.spec.ontology.ids import (
 
 
 class ExecutionPlanner:
+    """Behavioral contract for ExecutionPlanner."""
+
     resolver_id: ResolverID = ResolverID("agentic-flows:v0")
     _bijux_cli_version: str = bijux_cli_version
     _bijux_agent_version: str = bijux_agent_version
 
     def resolve(self, manifest: FlowManifest) -> ExecutionPlan:
+        """Execute resolve and enforce its contract."""
         validate_flow_manifest(manifest)
         ordered_agents = self._toposort_agents(manifest)
         dependencies = self._parse_dependencies(manifest)
@@ -144,6 +149,7 @@ class ExecutionPlanner:
         return ordered
 
     def _parse_dependencies(self, manifest: FlowManifest) -> dict[str, list[str]]:
+        """Internal helper; not part of the public API."""
         agents = set(manifest.agents)
         mapping: dict[str, list[str]] = {agent: [] for agent in agents}
         for entry in manifest.dependencies:
@@ -162,6 +168,7 @@ class ExecutionPlanner:
         steps: list[ResolvedStep],
         dependencies: dict[str, list[str]],
     ) -> PlanHash:
+        """Internal helper; not part of the public API."""
         payload = {
             "flow_id": manifest.flow_id,
             "tenant_id": manifest.tenant_id,

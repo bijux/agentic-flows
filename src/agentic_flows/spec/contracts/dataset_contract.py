@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 
+"""Module definitions for spec/contracts/dataset_contract.py."""
+
 from __future__ import annotations
 
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor

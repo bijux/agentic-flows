@@ -15,6 +15,7 @@ def _iter_markdown_files(root: Path) -> list[Path]:
         for path in root.rglob("*.md")
         if "/.venv/" not in str(path)
         and "/.git/" not in str(path)
+        and "/artifact/" not in str(path)
         and "/artifacts/" not in str(path)
         and "/site/" not in str(path)
     ]
