@@ -159,6 +159,7 @@ components:
         - flow_id
         - status
         - determinism_class
+        - environment_fingerprint
         - replay_acceptability
         - artifact_count
       properties:
@@ -170,6 +171,10 @@ components:
           $ref: '#/components/schemas/FlowRunStatus'
         determinism_class:
           $ref: '#/components/schemas/DeterminismClass'
+        environment_fingerprint:
+          type:
+            - string
+            - "null"
         replay_acceptability:
           $ref: '#/components/schemas/ReplayAcceptability'
         artifact_count:
