@@ -11,6 +11,9 @@ import sys
 
 from agentic_flows.api import ExecutionConfig, RunMode, execute_flow
 from agentic_flows.core.errors import classify_failure
+from agentic_flows.runtime.observability.determinism_classification import (
+    determinism_classes_for_trace,
+)
 from agentic_flows.runtime.observability.execution_store import (
     DuckDBExecutionReadStore,
     DuckDBExecutionWriteStore,
@@ -443,6 +446,9 @@ def _render_human_result(command: str, result) -> None:
             f"Dry-run trace: run_id={result.run_id} events={len(trace.events)} "
             f"artifacts={len(result.artifacts)}"
         )
+        determinism_class = determinism_classes_for_trace(trace) if trace else []
+        summary = ", ".join(determinism_class) if determinism_class else "unknown"
+        print(f"Determinism class: {summary}")
         return
     if command in {"run", "unsafe-run"}:
         trace = result.trace
@@ -452,6 +458,9 @@ def _render_human_result(command: str, result) -> None:
             f"artifacts={len(result.artifacts)} evidence={len(result.evidence)} "
             f"entropy_entries={entropy_count}"
         )
+        determinism_class = determinism_classes_for_trace(trace) if trace else []
+        summary = ", ".join(determinism_class) if determinism_class else "unknown"
+        print(f"Determinism class: {summary}")
         return
     print(f"Flow loaded successfully: {result.resolved_flow.manifest.flow_id}")
 

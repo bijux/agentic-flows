@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
+# Fingerprinted: python version, OS platform, bijux package versions.
+# Ignored: hostnames, environment variables.
 
 from __future__ import annotations
 

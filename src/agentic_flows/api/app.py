@@ -102,6 +102,7 @@ def run_flow(
 ) -> JSONResponse:
     """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the declared contract."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
+    seed_value = "0"
     if (
         x_agentic_gate is None
         or x_determinism_level is None
@@ -114,7 +115,11 @@ def run_flow(
             evidence_ids=[],
             determinism_impact="structural",
         )
-        return JSONResponse(status_code=406, content=payload.model_dump())
+        return JSONResponse(
+            status_code=406,
+            content=payload.model_dump(),
+            headers={"X-Determinism-Seed": seed_value},
+        )
     if x_determinism_level not in allowed_levels:
         payload = FailureEnvelope(
             failure_class="authority",
@@ -123,7 +128,11 @@ def run_flow(
             evidence_ids=[],
             determinism_impact="structural",
         )
-        return JSONResponse(status_code=406, content=payload.model_dump())
+        return JSONResponse(
+            status_code=406,
+            content=payload.model_dump(),
+            headers={"X-Determinism-Seed": seed_value},
+        )
     payload = {
         "run_id": "run-unimplemented",
         "flow_id": "flow-unimplemented",
@@ -132,7 +141,11 @@ def run_flow(
         "replay_acceptability": "exact_match",
         "artifact_count": 0,
     }
-    return JSONResponse(status_code=200, content=payload)
+    return JSONResponse(
+        status_code=200,
+        content=payload,
+        headers={"X-Determinism-Seed": seed_value},
+    )
 
 
 @app.post("/api/v1/flows/replay")
@@ -144,6 +157,7 @@ def replay_flow(
 ) -> JSONResponse:
     """Preconditions: required headers are present, determinism level is valid, and the replay request is well-formed; acceptable replay means differences stay within the declared acceptability threshold; mismatches return FailureEnvelope with failure_class set to authority."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
+    seed_value = "0"
     if (
         x_agentic_gate is None
         or x_determinism_level is None
@@ -156,7 +170,11 @@ def replay_flow(
             evidence_ids=[],
             determinism_impact="structural",
         )
-        return JSONResponse(status_code=406, content=payload.model_dump())
+        return JSONResponse(
+            status_code=406,
+            content=payload.model_dump(),
+            headers={"X-Determinism-Seed": seed_value},
+        )
     if x_determinism_level not in allowed_levels:
         payload = FailureEnvelope(
             failure_class="authority",
@@ -165,7 +183,11 @@ def replay_flow(
             evidence_ids=[],
             determinism_impact="structural",
         )
-        return JSONResponse(status_code=406, content=payload.model_dump())
+        return JSONResponse(
+            status_code=406,
+            content=payload.model_dump(),
+            headers={"X-Determinism-Seed": seed_value},
+        )
     payload = {
         "run_id": "run-unimplemented",
         "flow_id": "flow-unimplemented",
@@ -174,4 +196,8 @@ def replay_flow(
         "replay_acceptability": "exact_match",
         "artifact_count": 0,
     }
-    return JSONResponse(status_code=200, content=payload)
+    return JSONResponse(
+        status_code=200,
+        content=payload,
+        headers={"X-Determinism-Seed": seed_value},
+    )
