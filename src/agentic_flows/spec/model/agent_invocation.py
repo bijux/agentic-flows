@@ -10,6 +10,8 @@ from agentic_flows.spec.ontology.ids import AgentID, InputsFingerprint, VersionI
 
 @dataclass(frozen=True)
 class AgentInvocation:
+    """Agent invocation record; misuse breaks execution audit."""
+
     spec_version: str
     agent_id: AgentID
     agent_version: VersionID

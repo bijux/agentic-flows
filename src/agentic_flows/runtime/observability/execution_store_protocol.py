@@ -19,6 +19,8 @@ from agentic_flows.spec.ontology.ids import ClaimID, RunID, TenantID
 
 
 class ExecutionWriteStoreProtocol(Protocol):
+    """Write store protocol; misuse breaks persistence guarantees."""
+
     def begin_run(
         self,
         *,
@@ -84,6 +86,8 @@ class ExecutionWriteStoreProtocol(Protocol):
 
 
 class ExecutionReadStoreProtocol(Protocol):
+    """Read store protocol; misuse breaks replay guarantees."""
+
     def load_trace(self, run_id: RunID, *, tenant_id: TenantID) -> ExecutionTrace: ...
 
     def load_events(

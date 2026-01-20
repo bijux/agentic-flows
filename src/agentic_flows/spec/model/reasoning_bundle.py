@@ -12,6 +12,8 @@ from agentic_flows.spec.ontology.ids import AgentID, BundleID, EvidenceID
 
 @dataclass(frozen=True)
 class ReasoningBundle:
+    """Reasoning bundle; misuse breaks claim verification."""
+
     spec_version: str
     bundle_id: BundleID
     claims: tuple[ReasoningClaim, ...]

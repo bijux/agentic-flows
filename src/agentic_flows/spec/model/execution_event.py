@@ -11,6 +11,8 @@ from agentic_flows.spec.ontology.public import EventType
 
 @dataclass(frozen=True)
 class ExecutionEvent:
+    """Execution event record; misuse breaks trace integrity."""
+
     spec_version: str
     event_index: int
     step_index: int

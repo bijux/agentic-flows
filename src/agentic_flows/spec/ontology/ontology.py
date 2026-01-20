@@ -15,6 +15,8 @@ from agentic_flows.spec.ontology.ids import ToolID as Tool
 
 
 class ArtifactType(str, Enum):
+    """Artifact types; mislabeling breaks artifact contracts."""
+
     FLOW_MANIFEST = "flow_manifest"
     EXECUTION_PLAN = "execution_plan"
     RESOLVED_STEP = "resolved_step"
@@ -32,12 +34,16 @@ class ArtifactType(str, Enum):
 
 
 class ArtifactScope(str, Enum):
+    """Artifact scope boundary; mis-scoping breaks isolation."""
+
     EPHEMERAL = "ephemeral"
     WORKING = "working"
     AUDIT = "audit"
 
 
 class EventType(str, Enum):
+    """Execution event types; misuse breaks trace invariants."""
+
     def _generate_next_value_(name, start, count, last_values):  # noqa: N805
         return name
 
@@ -64,6 +70,8 @@ class EventType(str, Enum):
 
 
 class CausalityTag(str, Enum):
+    """Causality source tags; misuse breaks audit provenance."""
+
     AGENT = "agent"
     TOOL = "tool"
     DATASET = "dataset"
@@ -72,6 +80,8 @@ class CausalityTag(str, Enum):
 
 
 class StepType(str, Enum):
+    """Step types; misuse breaks step execution semantics."""
+
     AGENT = "agent"
     RETRIEVAL = "retrieval"
     REASONING = "reasoning"
@@ -79,17 +89,23 @@ class StepType(str, Enum):
 
 
 class VerificationPhase(str, Enum):
+    """Verification phases; misuse breaks gate ordering."""
+
     PRE_EXECUTION = "pre_execution"
     POST_EXECUTION = "post_execution"
 
 
 class ArbitrationRule(str, Enum):
+    """Arbitration rules; misuse breaks verification decisions."""
+
     UNANIMOUS = "unanimous"
     QUORUM = "quorum"
     STRICT_FIRST_FAILURE = "strict_first_failure"
 
 
 class DeterminismLevel(str, Enum):
+    """Determinism level; wrong value breaks enforcement."""
+
     STRICT = "strict"
     BOUNDED = "bounded"
     PROBABILISTIC = "probabilistic"
@@ -97,6 +113,8 @@ class DeterminismLevel(str, Enum):
 
 
 class DeterminismClass(str, Enum):
+    """Determinism class; wrong value breaks classification."""
+
     STRUCTURAL = "structural"
     ENVIRONMENTAL = "environmental"
     STOCHASTIC = "stochastic"
@@ -105,6 +123,8 @@ class DeterminismClass(str, Enum):
 
 
 class FlowState(str, Enum):
+    """Flow lifecycle state; misuse breaks flow governance."""
+
     DRAFT = "draft"
     VALIDATED = "validated"
     FROZEN = "frozen"
@@ -112,24 +132,32 @@ class FlowState(str, Enum):
 
 
 class DatasetState(str, Enum):
+    """Dataset lifecycle state; misuse breaks dataset governance."""
+
     EXPERIMENTAL = "experimental"
     FROZEN = "frozen"
     DEPRECATED = "deprecated"
 
 
 class ReplayAcceptability(str, Enum):
+    """Replay acceptability; wrong value breaks replay contract."""
+
     EXACT_MATCH = "exact_match"
     INVARIANT_PRESERVING = "invariant_preserving"
     STATISTICALLY_BOUNDED = "statistically_bounded"
 
 
 class EvidenceDeterminism(str, Enum):
+    """Evidence determinism; wrong value breaks evidence trust."""
+
     DETERMINISTIC = "deterministic"
     SAMPLED = "sampled"
     EXTERNAL = "external"
 
 
 class EntropySource(str, Enum):
+    """Entropy sources; misuse breaks nondeterminism tracking."""
+
     SEEDED_RNG = "seeded_rng"
     EXTERNAL_ORACLE = "external_oracle"
     HUMAN_INPUT = "human_input"
@@ -137,18 +165,24 @@ class EntropySource(str, Enum):
 
 
 class EntropyMagnitude(str, Enum):
+    """Entropy magnitude; wrong value breaks budget enforcement."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
 
 
 class VerificationRandomness(str, Enum):
+    """Verification randomness; wrong value breaks verification policy."""
+
     DETERMINISTIC = "deterministic"
     SAMPLED = "sampled"
     STATISTICAL = "statistical"
 
 
 class ReasonCode(str, Enum):
+    """Reason codes; misuse breaks failure classification."""
+
     CONTRADICTION_DETECTED = "contradiction_detected"
 
 

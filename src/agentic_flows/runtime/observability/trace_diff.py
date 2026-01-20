@@ -24,6 +24,7 @@ def semantic_trace_diff(
     *,
     acceptability: ReplayAcceptability = ReplayAcceptability.EXACT_MATCH,
 ) -> dict[str, object]:
+    """Compute semantic trace diff; misuse hides divergence."""
     diffs: dict[str, object] = {}
     if expected.flow_id != observed.flow_id:
         diffs["flow_id"] = {"expected": expected.flow_id, "observed": observed.flow_id}
@@ -89,6 +90,7 @@ def semantic_trace_diff(
 
 
 def render_semantic_diff(diff: dict[str, object]) -> str:
+    """Render semantic diff; misuse hides operator clarity."""
     if not diff:
         return "no semantic differences"
     lines = ["semantic differences:"]
@@ -166,6 +168,7 @@ def _statistical_envelope_diff(
 def non_determinism_report(
     expected: ExecutionTrace, observed: ExecutionTrace
 ) -> dict[str, object]:
+    """Summarize nondeterminism; misuse hides entropy sources."""
     expected_summary = entropy_summary(expected.entropy_usage)
     observed_summary = entropy_summary(observed.entropy_usage)
     class_report = determinism_class_report(expected, observed)
@@ -187,6 +190,7 @@ def non_determinism_report(
 
 
 def entropy_summary(usage: tuple[EntropyUsage, ...]) -> dict[str, object]:
+    """Summarize entropy usage; misuse hides budget drift."""
     sources = sorted({entry.source.value for entry in usage})
     max_magnitude = None
     if usage:
@@ -202,6 +206,7 @@ def entropy_summary(usage: tuple[EntropyUsage, ...]) -> dict[str, object]:
 def determinism_class_report(
     expected: ExecutionTrace, observed: ExecutionTrace
 ) -> dict[str, object]:
+    """Report determinism classes; misuse hides classification drift."""
     expected_classes = determinism_classes_for_trace(expected)
     observed_classes = determinism_classes_for_trace(observed)
     return {

@@ -17,3 +17,6 @@ A budget exhaustion means the run exceeded declared limits and must be rejected.
 
 ## Why It Matters  
 Operators should be able to classify a failure without reading code. The class tells you whether to fix the data, the policy, or the execution path.  
+
+## Related  
+See [Failure Taxonomy](failure-taxonomy.md) for the class-to-action mapping.  

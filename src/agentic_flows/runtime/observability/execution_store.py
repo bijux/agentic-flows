@@ -70,6 +70,8 @@ SCHEMA_HASH_PATH = Path(__file__).with_name("schema.hash")
 
 
 class DuckDBExecutionStore:
+    """DuckDB execution store; misuse breaks persistence contracts."""
+
     def __init__(self, path: Path) -> None:
         self._connection = duckdb.connect(str(path))
         self._migrate()
@@ -1076,6 +1078,8 @@ class DuckDBExecutionStore:
 
 
 class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
+    """DuckDB write store; misuse breaks append-only guarantees."""
+
     def __init__(self, path: Path) -> None:
         self.path = path
         self._store = DuckDBExecutionStore(path)
@@ -1172,6 +1176,8 @@ class DuckDBExecutionWriteStore(ExecutionWriteStoreProtocol):
 
 
 class DuckDBExecutionReadStore(ExecutionReadStoreProtocol):
+    """DuckDB read store; misuse breaks replay analysis."""
+
     def __init__(self, path: Path) -> None:
         self._store = DuckDBExecutionStore(path)
         self._connection = self._store._connection

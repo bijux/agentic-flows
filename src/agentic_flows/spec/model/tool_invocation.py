@@ -11,6 +11,8 @@ from agentic_flows.spec.ontology.ids import ContentHash, ToolID
 
 @dataclass(frozen=True)
 class ToolInvocation:
+    """Tool invocation record; misuse breaks tool audit."""
+
     spec_version: str
     tool_id: ToolID
     determinism_level: DeterminismLevel

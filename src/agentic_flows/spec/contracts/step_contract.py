@@ -17,6 +17,8 @@ from agentic_flows.spec.ontology import (
 
 @dataclass(frozen=True)
 class StepContract:
+    """Step contract; misuse breaks step invariants."""
+
     required_evidence: bool
     allowed_artifact_types: tuple[ArtifactType, ...]
     forbidden_scopes: tuple[ArtifactScope, ...]
@@ -54,6 +56,7 @@ def validate_outputs(
     artifacts: Iterable[Artifact],
     evidence: Iterable[RetrievedEvidence],
 ) -> None:
+    """Validate step outputs; misuse breaks step guarantees."""
     contract = _CONTRACTS[step_type]
     artifact_list = list(artifacts)
     evidence_list = list(evidence)

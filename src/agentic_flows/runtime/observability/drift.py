@@ -11,6 +11,7 @@ def entropy_drift(
     max_count_delta: int,
     allow_new_sources: bool,
 ) -> dict[str, object]:
+    """Compute entropy drift; misuse hides nondeterminism."""
     diffs: dict[str, object] = {}
     prev_sources = set(previous.get("sources", []))
     curr_sources = set(current.get("sources", []))
@@ -35,6 +36,7 @@ def outcome_drift(
     previous: dict[str, object],
     current: dict[str, object],
 ) -> dict[str, object]:
+    """Compute outcome drift; misuse hides artifact divergence."""
     diffs: dict[str, object] = {}
     for key in ("claim_count", "contradiction_count", "arbitration_decision"):
         if previous.get(key) != current.get(key):

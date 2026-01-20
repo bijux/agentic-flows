@@ -9,6 +9,7 @@ from agentic_flows.spec.model.execution_trace import ExecutionTrace
 
 
 def compare_runs(traces: Sequence[ExecutionTrace]) -> dict[str, object]:
+    """Compare runs; misuse hides divergence."""
     if not traces:
         return {"runs": 0}
     claim_sets = [set(trace.claim_ids) for trace in traces]

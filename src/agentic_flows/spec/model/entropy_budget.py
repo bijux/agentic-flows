@@ -11,6 +11,8 @@ from agentic_flows.spec.ontology.public import EntropySource
 
 @dataclass(frozen=True)
 class EntropyBudget:
+    """Entropy budget; misuse breaks entropy enforcement."""
+
     spec_version: str
     allowed_sources: tuple[EntropySource, ...]
     max_magnitude: EntropyMagnitude

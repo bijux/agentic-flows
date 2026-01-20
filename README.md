@@ -55,7 +55,7 @@ Most agent tooling optimizes for velocity. Agentic Flows prioritizes **repeatabi
 ```bash
 pipx install agentic-flows  # Or: pip install agentic-flows
 agentic-flows --help
-agentic-flows plan path/to/manifest.json
+agentic-flows run examples/boring/flow.json --policy examples/boring/policy.json --db-path /tmp/flows.duckdb
 ```
 
 
@@ -101,11 +101,8 @@ Upgrade: `pipx upgrade agentic-flows` or `pip install --upgrade agentic-flows`.
 # Discover commands/flags
 agentic-flows --help
 
-# Plan a flow from a manifest
-agentic-flows plan path/to/manifest.json
-
 # Run a deterministic execution
-agentic-flows run path/to/manifest.json --db-path /tmp/execution.duckdb
+agentic-flows run examples/boring/flow.json --policy examples/boring/policy.json --db-path /tmp/flows.duckdb
 ```
 
 
@@ -118,7 +115,7 @@ agentic-flows run path/to/manifest.json --db-path /tmp/execution.duckdb
 Artifacts are immutable and hash-addressed. Replaying a run verifies hashes before returning outputs.
 
 ```bash
-agentic-flows diff run <run_a> <run_b> --tenant-id <tenant> --db-path /tmp/execution.duckdb
+agentic-flows replay examples/boring/flow.json --policy examples/boring/policy.json --run-id <run_id> --tenant-id <tenant> --db-path /tmp/flows.duckdb
 ```
 
 Docs: [Execution Lifecycle](https://bijux.github.io/agentic-flows/architecture/execution_lifecycle/) · [Invariants](https://bijux.github.io/agentic-flows/architecture/invariants/)
@@ -143,11 +140,9 @@ Docs: [API Overview](https://bijux.github.io/agentic-flows/api/overview/) · [Sc
 
 | Command | Description | Example |
 | ------- | ----------- | ------- |
-| `plan` | Resolve a manifest into a plan | `agentic-flows plan manifest.json` |
-| `run` | Execute a flow | `agentic-flows run manifest.json --db-path /tmp/flow.duckdb` |
-| `dry-run` | Trace execution without calling tools | `agentic-flows dry-run manifest.json --db-path /tmp/flow.duckdb` |
+| `run` | Execute a flow | `agentic-flows run examples/boring/flow.json --policy examples/boring/policy.json --db-path /tmp/flow.duckdb` |
+| `replay` | Replay a stored run | `agentic-flows replay examples/boring/flow.json --policy examples/boring/policy.json --run-id <run_id> --tenant-id <tenant> --db-path /tmp/flow.duckdb` |
 | `inspect run` | Inspect a stored run | `agentic-flows inspect run <run_id> --tenant-id <tenant> --db-path /tmp/flow.duckdb` |
-| `diff run` | Compare two runs | `agentic-flows diff run <a> <b> --tenant-id <tenant> --db-path /tmp/flow.duckdb` |
 
 Full surface: [CLI Surface](https://bijux.github.io/agentic-flows/interface/cli_surface/)
 

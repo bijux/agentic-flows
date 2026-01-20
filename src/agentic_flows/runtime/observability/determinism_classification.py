@@ -15,6 +15,8 @@ from agentic_flows.spec.ontology.public import (
 
 
 class EntropySeverity(str, Enum):
+    """Entropy severity; misuse breaks entropy classification."""
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -60,18 +62,22 @@ ENTROPY_SOURCE_CLASS: dict[EntropySource, DeterminismClass] = {
 
 
 def determinism_class_for_event(event_type: EventType) -> DeterminismClass:
+    """Classify determinism for an event; misuse breaks reporting."""
     return EVENT_DETERMINISM_CLASS[event_type]
 
 
 def entropy_source_severity(source: EntropySource) -> EntropySeverity:
+    """Map entropy source to severity; misuse breaks audit severity."""
     return ENTROPY_SOURCE_SEVERITY[source]
 
 
 def determinism_class_for_entropy_source(source: EntropySource) -> DeterminismClass:
+    """Classify determinism for entropy source; misuse breaks reporting."""
     return ENTROPY_SOURCE_CLASS[source]
 
 
 def determinism_classes_for_trace(trace: ExecutionTrace) -> list[str]:
+    """Summarize determinism classes; misuse breaks drift detection."""
     classes: set[DeterminismClass] = set()
     if trace.events:
         classes.add(DeterminismClass.STRUCTURAL)

@@ -24,6 +24,8 @@ from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 @dataclass(frozen=True)
 class ExecutionSteps:
+    """Planned execution steps; misuse breaks ordering invariants."""
+
     spec_version: str
     flow_id: FlowID
     tenant_id: TenantID

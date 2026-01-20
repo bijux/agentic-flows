@@ -13,6 +13,8 @@ from agentic_flows.spec.ontology.public import EntropySource
 
 @dataclass(frozen=True)
 class EntropyUsage:
+    """Entropy usage record; misuse breaks auditability."""
+
     spec_version: str
     tenant_id: TenantID
     source: EntropySource

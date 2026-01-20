@@ -13,6 +13,8 @@ from agentic_flows.spec.ontology.ids import EvidenceID, RuleID
 
 @dataclass(frozen=True)
 class VerificationPolicy:
+    """Verification policy; misuse breaks verification guarantees."""
+
     spec_version: str
     verification_level: str
     failure_mode: str

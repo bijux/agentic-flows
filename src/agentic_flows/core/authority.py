@@ -49,14 +49,18 @@ class _RunResult(Protocol):
 
 @dataclass(frozen=True)
 class AuthorityToken:
+    """Authority token; misuse breaks semantic enforcement."""
+
     scope: str = "agentic_flows.authority"
 
 
 def authority_token() -> AuthorityToken:
+    """Issue authority token; misuse breaks semantic enforcement."""
     return AuthorityToken()
 
 
 def enforce_runtime_semantics(result: _RunResult, *, mode: Mode) -> None:
+    """Enforce runtime semantics; misuse breaks execution guarantees."""
     if mode == "plan":
         return
     if mode == "unsafe":
@@ -68,6 +72,7 @@ def enforce_runtime_semantics(result: _RunResult, *, mode: Mode) -> None:
 
 
 def finalize_trace(trace) -> None:
+    """Finalize trace; misuse breaks immutability guarantees."""
     if object.__getattribute__(trace, "finalized"):
         raise SemanticViolationError("execution trace already finalized")
     trace.finalize()
@@ -79,6 +84,7 @@ def evaluate_verification(
     artifacts: Sequence[Artifact],
     policy: VerificationPolicy,
 ) -> VerificationResult:
+    """Evaluate verification; misuse breaks verification trust."""
     registry = default_rule_registry()
     violations, total_cost, randomness_violations = registry.evaluate(
         policy, reasoning, evidence, artifacts
@@ -120,6 +126,7 @@ def baseline_violations(
     evidence: Sequence[RetrievedEvidence],
     artifacts: Sequence[Artifact],
 ) -> tuple[RuleID, ...]:
+    """Compute baseline violations; misuse breaks rule evaluation."""
     violations: list[RuleID] = []
     evidence_map = {item.evidence_id: item for item in evidence}
     artifact_hashes = {artifact.content_hash for artifact in artifacts}

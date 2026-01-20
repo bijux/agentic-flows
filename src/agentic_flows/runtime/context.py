@@ -37,6 +37,8 @@ if TYPE_CHECKING:
 
 
 class RunMode(str, Enum):
+    """Execution mode; misuse breaks mode-specific guarantees."""
+
     PLAN = "plan"
     DRY_RUN = "dry-run"
     LIVE = "live"

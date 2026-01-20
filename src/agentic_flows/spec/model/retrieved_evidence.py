@@ -16,6 +16,8 @@ from agentic_flows.spec.ontology.ids import (
 
 @dataclass(frozen=True)
 class RetrievedEvidence:
+    """Retrieved evidence; misuse breaks verification trust."""
+
     spec_version: str
     evidence_id: EvidenceID
     tenant_id: TenantID

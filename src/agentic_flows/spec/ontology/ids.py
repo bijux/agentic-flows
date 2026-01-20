@@ -5,95 +5,95 @@ from __future__ import annotations
 
 
 class FlowID(str):
-    pass
+    """Stable flow identifier; wrong value breaks trace linkage."""
 
 
 class AgentID(str):
-    pass
+    """Stable agent identifier; wrong value breaks provenance."""
 
 
 class ToolID(str):
-    pass
+    """Stable tool identifier; wrong value breaks tool audit."""
 
 
 class ActionID(str):
-    pass
+    """Stable action identifier; wrong value breaks action audit."""
 
 
 class ArtifactID(str):
-    pass
+    """Artifact identifier; wrong value breaks artifact lineage."""
 
 
 class EvidenceID(str):
-    pass
+    """Evidence identifier; wrong value breaks verification linkage."""
 
 
 class StepID(str):
-    pass
+    """Step identifier; wrong value breaks step ordering and replay."""
 
 
 class ClaimID(str):
-    pass
+    """Claim identifier; wrong value breaks claim provenance."""
 
 
 class BundleID(str):
-    pass
+    """Reasoning bundle identifier; wrong value breaks trace grouping."""
 
 
 class RuleID(str):
-    pass
+    """Verification rule identifier; wrong value breaks enforcement."""
 
 
 class RequestID(str):
-    pass
+    """Request identifier; wrong value breaks request traceability."""
 
 
 class ContractID(str):
-    pass
+    """Contract identifier; wrong value breaks contract resolution."""
 
 
 class GateID(str):
-    pass
+    """Gate identifier; wrong value breaks verification gating."""
 
 
 class ResolverID(str):
-    pass
+    """Resolver identifier; wrong value breaks planner attribution."""
 
 
 class VersionID(str):
-    pass
+    """Version identifier; wrong value breaks compatibility checks."""
 
 
 class DatasetID(str):
-    pass
+    """Dataset identifier; wrong value breaks dataset governance."""
 
 
 class TenantID(str):
-    pass
+    """Tenant identifier; wrong value breaks isolation guarantees."""
 
 
 class InputsFingerprint(str):
-    pass
+    """Inputs fingerprint; wrong value breaks determinism seeding."""
 
 
 class ContentHash(str):
-    pass
+    """Content hash; wrong value breaks integrity verification."""
 
 
 class EnvironmentFingerprint(str):
-    pass
+    """Environment fingerprint; wrong value breaks drift detection."""
 
 
 class PlanHash(str):
-    pass
+    """Plan hash; wrong value breaks replay equivalence."""
 
 
 class PolicyFingerprint(str):
-    pass
+    """Policy hash; wrong value breaks verification integrity."""
 
 
 class RunID(str):
-    pass
+    """Run identifier; wrong value breaks persistence lookup."""
 
 
 __all__ = [

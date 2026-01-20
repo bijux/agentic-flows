@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ReplayEnvelope:
+    """Replay envelope; misuse breaks replay acceptability."""
+
     spec_version: str
     min_claim_overlap: float
     max_contradiction_delta: int

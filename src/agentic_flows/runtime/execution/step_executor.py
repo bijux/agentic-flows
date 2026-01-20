@@ -15,6 +15,8 @@ from agentic_flows.spec.model.verification_result import VerificationResult
 
 @dataclass(frozen=True)
 class ExecutionOutcome:
+    """Execution outcome; misuse breaks result integrity."""
+
     trace: ExecutionTrace
     artifacts: list[Artifact]
     evidence: list[RetrievedEvidence]

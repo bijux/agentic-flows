@@ -31,6 +31,7 @@ def validate_determinism(
     unordered_normalized: bool,
     determinism_level: DeterminismLevel,
 ) -> None:
+    """Validate determinism inputs; misuse breaks replay guarantees."""
     current_fingerprint = compute_environment_fingerprint()
     if not environment_fingerprint:
         raise ValueError("environment_fingerprint is required before execution")
@@ -58,6 +59,7 @@ def validate_replay(
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
 ) -> None:
+    """Validate replay; misuse breaks acceptability checks."""
     diffs = replay_diff(
         trace,
         plan,
@@ -81,6 +83,7 @@ def replay_diff(
     evidence: Iterable[RetrievedEvidence] | None = None,
     verification_policy: object | None = None,
 ) -> dict[str, object]:
+    """Compute replay diff; misuse hides divergence."""
     diffs: dict[str, object] = {}
     if trace.plan_hash != plan.plan_hash:
         diffs["plan_hash"] = {
@@ -205,6 +208,7 @@ def _human_intervention_events(events: Iterable[ExecutionEvent]) -> list[int]:
 
 
 def semantic_artifact_fingerprint(artifacts: Iterable[Artifact]) -> str:
+    """Fingerprint artifacts; misuse breaks replay comparison."""
     normalized = sorted(
         artifacts,
         key=lambda item: (
@@ -226,6 +230,7 @@ def semantic_artifact_fingerprint(artifacts: Iterable[Artifact]) -> str:
 
 
 def semantic_evidence_fingerprint(evidence: Iterable[RetrievedEvidence]) -> str:
+    """Fingerprint evidence; misuse breaks replay comparison."""
     normalized = sorted(
         evidence, key=lambda item: (str(item.evidence_id), str(item.content_hash))
     )

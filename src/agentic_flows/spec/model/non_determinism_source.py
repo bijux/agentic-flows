@@ -11,6 +11,8 @@ from agentic_flows.spec.ontology.public import EntropySource
 
 @dataclass(frozen=True)
 class NonDeterminismSource:
+    """Nondeterminism source record; misuse breaks entropy audit."""
+
     source: EntropySource
     authorized: bool
     scope: StepID | FlowID

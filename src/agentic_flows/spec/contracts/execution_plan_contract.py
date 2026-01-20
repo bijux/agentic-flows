@@ -11,6 +11,7 @@ from agentic_flows.spec.ontology import (
 
 
 def validate(plan: ExecutionPlan) -> None:
+    """Validate execution plan; misuse breaks planning guarantees."""
     manifest_agents = set(plan.manifest.agents)
     if plan.plan.dataset != plan.manifest.dataset:
         raise ValueError("execution plan dataset must match manifest")

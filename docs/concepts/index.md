@@ -28,3 +28,4 @@ Replay re-executes a flow to confirm outputs and detect divergence. It is the au
 - [Core Concepts](core_concepts.md)  
 - [Determinism](determinism.md)  
 - [Failures](failures.md)  
+- [Failure Taxonomy](failure-taxonomy.md)  

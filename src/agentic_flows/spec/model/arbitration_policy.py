@@ -10,6 +10,8 @@ from agentic_flows.spec.ontology import ArbitrationRule
 
 @dataclass(frozen=True)
 class ArbitrationPolicy:
+    """Arbitration policy record; misuse breaks verification decisions."""
+
     spec_version: str
     rule: ArbitrationRule
     quorum_threshold: int | None

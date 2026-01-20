@@ -12,6 +12,7 @@ from agentic_flows.spec.ontology import ArtifactType
 def validate_flow_invariants(
     context: ExecutionContext, artifacts: list[Artifact]
 ) -> None:
+    """Validate flow invariants; misuse breaks artifact provenance."""
     _ensure_monotonic_artifact_growth(context)
     _ensure_artifact_provenance(artifacts)
     _ensure_no_orphan_artifacts(artifacts)

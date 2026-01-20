@@ -29,14 +29,17 @@ ALLOWED_EVOLUTION = frozenset(
 
 
 def breaks_replay(change: str) -> bool:
+    """Check replay breakage; misuse breaks compatibility review."""
     return change in REPLAY_BREAKERS
 
 
 def breaks_determinism(change: str) -> bool:
+    """Check determinism breakage; misuse breaks compatibility review."""
     return change in DETERMINISM_BREAKERS
 
 
 def allowed_to_evolve(change: str) -> bool:
+    """Check allowed evolution; misuse breaks compatibility review."""
     return change in ALLOWED_EVOLUTION
 
 

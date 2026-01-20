@@ -10,6 +10,8 @@ from agentic_flows.spec.ontology.ids import ClaimID, EvidenceID
 
 @dataclass(frozen=True)
 class ReasoningClaim:
+    """Reasoning claim; misuse breaks evidence linkage."""
+
     spec_version: str
     claim_id: ClaimID
     statement: str

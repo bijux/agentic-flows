@@ -15,6 +15,8 @@ from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
 
 @dataclass(frozen=True)
 class Artifact:
+    """Immutable artifact record; misuse breaks provenance."""
+
     spec_version: str
     artifact_id: ArtifactID
     tenant_id: TenantID

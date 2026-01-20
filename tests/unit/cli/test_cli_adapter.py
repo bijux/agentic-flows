@@ -171,7 +171,9 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
 
     cli_main_module = importlib.import_module("agentic_flows.cli.main")
     monkeypatch.setattr(cli_main_module, "execute_flow", _fake_run_flow)
-    monkeypatch.setattr("sys.argv", ["agentic-flows", "plan", str(manifest_path)])
+    monkeypatch.setattr(
+        "sys.argv", ["agentic-flows", "experimental", "plan", str(manifest_path)]
+    )
 
     cli_main()
 
@@ -214,6 +216,29 @@ def test_cli_sets_strict_determinism_flag(tmp_path: Path, monkeypatch) -> None:
                 "dependencies": [],
                 "retrieval_contracts": [],
                 "verification_gates": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    policy_path = tmp_path / "policy.json"
+    policy_path.write_text(
+        json.dumps(
+            {
+                "spec_version": "v1",
+                "verification_level": "baseline",
+                "failure_mode": "halt",
+                "randomness_tolerance": "deterministic",
+                "arbitration_policy": {
+                    "spec_version": "v1",
+                    "rule": "unanimous",
+                    "quorum_threshold": None,
+                },
+                "required_evidence": [],
+                "max_rule_cost": 100,
+                "rules": [],
+                "fail_on": [],
+                "escalate_on": [],
             }
         ),
         encoding="utf-8",
@@ -302,6 +327,8 @@ def test_cli_sets_strict_determinism_flag(tmp_path: Path, monkeypatch) -> None:
             "agentic-flows",
             "run",
             str(manifest_path),
+            "--policy",
+            str(policy_path),
             "--db-path",
             str(tmp_path / "db.duckdb"),
             "--strict-determinism",

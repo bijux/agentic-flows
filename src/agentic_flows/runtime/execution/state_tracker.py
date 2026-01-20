@@ -10,6 +10,8 @@ from agentic_flows.spec.ontology.ids import ContentHash
 
 
 class ExecutionStateTracker:
+    """Execution state tracker; misuse breaks ordering integrity."""
+
     def __init__(self, seed: str | None) -> None:
         self._seed = seed or "seedless"
         self._state = ContentHash(self._hash_payload(self._seed))

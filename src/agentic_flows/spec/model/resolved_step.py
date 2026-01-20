@@ -16,6 +16,8 @@ from agentic_flows.spec.ontology.ids import AgentID, ArtifactID, InputsFingerpri
 
 @dataclass(frozen=True)
 class ResolvedStep:
+    """Resolved step; misuse breaks execution ordering."""
+
     spec_version: str
     step_index: int
     step_type: StepType

@@ -18,6 +18,7 @@ _ALLOWED_TRANSITIONS: dict[DatasetState, set[DatasetState]] = {
 
 
 def validate_dataset_descriptor(dataset: DatasetDescriptor) -> None:
+    """Validate dataset descriptor; misuse breaks dataset governance."""
     if not isinstance(dataset.dataset_state, DatasetState):
         raise ValueError("dataset_state must be a DatasetState")
     if not isinstance(dataset.storage_uri, str) or not dataset.storage_uri.strip():
@@ -27,6 +28,7 @@ def validate_dataset_descriptor(dataset: DatasetDescriptor) -> None:
 def validate_transition(
     previous: DatasetState | None, next_state: DatasetState
 ) -> None:
+    """Validate dataset transition; misuse breaks state integrity."""
     if previous is None:
         return
     allowed = _ALLOWED_TRANSITIONS.get(previous, set())

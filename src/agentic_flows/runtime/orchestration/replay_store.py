@@ -25,6 +25,7 @@ def replay_with_store(
     resolved_flow: ExecutionPlan,
     config: ExecutionConfig,
 ) -> tuple[dict[str, object], FlowRunResult]:
+    """Replay using store; misuse breaks auditability."""
     stored_trace = store.load_trace(run_id, tenant_id=tenant_id)
     _ = store.load_dataset_descriptor(run_id, tenant_id=tenant_id)
     _ = store.load_replay_envelope(run_id, tenant_id=tenant_id)

@@ -20,6 +20,7 @@ from agentic_flows.spec.ontology.public import (
 
 
 def validate(manifest: FlowManifest) -> None:
+    """Validate flow manifest; misuse breaks flow validity."""
     _require_enum("flow_state", manifest.flow_state, FlowState)
     _require_tuple_of_str("agents", manifest.agents)
     _require_tuple_of_str("dependencies", manifest.dependencies)

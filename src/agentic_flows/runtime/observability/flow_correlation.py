@@ -11,6 +11,7 @@ from agentic_flows.spec.model.execution_trace import ExecutionTrace
 def validate_flow_correlation(
     trace: ExecutionTrace, related_traces: Iterable[ExecutionTrace]
 ) -> None:
+    """Validate flow correlation; misuse breaks cross-flow integrity."""
     related_ids = {item.flow_id for item in related_traces}
     if trace.parent_flow_id is not None and trace.parent_flow_id not in related_ids:
         raise ValueError("parent_flow_id missing from related traces")

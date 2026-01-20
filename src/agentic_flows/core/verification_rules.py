@@ -21,12 +21,16 @@ RuleEvaluator = Callable[
 
 @dataclass(frozen=True)
 class RuleMetadata:
+    """Rule metadata; misuse breaks verification policy evaluation."""
+
     rule_id: RuleID
     randomness: VerificationRandomness
     cost: int
 
 
 class RuleRegistry:
+    """Rule registry; misuse breaks rule enforcement."""
+
     def __init__(self) -> None:
         self._rules: dict[RuleID, tuple[RuleEvaluator, RuleMetadata]] = {}
 
@@ -68,6 +72,7 @@ class RuleRegistry:
 
 
 def default_rule_registry() -> RuleRegistry:
+    """Build default registry; misuse breaks baseline verification."""
     registry = RuleRegistry()
     registry.register(_claim_requires_evidence, _meta("claim_requires_evidence", 1))
     registry.register(_confidence_in_range, _meta("confidence_in_range", 1))

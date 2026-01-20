@@ -11,6 +11,8 @@ from agentic_flows.spec.ontology.ids import RuleID
 
 @dataclass(frozen=True)
 class VerificationRule:
+    """Verification rule definition; misuse breaks rule evaluation."""
+
     spec_version: str
     rule_id: RuleID
     description: str

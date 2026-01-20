@@ -11,6 +11,8 @@ from agentic_flows.spec.model.execution_plan import ExecutionPlan
 
 
 class ObserverExecutor:
+    """Observer executor; misuse breaks observer semantics."""
+
     def execute(
         self, plan: ExecutionPlan, context: ExecutionContext
     ) -> ExecutionOutcome:

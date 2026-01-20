@@ -10,6 +10,8 @@ from agentic_flows.spec.ontology.ids import ContractID, RequestID
 
 @dataclass(frozen=True)
 class RetrievalRequest:
+    """Retrieval request; misuse breaks evidence sourcing."""
+
     spec_version: str
     request_id: RequestID
     query: str

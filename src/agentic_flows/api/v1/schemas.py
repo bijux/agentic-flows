@@ -9,6 +9,8 @@ from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
 
 
 class FlowRunRequest(BaseModel):
+    """Flow run request; misuse breaks API contract."""
+
     model_config = ConfigDict(extra="forbid")
 
     flow_manifest: StrictStr
@@ -19,6 +21,8 @@ class FlowRunRequest(BaseModel):
 
 
 class FlowRunResponse(BaseModel):
+    """Flow run response; misuse breaks API contract."""
+
     model_config = ConfigDict(extra="forbid")
 
     run_id: StrictStr
@@ -40,6 +44,8 @@ class FlowRunResponse(BaseModel):
 
 
 class ReplayRequest(BaseModel):
+    """Replay request; misuse breaks API contract."""
+
     model_config = ConfigDict(extra="forbid")
 
     run_id: StrictStr
@@ -53,6 +59,8 @@ class ReplayRequest(BaseModel):
 
 
 class FailureEnvelope(BaseModel):
+    """Failure envelope; misuse breaks error contract."""
+
     model_config = ConfigDict(extra="forbid")
 
     failure_class: Literal["structural", "semantic", "environmental", "authority"]

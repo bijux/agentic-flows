@@ -28,6 +28,8 @@ from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 @dataclass(frozen=True)
 class ExecutionTrace:
+    """Immutable execution trace; mutation breaks replay trust."""
+
     spec_version: str
     flow_id: FlowID
     tenant_id: TenantID

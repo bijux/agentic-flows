@@ -18,6 +18,8 @@ _MAGNITUDE_ORDER = {
 
 
 class EntropyLedger:
+    """Entropy ledger; misuse breaks entropy accounting."""
+
     def __init__(self, budget: EntropyBudget | None) -> None:
         self._budget = budget
         self._records: list[EntropyUsage] = []

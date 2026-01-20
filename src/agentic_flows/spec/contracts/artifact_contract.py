@@ -57,6 +57,7 @@ _ALLOWED_PARENTS: dict[ArtifactType, set[ArtifactType]] = {
 
 
 def validate(parent_types: Iterable[ArtifactType], child_type: ArtifactType) -> None:
+    """Validate artifact lineage; misuse breaks artifact contracts."""
     allowed = _ALLOWED_PARENTS.get(child_type)
     if allowed is None:
         raise ValueError(f"Unknown artifact type: {child_type}")

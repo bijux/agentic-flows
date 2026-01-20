@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ExecutionBudget:
+    """Execution budget limits; misuse breaks cost enforcement."""
+
     step_limit: int | None
     token_limit: int | None
     artifact_limit: int | None
@@ -17,6 +19,8 @@ class ExecutionBudget:
 
 
 class BudgetState:
+    """Budget tracker; misuse breaks budget accounting."""
+
     def __init__(self, budget: ExecutionBudget | None) -> None:
         self._budget = budget
         self._steps = 0

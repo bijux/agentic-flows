@@ -26,6 +26,8 @@ from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, RuleI
 
 
 class VerificationEngine(Protocol):
+    """Verification engine contract; misuse breaks verification."""
+
     engine_id: str
 
     def verify(
@@ -38,6 +40,8 @@ class VerificationEngine(Protocol):
 
 
 class FlowVerificationEngine(Protocol):
+    """Flow verification contract; misuse breaks flow verification."""
+
     engine_id: str
 
     def verify_flow(
@@ -49,6 +53,8 @@ class FlowVerificationEngine(Protocol):
 
 @dataclass(frozen=True)
 class ContentVerificationEngine:
+    """Content verification engine; misuse breaks claim checks."""
+
     engine_id: str = "content"
 
     def verify(
@@ -76,6 +82,8 @@ class ContentVerificationEngine:
 
 @dataclass(frozen=True)
 class SignatureVerificationEngine:
+    """Signature verification engine; misuse breaks signature checks."""
+
     engine_id: str = "signature"
 
     def verify(
@@ -101,6 +109,8 @@ class SignatureVerificationEngine:
 
 @dataclass(frozen=True)
 class ContradictionVerificationEngine:
+    """Contradiction engine; misuse breaks contradiction detection."""
+
     engine_id: str = "contradiction"
 
     def verify_flow(
@@ -171,6 +181,8 @@ def _normalize_statement(statement: str) -> str:
 
 
 class VerificationOrchestrator:
+    """Verification orchestrator; misuse breaks arbitration flow."""
+
     def __init__(
         self,
         *,

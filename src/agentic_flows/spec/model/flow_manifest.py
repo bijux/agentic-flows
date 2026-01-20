@@ -26,6 +26,8 @@ from agentic_flows.spec.ontology.public import ReplayAcceptability
 # Semantic validity is enforced elsewhere.
 @dataclass(frozen=True)
 class FlowManifest:
+    """Flow manifest contract; misuse breaks plan validity."""
+
     spec_version: str
     flow_id: FlowID
     tenant_id: TenantID

@@ -8,7 +8,7 @@ from dataclasses import asdict, replace
 import json
 from pathlib import Path
 
-from agentic_flows.api import ExecutionConfig, execute_flow
+from agentic_flows.api import ExecutionConfig, RunMode, execute_flow
 from agentic_flows.runtime.observability.execution_store import (
     DuckDBExecutionReadStore,
     DuckDBExecutionWriteStore,
@@ -17,22 +17,31 @@ from agentic_flows.runtime.observability.trace_diff import (
     entropy_summary,
     semantic_trace_diff,
 )
+from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
+from agentic_flows.runtime.orchestration.replay_store import replay_with_store
+from agentic_flows.spec.model.arbitration_policy import ArbitrationPolicy
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.model.verification_rule import VerificationRule
 from agentic_flows.spec.ontology import (
+    ArbitrationRule,
     DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
     FlowState,
+    VerificationRandomness,
 )
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
     DatasetID,
+    EvidenceID,
     FlowID,
     GateID,
+    RuleID,
     RunID,
     TenantID,
 )
@@ -88,32 +97,63 @@ def _load_manifest(path: Path) -> FlowManifest:
     )
 
 
+def _load_policy(path: Path) -> VerificationPolicy:
+    raw_contents = path.read_text(encoding="utf-8")
+    payload = json.loads(raw_contents)
+    arbitration = payload["arbitration_policy"]
+    rules = tuple(
+        VerificationRule(
+            spec_version=rule["spec_version"],
+            rule_id=RuleID(rule["rule_id"]),
+            description=rule["description"],
+            severity=rule["severity"],
+            target=rule["target"],
+            randomness_requirement=VerificationRandomness(
+                rule["randomness_requirement"]
+            ),
+            cost=int(rule["cost"]),
+        )
+        for rule in payload["rules"]
+    )
+    return VerificationPolicy(
+        spec_version=payload["spec_version"],
+        verification_level=payload["verification_level"],
+        failure_mode=payload["failure_mode"],
+        randomness_tolerance=VerificationRandomness(payload["randomness_tolerance"]),
+        arbitration_policy=ArbitrationPolicy(
+            spec_version=arbitration["spec_version"],
+            rule=ArbitrationRule(arbitration["rule"]),
+            quorum_threshold=arbitration["quorum_threshold"],
+        ),
+        required_evidence=tuple(
+            EvidenceID(value) for value in payload["required_evidence"]
+        ),
+        max_rule_cost=int(payload["max_rule_cost"]),
+        rules=rules,
+        fail_on=tuple(RuleID(value) for value in payload["fail_on"]),
+        escalate_on=tuple(RuleID(value) for value in payload["escalate_on"]),
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="agentic-flows")
     subparsers = parser.add_subparsers(dest="command")
 
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("manifest")
+    run_parser.add_argument("--policy", required=True)
     run_parser.add_argument("--db-path", required=True)
     run_parser.add_argument("--strict-determinism", action="store_true")
     run_parser.add_argument("--json", action="store_true")
 
-    plan_parser = subparsers.add_parser("plan")
-    plan_parser.add_argument("manifest")
-    plan_parser.add_argument("--db-path")
-    plan_parser.add_argument("--json", action="store_true")
-
-    dry_run_parser = subparsers.add_parser("dry-run")
-    dry_run_parser.add_argument("manifest")
-    dry_run_parser.add_argument("--db-path", required=True)
-    dry_run_parser.add_argument("--strict-determinism", action="store_true")
-    dry_run_parser.add_argument("--json", action="store_true")
-
-    unsafe_parser = subparsers.add_parser("unsafe-run")
-    unsafe_parser.add_argument("manifest")
-    unsafe_parser.add_argument("--db-path", required=True)
-    unsafe_parser.add_argument("--strict-determinism", action="store_true")
-    unsafe_parser.add_argument("--json", action="store_true")
+    replay_parser = subparsers.add_parser("replay")
+    replay_parser.add_argument("manifest")
+    replay_parser.add_argument("--policy", required=True)
+    replay_parser.add_argument("--run-id", required=True)
+    replay_parser.add_argument("--tenant-id", required=True)
+    replay_parser.add_argument("--db-path", required=True)
+    replay_parser.add_argument("--strict-determinism", action="store_true")
+    replay_parser.add_argument("--json", action="store_true")
 
     inspect_parser = subparsers.add_parser("inspect")
     inspect_subparsers = inspect_parser.add_subparsers(dest="inspect_command")
@@ -123,7 +163,29 @@ def main() -> None:
     inspect_run_parser.add_argument("--db-path", required=True)
     inspect_run_parser.add_argument("--json", action="store_true")
 
-    diff_parser = subparsers.add_parser("diff")
+    experimental_parser = subparsers.add_parser("experimental")
+    experimental_subparsers = experimental_parser.add_subparsers(
+        dest="experimental_command"
+    )
+
+    plan_parser = experimental_subparsers.add_parser("plan")
+    plan_parser.add_argument("manifest")
+    plan_parser.add_argument("--db-path")
+    plan_parser.add_argument("--json", action="store_true")
+
+    dry_run_parser = experimental_subparsers.add_parser("dry-run")
+    dry_run_parser.add_argument("manifest")
+    dry_run_parser.add_argument("--db-path", required=True)
+    dry_run_parser.add_argument("--strict-determinism", action="store_true")
+    dry_run_parser.add_argument("--json", action="store_true")
+
+    unsafe_parser = experimental_subparsers.add_parser("unsafe-run")
+    unsafe_parser.add_argument("manifest")
+    unsafe_parser.add_argument("--db-path", required=True)
+    unsafe_parser.add_argument("--strict-determinism", action="store_true")
+    unsafe_parser.add_argument("--json", action="store_true")
+
+    diff_parser = experimental_subparsers.add_parser("diff")
     diff_subparsers = diff_parser.add_subparsers(dest="diff_command")
     diff_run_parser = diff_subparsers.add_parser("run")
     diff_run_parser.add_argument("run_a")
@@ -132,7 +194,7 @@ def main() -> None:
     diff_run_parser.add_argument("--db-path", required=True)
     diff_run_parser.add_argument("--json", action="store_true")
 
-    explain_parser = subparsers.add_parser("explain")
+    explain_parser = experimental_subparsers.add_parser("explain")
     explain_subparsers = explain_parser.add_subparsers(dest="explain_command")
     explain_failure_parser = explain_subparsers.add_parser("failure")
     explain_failure_parser.add_argument("run_id")
@@ -140,7 +202,7 @@ def main() -> None:
     explain_failure_parser.add_argument("--db-path", required=True)
     explain_failure_parser.add_argument("--json", action="store_true")
 
-    validate_parser = subparsers.add_parser("validate")
+    validate_parser = experimental_subparsers.add_parser("validate")
     validate_subparsers = validate_parser.add_subparsers(dest="validate_command")
     validate_db_parser = validate_subparsers.add_parser("db")
     validate_db_parser.add_argument("--db-path", required=True)
@@ -150,20 +212,39 @@ def main() -> None:
     if args.command == "inspect" and args.inspect_command == "run":
         _inspect_run(args, json_output=args.json)
         return
-    if args.command == "diff" and args.diff_command == "run":
+    if args.command == "replay":
+        _replay_run(args, json_output=args.json)
+        return
+    if (
+        args.command == "experimental"
+        and args.experimental_command == "diff"
+        and args.diff_command == "run"
+    ):
         _diff_runs(args, json_output=args.json)
         return
-    if args.command == "explain" and args.explain_command == "failure":
+    if (
+        args.command == "experimental"
+        and args.experimental_command == "explain"
+        and args.explain_command == "failure"
+    ):
         _explain_failure(args, json_output=args.json)
         return
-    if args.command == "validate" and args.validate_command == "db":
+    if (
+        args.command == "experimental"
+        and args.experimental_command == "validate"
+        and args.validate_command == "db"
+    ):
         _validate_db(args, json_output=args.json)
         return
 
     manifest_path = Path(args.manifest)
     manifest = _load_manifest(manifest_path)
 
-    config = ExecutionConfig.from_command(args.command)
+    command = args.command
+    if args.command == "experimental":
+        command = args.experimental_command
+
+    config = ExecutionConfig.from_command(command)
     if getattr(args, "db_path", None):
         config = ExecutionConfig(
             mode=config.mode,
@@ -171,8 +252,11 @@ def main() -> None:
         )
     if getattr(args, "strict_determinism", False):
         config = replace(config, strict_determinism=True)
+    if getattr(args, "policy", None):
+        policy = _load_policy(Path(args.policy))
+        config = replace(config, verification_policy=policy)
     result = execute_flow(manifest, config=config)
-    _render_result(args.command, result, json_output=args.json)
+    _render_result(command, result, json_output=args.json)
 
 
 def _render_result(command: str, result, *, json_output: bool) -> None:
@@ -390,3 +474,42 @@ def _replay_confidence(acceptability: ReplayAcceptability) -> str:
     if acceptability == ReplayAcceptability.STATISTICALLY_BOUNDED:
         return "statistically_bounded"
     return "unknown"
+
+
+def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
+    manifest = _load_manifest(Path(args.manifest))
+    policy = _load_policy(Path(args.policy))
+    planner = ExecutionPlanner()
+    resolved_flow = planner.resolve(manifest)
+    read_store = DuckDBExecutionReadStore(Path(args.db_path))
+    write_store = DuckDBExecutionWriteStore(Path(args.db_path))
+    config = ExecutionConfig(
+        mode=_config_mode_for_replay(),
+        execution_store=write_store,
+        execution_read_store=read_store,
+        verification_policy=policy,
+        strict_determinism=bool(args.strict_determinism),
+    )
+    diff, result = replay_with_store(
+        store=read_store,
+        run_id=RunID(args.run_id),
+        tenant_id=TenantID(args.tenant_id),
+        resolved_flow=resolved_flow,
+        config=config,
+    )
+    if json_output:
+        payload = {
+            "diff": _normalize_for_json(diff),
+            "trace": _normalize_for_json(asdict(result.trace)),
+            "run_id": str(result.run_id),
+        }
+        print(json.dumps(payload, sort_keys=True))
+        return
+    if diff:
+        print(f"Replay diff detected: keys={', '.join(sorted(diff.keys()))}")
+    else:
+        print(f"Replay clean: run_id={result.run_id}")
+
+
+def _config_mode_for_replay() -> RunMode:
+    return RunMode.LIVE

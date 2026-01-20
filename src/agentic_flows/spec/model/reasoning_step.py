@@ -10,6 +10,8 @@ from agentic_flows.spec.ontology.ids import ClaimID, StepID
 
 @dataclass(frozen=True)
 class ReasoningStep:
+    """Reasoning step; misuse breaks reasoning sequence."""
+
     spec_version: str
     step_id: StepID
     input_claims: tuple[ClaimID, ...]

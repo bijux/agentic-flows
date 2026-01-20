@@ -3,7 +3,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+import os
 
 from agentic_flows.core.authority import authority_token, enforce_runtime_semantics
 from agentic_flows.runtime.artifact_store import ArtifactStore, InMemoryArtifactStore
@@ -43,6 +44,8 @@ from agentic_flows.spec.ontology.ids import ClaimID, FlowID, RunID, TenantID
 
 @dataclass(frozen=True)
 class FlowRunResult:
+    """Execution result record; misuse breaks run auditability."""
+
     resolved_flow: ExecutionPlan
     trace: ExecutionTrace | None
     artifacts: list[Artifact]
@@ -55,6 +58,8 @@ class FlowRunResult:
 
 @dataclass(frozen=True)
 class ExecutionConfig:
+    """Execution config; misuse breaks execution invariants."""
+
     mode: RunMode
     verification_policy: VerificationPolicy | None = None
     artifact_store: ArtifactStore | None = None
@@ -85,6 +90,8 @@ class ExecutionConfig:
 
 @dataclass(frozen=True)
 class ResumeState:
+    """Resume state snapshot; misuse breaks crash recovery."""
+
     resume_from_step_index: int
     starting_event_index: int
     starting_evidence_index: int
@@ -104,7 +111,12 @@ def execute_flow(
     resolved_flow: ExecutionPlan | None = None,
     config: ExecutionConfig | None = None,
 ) -> FlowRunResult:
+    """Execute a flow; misuse breaks determinism and persistence guarantees."""
     execution_config = config or ExecutionConfig(mode=RunMode.LIVE)
+    if os.environ.get("AGENTIC_FLOWS_STRICT") == "1":
+        if execution_config.mode in {RunMode.DRY_RUN, RunMode.UNSAFE}:
+            raise ValueError("AGENTIC_FLOWS_STRICT forbids best-effort execution")
+        execution_config = replace(execution_config, strict_determinism=True)
     if (manifest is None) == (resolved_flow is None):
         raise ValueError("Provide exactly one of manifest or resolved_flow")
     if resolved_flow is None:

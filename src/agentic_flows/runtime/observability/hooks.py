@@ -9,6 +9,8 @@ from agentic_flows.spec.model.execution_event import ExecutionEvent
 
 
 class RuntimeObserver(Protocol):
+    """Runtime observer contract; misuse breaks observation guarantees."""
+
     def on_event(self, event: ExecutionEvent) -> None: ...
 
 

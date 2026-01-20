@@ -14,6 +14,8 @@ from agentic_flows.spec.ontology.ids import ArtifactID, RuleID
 
 @dataclass(frozen=True)
 class VerificationResult:
+    """Verification result record; misuse breaks verification audit."""
+
     spec_version: str
     engine_id: str
     status: str

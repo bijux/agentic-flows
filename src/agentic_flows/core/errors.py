@@ -7,30 +7,32 @@ from enum import Enum
 
 
 class ResolutionFailure(Exception):  # noqa: N818
-    """Resolution failures (structural truth) as defined in docs/failures.md."""
+    """Resolution failure; misuse breaks planning guarantees."""
 
 
 class ExecutionFailure(Exception):  # noqa: N818
-    """Execution failures (structural truth) as defined in docs/failures.md."""
+    """Execution failure; misuse breaks run integrity."""
 
 
 class RetrievalFailure(Exception):  # noqa: N818
-    """Retrieval failures (structural truth) as defined in docs/failures.md."""
+    """Retrieval failure; misuse breaks evidence integrity."""
 
 
 class ReasoningFailure(Exception):  # noqa: N818
-    """Reasoning failures (structural truth) as defined in docs/failures.md."""
+    """Reasoning failure; misuse breaks claim integrity."""
 
 
 class VerificationFailure(Exception):  # noqa: N818
-    """Verification failures (epistemic truth) as defined in docs/failures.md."""
+    """Verification failure; misuse breaks verification trust."""
 
 
 class SemanticViolationError(RuntimeError):
-    """Semantic violations (structural truth) enforced by authority."""
+    """Semantic violation; misuse breaks authority guarantees."""
 
 
 class FailureClass(str, Enum):
+    """Failure classes; misuse breaks failure taxonomy."""
+
     STRUCTURAL = "structural"
     SEMANTIC = "semantic"
     ENVIRONMENTAL = "environmental"
@@ -48,6 +50,7 @@ FAILURE_CLASS_MAP = {
 
 
 def classify_failure(exc: BaseException) -> FailureClass:
+    """Classify failure; misuse breaks operator response."""
     for failure_type, failure_class in FAILURE_CLASS_MAP.items():
         if isinstance(exc, failure_type):
             return failure_class

@@ -13,6 +13,8 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 
 @dataclass(frozen=True)
 class ObservedRun:
+    """Observed run snapshot; misuse breaks observer invariants."""
+
     trace: ExecutionTrace
     artifacts: list[Artifact]
     evidence: list[RetrievedEvidence]

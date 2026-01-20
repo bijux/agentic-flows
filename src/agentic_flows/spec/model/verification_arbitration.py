@@ -14,6 +14,8 @@ from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint
 
 @dataclass(frozen=True)
 class VerificationArbitration:
+    """Verification arbitration record; misuse breaks arbitration audit."""
+
     spec_version: str
     rule: ArbitrationRule
     policy_fingerprint: PolicyFingerprint
