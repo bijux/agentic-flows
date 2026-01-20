@@ -221,3 +221,10 @@ Welcome. See **[CONTRIBUTING.md](https://github.com/bijux/agentic-flows/blob/mai
 
 Apache-2.0 — see **[LICENSE](https://github.com/bijux/agentic-flows/blob/main/LICENSE)**.
 © 2025 Bijan Mousavi.
+
+
+---
+
+## Publishing status
+
+Current maturity: experimental research framework with v1 contracts frozen. It is safe to rely on deterministic replay, contract validation, and published API schemas in v1. CLI output formatting and observability summaries may change without notice. Internal execution and verification APIs are not stable. Production usage should gate on strict determinism and explicit contracts.

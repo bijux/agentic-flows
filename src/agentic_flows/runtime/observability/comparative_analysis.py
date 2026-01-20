@@ -5,12 +5,18 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import logging
 
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def compare_runs(traces: Sequence[ExecutionTrace]) -> dict[str, object]:
     """Compare runs; misuse hides divergence."""
+    _LOGGER.warning(
+        "experimental observability: comparative analysis output is not stable"
+    )
     if not traces:
         return {"runs": 0}
     claim_sets = [set(trace.claim_ids) for trace in traces]

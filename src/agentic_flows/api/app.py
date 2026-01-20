@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
+# API stability: v1 frozen; Backward compatibility rules apply.
 
 from __future__ import annotations
 
@@ -99,7 +100,7 @@ def run_flow(
     x_determinism_level: str | None = Header(None, alias="X-Determinism-Level"),
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
-    """Preconditions: required headers are present and determinism level is valid; success guarantees a FlowRunResponse payload; failures are returned as FailureEnvelope responses, not raised as exceptions."""
+    """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the contract."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     if (
         x_agentic_gate is None
@@ -141,7 +142,7 @@ def replay_flow(
     x_determinism_level: str | None = Header(None, alias="X-Determinism-Level"),
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
-    """Preconditions: required headers are present and determinism level is valid; success guarantees a FlowRunResponse payload; failures are returned as FailureEnvelope responses, not raised as exceptions."""
+    """Preconditions: required headers are present, determinism level is valid, and the replay request is well-formed; acceptable replay means differences stay within the declared acceptability threshold; mismatches return FailureEnvelope with failure_class set to authority."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     if (
         x_agentic_gate is None
