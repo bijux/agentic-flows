@@ -43,12 +43,17 @@ nav:
       - replay-equivalence: overview/replay-equivalence.md
       - storage-model: overview/storage-model.md
       - cli-contract: overview/cli-contract.md
+      - documentation-policy: overview/documentation-policy.md
+      - common-misuse: overview/common-misuse.md
+      - audit-grade: overview/audit-grade.md
+      - datasets: overview/datasets.md
       - versioning: overview/versioning.md
       - what-breaks-determinism: overview/what-breaks-determinism.md
       - relationship-to-agentic-proteins: overview/relationship-to-agentic-proteins.md
       - audience: overview/audience.md
       - non-goals: overview/non-goals.md
       - stability: overview/stability.md
+      - release-checklist: overview/release-checklist.md
   - Concepts:
       - concepts: concepts/index.md
       - core_concepts: concepts/core_concepts.md
@@ -111,8 +116,10 @@ nav:
       - overview: api/overview.md
       - schema: api/schema.md
       - schema-mapping: api/schema-mapping.md
+      - public-surface: api/public-surface.md
       - failures: api/failures.md
       - http-failures: api/http_failures.md
+      - replay-rejected-example: api/examples/replay_rejected.md
   - Examples:
       - replay-failure: examples/replay_failure.txt
   - Security:

@@ -32,6 +32,10 @@ class FlowRunResponse(BaseModel):
         default=None,
         description="Determinism class classification when available.",
     )
+    environment_fingerprint: StrictStr | None = Field(
+        default=None,
+        description="Environment fingerprint when available.",
+    )
     replay_acceptability: Literal[
         "exact_match",
         "invariant_preserving",

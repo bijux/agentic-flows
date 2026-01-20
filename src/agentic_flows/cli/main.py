@@ -143,8 +143,19 @@ def _load_policy(path: Path) -> VerificationPolicy:
 # Stable commands: run, replay, inspect.
 # Diagnostic-only commands: experimental/* (plan, dry-run, unsafe-run, diff, explain, validate).
 # The CLI is not the primary API surface; contract-first integration should use the API schema.
+EXIT_OK = 0
+EXIT_FAILURE = 1
+EXIT_CONTRACT_VIOLATION = 2
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="agentic-flows")
+    parser = argparse.ArgumentParser(
+        prog="agentic-flows",
+        description=(
+            "All completed runs are expected to be replayable unless explicitly "
+            "documented otherwise."
+        ),
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     run_parser = subparsers.add_parser(
@@ -334,7 +345,7 @@ def main() -> None:
         except KeyError:
             raise
         print(f"Failure: {failure_class.value}", file=sys.stderr)
-        raise SystemExit(1) from exc
+        raise SystemExit(EXIT_FAILURE) from exc
     _render_result(command, result, json_output=args.json)
 
 
@@ -462,7 +473,7 @@ def _render_human_result(command: str, result) -> None:
         summary = ", ".join(determinism_class) if determinism_class else "unknown"
         print(f"Determinism class: {summary}")
         return
-    print(f"Flow loaded successfully: {result.resolved_flow.manifest.flow_id}")
+    print(f"Flow loaded: {result.resolved_flow.manifest.flow_id}")
 
 
 def _normalize_for_json(value):
@@ -591,11 +602,11 @@ def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
         }
         print(json.dumps(payload, sort_keys=True))
         if diff:
-            raise SystemExit(1)
+            raise SystemExit(EXIT_FAILURE)
         return
     if diff:
         print(f"Replay diff detected: keys={', '.join(sorted(diff.keys()))}")
-        raise SystemExit(1)
+        raise SystemExit(EXIT_FAILURE)
     else:
         print(f"Replay clean: run_id={result.run_id}")
 

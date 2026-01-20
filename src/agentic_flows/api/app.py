@@ -2,6 +2,8 @@
 # Copyright © 2025 Bijan Mousavi
 # API stability: v1 frozen; Backward compatibility rules apply.
 
+"""API is batch-oriented and not intended for chat, streaming, or interactive use."""
+
 from __future__ import annotations
 
 from typing import Annotated
@@ -103,11 +105,20 @@ def run_flow(
     """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the declared contract."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     seed_value = "0"
-    if (
-        x_agentic_gate is None
-        or x_determinism_level is None
-        or x_policy_fingerprint is None
-    ):
+    if x_determinism_level is None:
+        payload = FailureEnvelope(
+            failure_class="structural",
+            reason_code="contradiction_detected",
+            violated_contract="determinism_level_required",
+            evidence_ids=[],
+            determinism_impact="structural",
+        )
+        return JSONResponse(
+            status_code=406,
+            content=payload.model_dump(),
+            headers={"X-Determinism-Seed": seed_value},
+        )
+    if x_agentic_gate is None or x_policy_fingerprint is None:
         payload = FailureEnvelope(
             failure_class="authority",
             reason_code="contradiction_detected",
@@ -138,6 +149,7 @@ def run_flow(
         "flow_id": "flow-unimplemented",
         "status": "failed",
         "determinism_class": "structural",
+        "environment_fingerprint": None,
         "replay_acceptability": "exact_match",
         "artifact_count": 0,
     }
@@ -158,11 +170,20 @@ def replay_flow(
     """Preconditions: required headers are present, determinism level is valid, and the replay request is well-formed; acceptable replay means differences stay within the declared acceptability threshold; mismatches return FailureEnvelope with failure_class set to authority."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     seed_value = "0"
-    if (
-        x_agentic_gate is None
-        or x_determinism_level is None
-        or x_policy_fingerprint is None
-    ):
+    if x_determinism_level is None:
+        payload = FailureEnvelope(
+            failure_class="structural",
+            reason_code="contradiction_detected",
+            violated_contract="determinism_level_required",
+            evidence_ids=[],
+            determinism_impact="structural",
+        )
+        return JSONResponse(
+            status_code=406,
+            content=payload.model_dump(),
+            headers={"X-Determinism-Seed": seed_value},
+        )
+    if x_agentic_gate is None or x_policy_fingerprint is None:
         payload = FailureEnvelope(
             failure_class="authority",
             reason_code="contradiction_detected",
@@ -193,6 +214,7 @@ def replay_flow(
         "flow_id": "flow-unimplemented",
         "status": "failed",
         "determinism_class": "structural",
+        "environment_fingerprint": None,
         "replay_acceptability": "exact_match",
         "artifact_count": 0,
     }

@@ -13,3 +13,15 @@
 | VerificationFailure | VERIFICATION_CONFLICT | Verification engines disagree beyond the allowed threshold. | Review arbitration policy and tighten evidence requirements. |
 | SemanticViolationError | UNAUTHORIZED_ENTROPY | An entropy source was used without explicit authorization. | Update the policy to authorize the source or remove it. |
 | VerificationFailure | CONTRACT_VIOLATION | The run violates a declared contract or invariant. | Fix the contract breach and re-run. |
+
+## Failure severity legend
+> Severity guidance by failure class.
+
+FailureClass → severity
+ResolutionFailure → ERROR
+ExecutionFailure → FATAL
+RetrievalFailure → WARN
+ReasoningFailure → ERROR
+ReplayUnacceptable → ERROR
+VerificationFailure → ERROR
+SemanticViolationError → FATAL

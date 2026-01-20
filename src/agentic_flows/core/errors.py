@@ -35,6 +35,7 @@ class ConfigurationError(ValueError):
 
 
 class FailureClass(str, Enum):
+    # Order is stable; ordinal values are part of the external contract. Reordering is forbidden.
     """Failure classes; misuse breaks failure taxonomy."""
 
     STRUCTURAL = "structural"

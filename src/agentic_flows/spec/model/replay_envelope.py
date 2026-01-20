@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ReplayEnvelope:
-    """Replay envelope; misuse breaks replay acceptability."""
+    """Envelope equality means replay thresholds are identical; inequality implies replay acceptability changes, so diffs are rejected; the envelope exists separately from the trace to isolate contract thresholds from observed execution state."""
 
     spec_version: str
     min_claim_overlap: float

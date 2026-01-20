@@ -229,6 +229,10 @@ Apache-2.0 — see **[LICENSE](https://github.com/bijux/agentic-flows/blob/main/
 
 This system is designed for auditability and replay, not exploratory or interactive use.
 
+## Non-goals
+
+- Automatic agent self-improvement or learning
+
 ## Publishing status
 
 Current maturity: experimental research framework with v1 contracts frozen. It is safe to rely on deterministic replay, contract validation, and published API schemas in v1. CLI output formatting and observability summaries may change without notice. Internal execution and verification APIs are not stable. Production usage should gate on strict determinism and explicit contracts.
