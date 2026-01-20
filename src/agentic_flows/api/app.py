@@ -99,6 +99,7 @@ def run_flow(
     x_determinism_level: str | None = Header(None, alias="X-Determinism-Level"),
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
+    """Preconditions: required headers are present and determinism level is valid; success guarantees a FlowRunResponse payload; failures are returned as FailureEnvelope responses, not raised as exceptions."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     if (
         x_agentic_gate is None
@@ -140,6 +141,7 @@ def replay_flow(
     x_determinism_level: str | None = Header(None, alias="X-Determinism-Level"),
     x_policy_fingerprint: str | None = Header(None, alias="X-Policy-Fingerprint"),
 ) -> JSONResponse:
+    """Preconditions: required headers are present and determinism level is valid; success guarantees a FlowRunResponse payload; failures are returned as FailureEnvelope responses, not raised as exceptions."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     if (
         x_agentic_gate is None

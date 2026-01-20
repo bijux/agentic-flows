@@ -249,6 +249,9 @@ def semantic_evidence_fingerprint(evidence: Iterable[RetrievedEvidence]) -> str:
 def _partition_diffs(
     diffs: dict[str, object], acceptability: ReplayAcceptability
 ) -> tuple[dict[str, object], dict[str, object]]:
+    # ReplayAcceptability.EXACT_MATCH: triggers on any divergence; acceptable in production: yes.
+    # ReplayAcceptability.INVARIANT_PRESERVING: triggers when only invariant-safe deltas exist; acceptable in production: yes.
+    # ReplayAcceptability.STATISTICALLY_BOUNDED: triggers when bounded statistical drift is present; acceptable in production: depends on policy.
     if not diffs:
         return {}, {}
     allowed: set[str] = set()

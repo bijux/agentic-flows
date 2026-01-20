@@ -13,7 +13,7 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 
 @dataclass(frozen=True)
 class ObservedRun:
-    """Observed run snapshot; misuse breaks observer invariants."""
+    """ObservedRun is not a replay artifact and must never be used to validate determinism because it lacks the persisted contract boundary."""
 
     trace: ExecutionTrace
     artifacts: list[Artifact]

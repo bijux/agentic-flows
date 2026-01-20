@@ -130,3 +130,10 @@ def test_trace_mutation_after_finalize_raises() -> None:
     trace.finalize()
     with pytest.raises(dataclasses.FrozenInstanceError):
         trace.events = ()
+
+
+def test_trace_mutation_after_finalize_attribute_raises() -> None:
+    trace = _build_trace()
+    trace.finalize()
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        trace.arbitration_decision = "mutated"

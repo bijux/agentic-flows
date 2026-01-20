@@ -39,6 +39,7 @@ nav:
       - mental-model: overview/mental-model.md
       - minimal-run: overview/minimal-run.md
       - boring-path: overview/boring-path.md
+      - what-breaks-determinism: overview/what-breaks-determinism.md
       - relationship-to-agentic-proteins: overview/relationship-to-agentic-proteins.md
       - audience: overview/audience.md
       - non-goals: overview/non-goals.md

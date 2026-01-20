@@ -204,16 +204,21 @@ components:
       properties:
         failure_class:
           $ref: '#/components/schemas/FailureClass'
+          description: Classification of the failure category returned by the API.
         reason_code:
           $ref: '#/components/schemas/ReasonCode'
+          description: Stable reason code describing the contractual failure cause.
         violated_contract:
           type: string
+          description: Identifier of the contract or invariant that was violated.
         evidence_ids:
           type: array
           items:
             type: string
+          description: Evidence identifiers relevant to the failure analysis.
         determinism_impact:
           $ref: '#/components/schemas/DeterminismClass'
+          description: Determinism class impacted by the failure.
     RunMode:
       type: string
       enum:

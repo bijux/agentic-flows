@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
+# Never persists: in-memory executor state, transient runtime caches, or raw tool sessions.
+# Incorrect assumption: live process environment variables are persisted.
 
 from __future__ import annotations
 
