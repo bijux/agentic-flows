@@ -160,6 +160,7 @@ _alias_module(
     "agentic_flows.spec.model.datasets.retrieval_request",
 )
 
+# PUBLIC MODEL SURFACE — ADDING EXPORTS IS A BREAKING CHANGE
 __all__ = [
     "AgentInvocation",
     "Artifact",

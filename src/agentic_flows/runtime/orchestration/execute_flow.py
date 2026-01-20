@@ -121,7 +121,12 @@ def execute_flow(
     resolved_flow: ExecutionPlan | None = None,
     config: ExecutionConfig | None = None,
 ) -> FlowRunResult:
-    """Invariant: exactly one of manifest or resolved_flow is supplied and required execution prerequisites are present; violation raises ValueError before any execution or persistence occurs, leaving no run state or trace committed."""
+    """Execution lifecycle contract.
+
+    - Phases (order): planning -> execution -> finalization.
+    - Restartable: planning, execution (resume from last checkpoint).
+    - Irreversible: dataset registration, run begin, persisted writes, finalization.
+    """
     execution_config = config or ExecutionConfig(
         mode=RunMode.LIVE,
         determinism_level=None,

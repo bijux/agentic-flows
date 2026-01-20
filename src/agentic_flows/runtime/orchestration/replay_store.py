@@ -1,5 +1,5 @@
 # INTERNAL — NOT A PUBLIC EXTENSION POINT
-"""Replay is read-only: it never mutates stores, registers datasets, or writes artifact."""
+"""Replay assumes execution stores are immutable and append-only; it relies on persisted traces, datasets, and replay envelopes matching stored hashes."""
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 

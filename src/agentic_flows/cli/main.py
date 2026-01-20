@@ -172,7 +172,6 @@ def _load_policy(path: Path) -> VerificationPolicy:
 # Stable commands: run, replay, inspect.
 # Diagnostic-only commands: experimental/* (plan, dry-run, unsafe-run, diff, explain, validate).
 # The CLI is not the primary API surface; contract-first integration should use the API schema.
-EXIT_OK = 0
 EXIT_FAILURE = 1
 EXIT_CONTRACT_VIOLATION = 2
 

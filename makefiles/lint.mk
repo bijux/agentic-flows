@@ -40,6 +40,9 @@ lint-artifacts: | $(VENV)
 	@set -euo pipefail; $(MYPY) --config-file config/mypy.ini --strict --cache-dir "$(MYPY_CACHE_DIR)" $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/mypy.log"
 	@set -euo pipefail; $(CODESPELL) -I config/agentic_flows.dic $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/codespell.log"
 	@set -euo pipefail; $(RADON) cc -s -a $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/radon.log"
+	@set -euo pipefail; $(RADON) cc -j $(LINT_DIRS) | $(VENV_PYTHON) -c 'import json,sys; max_score=45; payload=json.load(sys.stdin); violations=[]; [violations.append((f,i.get("name"),i.get("complexity",0))) for f,items in payload.items() for i in items if i.get("type") in {"function","method"} and i.get("complexity",0)>max_score]; \
+print("Radon complexity threshold exceeded (>{})".format(max_score)) if violations else None; \
+[print(f"{f}: {name} ({complexity})") for f,name,complexity in violations]; sys.exit(1 if violations else 0)'
 	@set -euo pipefail; $(PYDOCSTYLE) --convention=google --add-ignore=D100,D101,D102,D103,D104,D105,D106,D107 $(LINT_DIRS) 2>&1 | tee "$(LINT_ARTIFACTS_DIR)/pydocstyle.log"
 	@[ -d .pytype ] && echo "→ removing stray .pytype" && rm -rf .pytype || true
 	@[ -d .mypy_cache ] && echo "→ removing stray .mypy_cache" && rm -rf .mypy_cache || true

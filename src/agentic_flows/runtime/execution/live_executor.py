@@ -652,52 +652,16 @@ class LiveExecutor:
                 },
             )
 
-            if str(step.agent_id) == "force-partial-failure":
-                verification_results.append(
-                    VerificationResult(
-                        spec_version="v1",
-                        engine_id="forced",
-                        status="FAIL",
-                        reason="forced_partial_failure",
-                        randomness=VerificationRandomness.DETERMINISTIC,
-                        violations=(RuleID("forced_partial_failure"),),
-                        checked_artifact_ids=tuple(
-                            artifact.artifact_id for artifact in step_artifacts
-                        ),
-                        phase=VerificationPhase.POST_EXECUTION,
-                        rules_applied=(),
-                        decision="FAIL",
-                    )
-                )
-                record_event(
-                    EventType.VERIFICATION_FAIL,
-                    step.step_index,
-                    {
-                        "step_index": step.step_index,
-                        "status": "FAIL",
-                        "rule_ids": ["forced_partial_failure"],
-                    },
-                )
-                record_event(
-                    EventType.STEP_FAILED,
-                    step.step_index,
-                    {
-                        "step_index": step.step_index,
-                        "agent_id": step.agent_id,
-                        "error": "forced_partial_failure",
-                    },
-                )
-                if context.mode == RunMode.UNSAFE:
-                    record_event(
-                        EventType.SEMANTIC_VIOLATION,
-                        step.step_index,
-                        {
-                            "step_index": step.step_index,
-                            "decision": "FAIL",
-                            "rule_ids": ["forced_partial_failure"],
-                        },
-                    )
-                    continue
+            forced_action = self._handle_verification_phase_override(
+                step=step,
+                context=context,
+                record_event=record_event,
+                verification_results=verification_results,
+                step_artifacts=step_artifacts,
+            )
+            if forced_action == "continue":
+                continue
+            if forced_action == "break":
                 break
 
             record_event(
@@ -976,6 +940,65 @@ class LiveExecutor:
                 },
             )
         return interrupted
+
+    def _handle_verification_phase_override(
+        self,
+        *,
+        step,
+        context: ExecutionContext,
+        record_event,
+        verification_results: list[VerificationResult],
+        step_artifacts: list[Artifact],
+    ) -> str | None:
+        """Internal helper; not part of the public API."""
+        if str(step.agent_id) != "force-partial-failure":
+            return None
+        verification_results.append(
+            VerificationResult(
+                spec_version="v1",
+                engine_id="forced",
+                status="FAIL",
+                reason="forced_partial_failure",
+                randomness=VerificationRandomness.DETERMINISTIC,
+                violations=(RuleID("forced_partial_failure"),),
+                checked_artifact_ids=tuple(
+                    artifact.artifact_id for artifact in step_artifacts
+                ),
+                phase=VerificationPhase.POST_EXECUTION,
+                rules_applied=(),
+                decision="FAIL",
+            )
+        )
+        record_event(
+            EventType.VERIFICATION_FAIL,
+            step.step_index,
+            {
+                "step_index": step.step_index,
+                "status": "FAIL",
+                "rule_ids": ["forced_partial_failure"],
+            },
+        )
+        record_event(
+            EventType.STEP_FAILED,
+            step.step_index,
+            {
+                "step_index": step.step_index,
+                "agent_id": step.agent_id,
+                "error": "forced_partial_failure",
+            },
+        )
+        if context.mode == RunMode.UNSAFE:
+            record_event(
+                EventType.SEMANTIC_VIOLATION,
+                step.step_index,
+                {
+                    "step_index": step.step_index,
+                    "decision": "FAIL",
+                    "rule_ids": ["forced_partial_failure"],
+                },
+            )
+            return "continue"
+        return "break"
 
     def _finalization_phase(
         self,
