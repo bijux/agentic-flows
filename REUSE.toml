@@ -9,7 +9,7 @@ path = [
   "**/*.cff", "**/*.dic", ".coverage*", ".gitattributes", ".gitignore",
   "models/**", "**/.editorconfig", "artifacts/**", ".idea/**", "**/*.pyc",
   "**/*.fasta", "**/*.gitkeep", "site/**", ".venv/**", "**/*.jsonl", "**/*.dvc",
-  "**/*.gitignore",
+  "**/*.gitignore", "**/*.hash",
 ]
 precedence = "override"
 SPDX-License-Identifier = "CC0-1.0"

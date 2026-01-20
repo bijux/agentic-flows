@@ -98,6 +98,7 @@ nav:
   - API:
       - overview: api/overview.md
       - schema: api/schema.md
+      - schema-mapping: api/schema-mapping.md
   - Security:
       - dependencies: security/dependencies.md
       - threat_model: security/threat_model.md
