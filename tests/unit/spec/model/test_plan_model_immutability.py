@@ -13,6 +13,13 @@ from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.ontology import (
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    FlowState,
+    StepType,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     DatasetID,
@@ -20,17 +27,12 @@ from agentic_flows.spec.ontology.ids import (
     FlowID,
     InputsFingerprint,
     ResolverID,
-    VersionID,
     TenantID,
+    VersionID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
     ReplayAcceptability,
-    StepType,
-    DatasetState,
-    FlowState,
 )
 
 pytestmark = pytest.mark.unit

@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
-from agentic_flows.spec.ontology.ontology import DatasetState
+from agentic_flows.spec.ontology import DatasetState
 
 _ALLOWED_TRANSITIONS: dict[DatasetState, set[DatasetState]] = {
     DatasetState.EXPERIMENTAL: {

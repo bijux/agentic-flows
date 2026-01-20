@@ -18,8 +18,8 @@ from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
+from agentic_flows.spec.ontology import DeterminismLevel
+from agentic_flows.spec.ontology.public import (
     EventType,
     ReplayAcceptability,
 )

@@ -5,11 +5,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ids import ArtifactID, RuleID
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import (
     VerificationPhase,
     VerificationRandomness,
 )
+from agentic_flows.spec.ontology.ids import ArtifactID, RuleID
 
 
 @dataclass(frozen=True)

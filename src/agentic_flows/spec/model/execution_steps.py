@@ -9,17 +9,17 @@ from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     EnvironmentFingerprint,
     FlowID,
     PlanHash,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
-    FlowState,
-    ReplayAcceptability,
-)
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 
 @dataclass(frozen=True)

@@ -36,6 +36,9 @@ nav:
   - Non-Determinism Contract: guarantees/non_determinism.md
   - Never Support: guarantees/never_support.md
   - Home: guarantees/index.md
+  - Architecture Overview: ARCHITECTURE.md
+  - Invariants Overview: INVARIANTS.md
+  - What This Is Not: what_this_is_not.md
   - Getting Started:
       - guarantees/overview/getting_started.md
       - guarantees/overview/cli_demo.md

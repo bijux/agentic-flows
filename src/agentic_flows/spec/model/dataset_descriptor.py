@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.ontology import DatasetState
 from agentic_flows.spec.ontology.ids import DatasetID, TenantID
-from agentic_flows.spec.ontology.ontology import DatasetState
 
 
 @dataclass(frozen=True)

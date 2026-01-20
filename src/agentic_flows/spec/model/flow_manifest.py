@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
@@ -15,11 +19,7 @@ from agentic_flows.spec.ontology.ids import (
     GateID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
-    FlowState,
-    ReplayAcceptability,
-)
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 
 # NOTE: This manifest defines structure only.

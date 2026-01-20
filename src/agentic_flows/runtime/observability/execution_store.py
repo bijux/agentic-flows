@@ -30,6 +30,16 @@ from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    CausalityTag,
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EvidenceDeterminism,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     ArtifactID,
     ClaimID,
@@ -47,17 +57,9 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
     ToolID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    ArtifactScope,
-    ArtifactType,
-    CausalityTag,
-    DatasetState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
     EventType,
-    EvidenceDeterminism,
-    FlowState,
     ReplayAcceptability,
 )
 

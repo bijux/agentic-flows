@@ -13,11 +13,19 @@ from agentic_flows.runtime.artifact_store import ArtifactStore
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
-from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
+from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    CausalityTag,
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+)
 from agentic_flows.spec.ontology.ids import (
     ArtifactID,
     ClaimID,
@@ -32,13 +40,7 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
     ToolID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    ArtifactScope,
-    ArtifactType,
-    CausalityTag,
-    DatasetState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
     EventType,
     ReplayAcceptability,
@@ -304,11 +306,9 @@ def _scope_type(scope: StepID | FlowID) -> str:
 def _load_nondeterminism_source(
     *, source: EntropySource, authorized: bool, scope_id: str, scope_type: str
 ) -> NonDeterminismSource:
-    scope: StepID | FlowID
-    if scope_type == "step":
-        scope = StepID(scope_id)
-    else:
-        scope = FlowID(scope_id)
+    scope: StepID | FlowID = (
+        StepID(scope_id) if scope_type == "step" else FlowID(scope_id)
+    )
     return NonDeterminismSource(
         source=source,
         authorized=authorized,

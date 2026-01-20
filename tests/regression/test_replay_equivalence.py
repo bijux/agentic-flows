@@ -13,6 +13,10 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 )
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
@@ -21,11 +25,7 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
-    FlowState,
-    ReplayAcceptability,
-)
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 pytestmark = pytest.mark.regression
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.ontology import DeterminismLevel
 from agentic_flows.spec.ontology.ids import ContentHash, ToolID
-from agentic_flows.spec.ontology.ontology import DeterminismLevel
 
 
 @dataclass(frozen=True)

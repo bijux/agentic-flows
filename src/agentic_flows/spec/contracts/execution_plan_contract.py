@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
-from agentic_flows.spec.ontology.ontology import DeterminismLevel, StepType
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    StepType,
+)
 
 
 def validate(plan: ExecutionPlan) -> None:

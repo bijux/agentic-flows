@@ -6,7 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from agentic_flows.spec.ontology.ids import FlowID, StepID
-from agentic_flows.spec.ontology.ontology import EntropySource
+from agentic_flows.spec.ontology.public import EntropySource
 
 
 @dataclass(frozen=True)

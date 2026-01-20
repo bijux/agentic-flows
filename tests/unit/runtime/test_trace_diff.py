@@ -5,12 +5,19 @@ from __future__ import annotations
 
 from agentic_flows.runtime.observability.trace_diff import semantic_trace_diff
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
+from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.model.tool_invocation import ToolInvocation
+from agentic_flows.spec.ontology import (
+    CausalityTag,
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     ContentHash,
     DatasetID,
@@ -21,15 +28,10 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
     ToolID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    CausalityTag,
-    DatasetState,
-    DeterminismLevel,
-    EventType,
-    FlowState,
-    ReplayAcceptability,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
+    EventType,
+    ReplayAcceptability,
 )
 
 

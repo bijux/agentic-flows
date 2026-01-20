@@ -28,6 +28,15 @@ from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.ontology import (
+    ArbitrationRule,
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    FlowState,
+    StepType,
+    VerificationRandomness,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
@@ -41,16 +50,9 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    ArbitrationRule,
-    DatasetState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
-    FlowState,
     ReplayAcceptability,
-    StepType,
-    VerificationRandomness,
 )
 
 
@@ -79,7 +81,7 @@ def pytest_configure() -> None:
 
 
 @pytest.fixture(autouse=True)
-def stable_bijux_versions(monkeypatch: pytest.MonkeyPatch) -> None:
+def _stable_bijux_versions(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "agentic_flows.runtime.orchestration.planner.ExecutionPlanner._bijux_cli_version",
         "0.0.0",

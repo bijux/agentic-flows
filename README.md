@@ -1,6 +1,8 @@
 # This repository is governed by docs/guarantees/system_guarantees.md.
 # Code that violates semantics is considered a bug, not an implementation choice.
 
+Status: Experimental research framework. Determinism is enforced only in strict mode.
+
 agentic-flows defines the minimal contracts and entrypoints for describing, resolving, and tracing agentic flows across the Bijux core stack.
 
 It does not execute flows, schedule work, run agents, or perform retrieval; it only defines the schema and stubs those systems depend on.

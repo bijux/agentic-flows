@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
+from agentic_flows.spec.ontology import EntropyMagnitude
+from agentic_flows.spec.ontology.public import EntropySource
 
 
 @dataclass(frozen=True)

@@ -17,8 +17,15 @@ from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
+from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology import (
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     DatasetID,
@@ -28,12 +35,8 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DatasetState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
-    FlowState,
     ReplayAcceptability,
 )
 
@@ -178,6 +181,139 @@ def test_cli_delegates_to_api_run_flow(tmp_path: Path, monkeypatch) -> None:
             config=ExecutionConfig(mode=RunMode.PLAN),
         )
     ]
+
+
+def test_cli_sets_strict_determinism_flag(tmp_path: Path, monkeypatch) -> None:
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "flow_id": "flow-cli",
+                "tenant_id": "tenant-a",
+                "flow_state": "validated",
+                "determinism_level": "strict",
+                "replay_acceptability": "exact_match",
+                "entropy_budget": {
+                    "allowed_sources": ["seeded_rng", "data"],
+                    "max_magnitude": "low",
+                },
+                "dataset": {
+                    "dataset_id": "dataset-cli",
+                    "tenant_id": "tenant-a",
+                    "dataset_version": "1.0.0",
+                    "dataset_hash": "hash-cli",
+                    "dataset_state": "frozen",
+                    "storage_uri": "file://datasets/retrieval_corpus.jsonl",
+                },
+                "allow_deprecated_datasets": False,
+                "replay_envelope": {
+                    "min_claim_overlap": 1.0,
+                    "max_contradiction_delta": 0,
+                },
+                "agents": ["agent-1"],
+                "dependencies": [],
+                "retrieval_contracts": [],
+                "verification_gates": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    calls: list[_RunCall] = []
+
+    def _fake_run_flow(manifest, *, config: ExecutionConfig, **_kwargs):
+        plan = ExecutionSteps(
+            spec_version="v1",
+            flow_id=FlowID("flow-cli"),
+            tenant_id=TenantID("tenant-a"),
+            flow_state=FlowState.VALIDATED,
+            determinism_level=DeterminismLevel.STRICT,
+            replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+            entropy_budget=EntropyBudget(
+                spec_version="v1",
+                allowed_sources=(EntropySource.SEEDED_RNG,),
+                max_magnitude=EntropyMagnitude.LOW,
+            ),
+            replay_envelope=ReplayEnvelope(
+                spec_version="v1",
+                min_claim_overlap=1.0,
+                max_contradiction_delta=0,
+            ),
+            dataset=DatasetDescriptor(
+                spec_version="v1",
+                dataset_id=DatasetID("dataset-cli"),
+                tenant_id=TenantID("tenant-a"),
+                dataset_version="1.0.0",
+                dataset_hash="hash-cli",
+                dataset_state=DatasetState.FROZEN,
+                storage_uri="file://datasets/retrieval_corpus.jsonl",
+            ),
+            allow_deprecated_datasets=False,
+            steps=(),
+            environment_fingerprint=EnvironmentFingerprint("env"),
+            plan_hash=PlanHash("plan"),
+            resolution_metadata=(("resolver_id", ResolverID("agentic-flows:v0")),),
+        )
+        trace = ExecutionTrace(
+            spec_version="v1",
+            flow_id=FlowID("flow-cli"),
+            tenant_id=TenantID("tenant-a"),
+            parent_flow_id=None,
+            child_flow_ids=(),
+            flow_state=FlowState.VALIDATED,
+            determinism_level=DeterminismLevel.STRICT,
+            replay_acceptability=ReplayAcceptability.EXACT_MATCH,
+            dataset=plan.dataset,
+            replay_envelope=plan.replay_envelope,
+            allow_deprecated_datasets=False,
+            environment_fingerprint=plan.environment_fingerprint,
+            plan_hash=plan.plan_hash,
+            verification_policy_fingerprint=None,
+            resolver_id=ResolverID("agentic-flows:v0"),
+            events=(),
+            tool_invocations=(),
+            entropy_usage=(),
+            claim_ids=(),
+            contradiction_count=0,
+            arbitration_decision="none",
+            finalized=True,
+        )
+        calls.append(_RunCall(manifest=manifest, config=config))
+        return FlowRunResult(
+            resolved_flow=ExecutionPlan(
+                spec_version="v1",
+                manifest=manifest,
+                plan=plan,
+            ),
+            trace=trace,
+            artifacts=[],
+            evidence=[],
+            reasoning_bundles=[],
+            verification_results=[],
+            verification_arbitrations=[],
+            run_id=None,
+        )
+
+    cli_main_module = importlib.import_module("agentic_flows.cli.main")
+    monkeypatch.setattr(cli_main_module, "execute_flow", _fake_run_flow)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "agentic-flows",
+            "run",
+            str(manifest_path),
+            "--db-path",
+            str(tmp_path / "db.duckdb"),
+            "--strict-determinism",
+            "--json",
+        ],
+    )
+
+    cli_main()
+
+    assert calls
+    assert calls[0].config.mode == RunMode.LIVE
+    assert calls[0].config.strict_determinism is True
 
 
 @pytest.mark.parametrize("missing_key", ["min_claim_overlap", "max_contradiction_delta"])

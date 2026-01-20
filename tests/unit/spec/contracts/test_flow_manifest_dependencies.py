@@ -10,13 +10,15 @@ from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
-from agentic_flows.spec.ontology.ids import AgentID, DatasetID, FlowID, TenantID
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import (
     DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
-    EntropySource,
     FlowState,
+)
+from agentic_flows.spec.ontology.ids import AgentID, DatasetID, FlowID, TenantID
+from agentic_flows.spec.ontology.public import (
+    EntropySource,
     ReplayAcceptability,
 )
 

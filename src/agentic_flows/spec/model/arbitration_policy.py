@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ontology import ArbitrationRule
+from agentic_flows.spec.ontology import ArbitrationRule
 
 
 @dataclass(frozen=True)

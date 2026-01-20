@@ -16,6 +16,14 @@ from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EvidenceDeterminism,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ArtifactID,
@@ -28,14 +36,8 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    ArtifactScope,
-    ArtifactType,
-    FlowState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
-    EvidenceDeterminism,
     ReplayAcceptability,
 )
 

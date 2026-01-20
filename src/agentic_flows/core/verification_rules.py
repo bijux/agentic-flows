@@ -11,8 +11,8 @@ from agentic_flows.spec.model.reasoning_bundle import ReasoningBundle
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_rule import VerificationRule
+from agentic_flows.spec.ontology import VerificationRandomness
 from agentic_flows.spec.ontology.ids import RuleID
-from agentic_flows.spec.ontology.ontology import VerificationRandomness
 
 RuleEvaluator = Callable[
     [ReasoningBundle, Sequence[RetrievedEvidence], Sequence[Artifact]], bool

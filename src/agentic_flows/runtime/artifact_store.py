@@ -7,8 +7,11 @@ from abc import ABC, abstractmethod
 import hashlib
 
 from agentic_flows.spec.model.artifact import Artifact
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+)
 from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
 class ArtifactStore(ABC):

@@ -6,8 +6,11 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.runtime.artifact_store import InMemoryArtifactStore
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+)
 from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash, TenantID
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 pytestmark = pytest.mark.unit
 

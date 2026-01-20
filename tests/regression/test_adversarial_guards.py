@@ -34,6 +34,17 @@ from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.ontology import (
+    ArbitrationRule,
+    ArtifactScope,
+    ArtifactType,
+    DeterminismLevel,
+    EntropyMagnitude,
+    EvidenceDeterminism,
+    FlowState,
+    StepType,
+    VerificationRandomness,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ArtifactID,
@@ -48,22 +59,13 @@ from agentic_flows.spec.ontology.ids import (
     InputsFingerprint,
     RequestID,
     StepID,
-    VersionID,
     TenantID,
+    VersionID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    ArbitrationRule,
-    ArtifactScope,
-    ArtifactType,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
     EventType,
-    EvidenceDeterminism,
     ReplayAcceptability,
-    StepType,
-    VerificationRandomness,
-    FlowState,
 )
 
 pytestmark = pytest.mark.regression

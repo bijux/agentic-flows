@@ -20,6 +20,7 @@ from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification import VerificationPolicy
+from agentic_flows.spec.ontology import EntropyMagnitude
 from agentic_flows.spec.ontology.ids import (
     ClaimID,
     EnvironmentFingerprint,
@@ -27,7 +28,7 @@ from agentic_flows.spec.ontology.ids import (
     RunID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
+from agentic_flows.spec.ontology.public import EntropySource
 
 if TYPE_CHECKING:
     from agentic_flows.runtime.observability.execution_store_protocol import (
@@ -71,6 +72,7 @@ class ExecutionContext:
     initial_tool_invocations: list[ToolInvocation]
     _step_evidence: dict[int, tuple[RetrievedEvidence, ...]]
     _step_artifacts: dict[int, tuple[Artifact, ...]]
+    strict_determinism: bool = False
     observed_run: ObservedRun | None = None
     _cancelled: bool = False
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.spec.contracts.artifact_contract import validate
-from agentic_flows.spec.ontology.ontology import ArtifactType
+from agentic_flows.spec.ontology import ArtifactType
 
 pytestmark = pytest.mark.unit
 

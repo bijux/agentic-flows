@@ -6,9 +6,9 @@ from __future__ import annotations
 from enum import Enum
 
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import DeterminismLevel
+from agentic_flows.spec.ontology.public import (
     DeterminismClass,
-    DeterminismLevel,
     EntropySource,
     EventType,
 )

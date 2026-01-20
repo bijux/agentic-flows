@@ -7,10 +7,13 @@ import duckdb
 import pytest
 
 from agentic_flows.runtime.context import RunMode
-from agentic_flows.runtime.observability.execution_store import DuckDBExecutionWriteStore
+from agentic_flows.runtime.observability.execution_store import (
+    DuckDBExecutionWriteStore,
+)
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
-from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
+from agentic_flows.spec.ontology import EntropyMagnitude
+from agentic_flows.spec.ontology.public import EntropySource
 
 pytestmark = pytest.mark.unit
 

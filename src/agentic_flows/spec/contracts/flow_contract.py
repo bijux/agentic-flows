@@ -7,12 +7,14 @@ from collections import defaultdict, deque
 from collections.abc import Iterable
 
 from agentic_flows.spec.model.flow_manifest import FlowManifest
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import (
     DatasetState,
     DeterminismLevel,
     EntropyMagnitude,
-    EntropySource,
     FlowState,
+)
+from agentic_flows.spec.ontology.public import (
+    EntropySource,
     ReplayAcceptability,
 )
 

@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 
 from agentic_flows.spec.contracts.dataset_contract import validate_transition
-from agentic_flows.spec.ontology.ontology import DatasetState
+from agentic_flows.spec.ontology import DatasetState
 
 pytestmark = pytest.mark.unit
 

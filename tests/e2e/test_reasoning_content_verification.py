@@ -11,6 +11,10 @@ from agentic_flows.runtime.orchestration.execute_flow import (
     execute_flow,
 )
 from agentic_flows.spec.model.flow_manifest import FlowManifest
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
@@ -18,11 +22,7 @@ from agentic_flows.spec.ontology.ids import (
     GateID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
-    FlowState,
-    ReplayAcceptability,
-)
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 pytestmark = pytest.mark.e2e
 

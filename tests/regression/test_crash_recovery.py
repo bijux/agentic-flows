@@ -76,5 +76,5 @@ def test_crash_recovery_resume(
     assert checkpoint[0] == 0
     assert all(
         earlier.event_index < later.event_index
-        for earlier, later in zip(trace.events, trace.events[1:])
+        for earlier, later in zip(trace.events, trace.events[1:], strict=False)
     )

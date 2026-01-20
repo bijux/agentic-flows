@@ -9,7 +9,7 @@ from agentic_flows.runtime.observability.environment import (
     compute_environment_fingerprint,
 )
 from agentic_flows.runtime.orchestration.determinism_guard import validate_determinism
-from agentic_flows.spec.ontology.ontology import DeterminismLevel
+from agentic_flows.spec.ontology import DeterminismLevel
 
 pytestmark = pytest.mark.regression
 

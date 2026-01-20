@@ -23,6 +23,12 @@ from agentic_flows.spec.model.reasoning_claim import ReasoningClaim
 from agentic_flows.spec.model.reasoning_step import ReasoningStep
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    EvidenceDeterminism,
+    FlowState,
+    StepType,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     BundleID,
@@ -36,13 +42,7 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
-    EvidenceDeterminism,
-    FlowState,
-    ReplayAcceptability,
-    StepType,
-)
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 pytestmark = pytest.mark.regression
 

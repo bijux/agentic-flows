@@ -6,8 +6,9 @@ from __future__ import annotations
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
+from agentic_flows.spec.ontology import EntropyMagnitude
 from agentic_flows.spec.ontology.ids import TenantID
-from agentic_flows.spec.ontology.ontology import EntropyMagnitude, EntropySource
+from agentic_flows.spec.ontology.public import EntropySource
 
 _MAGNITUDE_ORDER = {
     EntropyMagnitude.LOW: 0,

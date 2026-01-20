@@ -22,13 +22,13 @@ from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, ResolverID
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import (
     ArtifactScope,
     ArtifactType,
     CausalityTag,
-    EventType,
 )
+from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, ResolverID
+from agentic_flows.spec.ontology.public import EventType
 
 
 def _causality_tag(event_type: EventType) -> CausalityTag:

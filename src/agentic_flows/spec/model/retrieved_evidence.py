@@ -5,13 +5,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.ontology import EvidenceDeterminism
 from agentic_flows.spec.ontology.ids import (
     ContentHash,
     ContractID,
     EvidenceID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import EvidenceDeterminism
 
 
 @dataclass(frozen=True)

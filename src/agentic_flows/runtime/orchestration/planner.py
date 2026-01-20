@@ -30,6 +30,7 @@ from agentic_flows.spec.model.execution_plan import ExecutionPlan
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.ontology import StepType
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     EnvironmentFingerprint,
@@ -39,7 +40,6 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import StepType
 
 
 class ExecutionPlanner:

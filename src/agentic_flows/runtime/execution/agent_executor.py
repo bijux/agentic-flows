@@ -16,8 +16,11 @@ from agentic_flows.runtime.execution.state_tracker import ExecutionStateTracker
 from agentic_flows.runtime.observability.seed import deterministic_seed
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+)
 from agentic_flows.spec.ontology.ids import ArtifactID, ContentHash
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType
 
 
 class AgentExecutor:

@@ -5,8 +5,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from agentic_flows.spec.ontology import VerificationRandomness
 from agentic_flows.spec.ontology.ids import RuleID
-from agentic_flows.spec.ontology.ontology import VerificationRandomness
 
 
 @dataclass(frozen=True)

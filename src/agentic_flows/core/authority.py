@@ -15,12 +15,12 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology.ids import RuleID
-from agentic_flows.spec.ontology.ontology import (
-    EventType,
+from agentic_flows.spec.ontology import (
     VerificationPhase,
     VerificationRandomness,
 )
+from agentic_flows.spec.ontology.ids import RuleID
+from agentic_flows.spec.ontology.public import EventType
 
 SEMANTICS_VERSION = "v1"
 SEMANTICS_SOURCE = "docs/guarantees/system_guarantees.md"

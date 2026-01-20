@@ -13,6 +13,10 @@ from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.non_determinism_source import NonDeterminismSource
 from agentic_flows.spec.model.resolved_step import ResolvedStep
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.ontology import (
+    EntropyMagnitude,
+    EvidenceDeterminism,
+)
 from agentic_flows.spec.ontology.ids import (
     ContentHash,
     ContractID,
@@ -20,11 +24,7 @@ from agentic_flows.spec.ontology.ids import (
     StepID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    EntropyMagnitude,
-    EntropySource,
-    EvidenceDeterminism,
-)
+from agentic_flows.spec.ontology.public import EntropySource
 
 
 class RetrievalExecutor:

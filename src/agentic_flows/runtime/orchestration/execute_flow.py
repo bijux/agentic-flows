@@ -66,6 +66,7 @@ class ExecutionConfig:
     child_flow_ids: tuple[FlowID, ...] | None = None
     observers: tuple[RuntimeObserver, ...] | None = None
     resume_run_id: RunID | None = None
+    strict_determinism: bool = False
 
     @classmethod
     def from_command(cls, command: str) -> ExecutionConfig:
@@ -203,6 +204,7 @@ def execute_flow(
         _step_evidence={},
         _step_artifacts={},
         observed_run=execution_config.observed_run,
+        strict_determinism=execution_config.strict_determinism,
     )
 
     outcome = strategy.execute(resolved_flow, context)

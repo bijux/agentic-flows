@@ -5,7 +5,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from agentic_flows.spec.ontology.ontology import CausalityTag, EventType
+from agentic_flows.spec.ontology import CausalityTag
+from agentic_flows.spec.ontology.public import EventType
 
 
 @dataclass(frozen=True)

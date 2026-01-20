@@ -30,16 +30,21 @@ from agentic_flows.spec.ontology.ontology import (
     ArbitrationRule,
     ArtifactScope,
     CausalityTag,
+    DatasetState,
+    DeterminismClass,
     DeterminismLevel,
     EntropyMagnitude,
-    EntropySource,
-    EventType,
     EvidenceDeterminism,
+    FlowState,
     ReasonCode,
-    ReplayAcceptability,
     StepType,
     VerificationPhase,
     VerificationRandomness,
+)
+from agentic_flows.spec.ontology.public import (
+    EntropySource,
+    EventType,
+    ReplayAcceptability,
 )
 
 __all__ = [
@@ -55,6 +60,8 @@ __all__ = [
     "ContentHash",
     "ContractID",
     "DatasetID",
+    "DatasetState",
+    "DeterminismClass",
     "DeterminismLevel",
     "EnvironmentFingerprint",
     "EvidenceID",
@@ -63,6 +70,7 @@ __all__ = [
     "EntropySource",
     "EventType",
     "FlowID",
+    "FlowState",
     "GateID",
     "InputsFingerprint",
     "PlanHash",

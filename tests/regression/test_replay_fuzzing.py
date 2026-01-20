@@ -11,17 +11,17 @@ from agentic_flows.runtime.orchestration.determinism_guard import (
 )
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    EvidenceDeterminism,
+)
 from agentic_flows.spec.ontology.ids import (
     ArtifactID,
     ContentHash,
     ContractID,
     EvidenceID,
     TenantID,
-)
-from agentic_flows.spec.ontology.ontology import (
-    ArtifactScope,
-    ArtifactType,
-    EvidenceDeterminism,
 )
 
 pytestmark = pytest.mark.regression

@@ -12,6 +12,13 @@ from agentic_flows.spec.model.execution_event import ExecutionEvent
 from agentic_flows.spec.model.execution_steps import ExecutionSteps
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology import (
+    CausalityTag,
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     DatasetID,
     EnvironmentFingerprint,
@@ -20,14 +27,9 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    CausalityTag,
-    DatasetState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
     EventType,
-    FlowState,
     ReplayAcceptability,
 )
 

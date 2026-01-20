@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import json
 from pathlib import Path
 
@@ -21,6 +21,12 @@ from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.entropy_budget import EntropyBudget
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology import (
+    DatasetState,
+    DeterminismLevel,
+    EntropyMagnitude,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
@@ -30,12 +36,8 @@ from agentic_flows.spec.ontology.ids import (
     RunID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DatasetState,
-    DeterminismLevel,
-    EntropyMagnitude,
+from agentic_flows.spec.ontology.public import (
     EntropySource,
-    FlowState,
     ReplayAcceptability,
 )
 
@@ -93,18 +95,25 @@ def main() -> None:
     run_parser = subparsers.add_parser("run")
     run_parser.add_argument("manifest")
     run_parser.add_argument("--db-path", required=True)
+    run_parser.add_argument("--strict-determinism", action="store_true")
+    run_parser.add_argument("--json", action="store_true")
 
     plan_parser = subparsers.add_parser("plan")
     plan_parser.add_argument("manifest")
     plan_parser.add_argument("--db-path")
+    plan_parser.add_argument("--json", action="store_true")
 
     dry_run_parser = subparsers.add_parser("dry-run")
     dry_run_parser.add_argument("manifest")
     dry_run_parser.add_argument("--db-path", required=True)
+    dry_run_parser.add_argument("--strict-determinism", action="store_true")
+    dry_run_parser.add_argument("--json", action="store_true")
 
     unsafe_parser = subparsers.add_parser("unsafe-run")
     unsafe_parser.add_argument("manifest")
     unsafe_parser.add_argument("--db-path", required=True)
+    unsafe_parser.add_argument("--strict-determinism", action="store_true")
+    unsafe_parser.add_argument("--json", action="store_true")
 
     inspect_parser = subparsers.add_parser("inspect")
     inspect_subparsers = inspect_parser.add_subparsers(dest="inspect_command")
@@ -112,6 +121,7 @@ def main() -> None:
     inspect_run_parser.add_argument("run_id")
     inspect_run_parser.add_argument("--tenant-id", required=True)
     inspect_run_parser.add_argument("--db-path", required=True)
+    inspect_run_parser.add_argument("--json", action="store_true")
 
     diff_parser = subparsers.add_parser("diff")
     diff_subparsers = diff_parser.add_subparsers(dest="diff_command")
@@ -120,6 +130,7 @@ def main() -> None:
     diff_run_parser.add_argument("run_b")
     diff_run_parser.add_argument("--tenant-id", required=True)
     diff_run_parser.add_argument("--db-path", required=True)
+    diff_run_parser.add_argument("--json", action="store_true")
 
     explain_parser = subparsers.add_parser("explain")
     explain_subparsers = explain_parser.add_subparsers(dest="explain_command")
@@ -127,24 +138,26 @@ def main() -> None:
     explain_failure_parser.add_argument("run_id")
     explain_failure_parser.add_argument("--tenant-id", required=True)
     explain_failure_parser.add_argument("--db-path", required=True)
+    explain_failure_parser.add_argument("--json", action="store_true")
 
     validate_parser = subparsers.add_parser("validate")
     validate_subparsers = validate_parser.add_subparsers(dest="validate_command")
     validate_db_parser = validate_subparsers.add_parser("db")
     validate_db_parser.add_argument("--db-path", required=True)
+    validate_db_parser.add_argument("--json", action="store_true")
 
     args = parser.parse_args()
     if args.command == "inspect" and args.inspect_command == "run":
-        _inspect_run(args)
+        _inspect_run(args, json_output=args.json)
         return
     if args.command == "diff" and args.diff_command == "run":
-        _diff_runs(args)
+        _diff_runs(args, json_output=args.json)
         return
     if args.command == "explain" and args.explain_command == "failure":
-        _explain_failure(args)
+        _explain_failure(args, json_output=args.json)
         return
     if args.command == "validate" and args.validate_command == "db":
-        _validate_db(args)
+        _validate_db(args, json_output=args.json)
         return
 
     manifest_path = Path(args.manifest)
@@ -156,11 +169,20 @@ def main() -> None:
             mode=config.mode,
             execution_store=DuckDBExecutionWriteStore(Path(args.db_path)),
         )
+    if getattr(args, "strict_determinism", False):
+        config = replace(config, strict_determinism=True)
     result = execute_flow(manifest, config=config)
-    _render_result(args.command, result)
+    _render_result(args.command, result, json_output=args.json)
 
 
-def _render_result(command: str, result) -> None:
+def _render_result(command: str, result, *, json_output: bool) -> None:
+    if json_output:
+        _render_json_result(command, result)
+        return
+    _render_human_result(command, result)
+
+
+def _render_json_result(command: str, result) -> None:
     if command == "plan":
         payload = asdict(result.resolved_flow.plan)
         print(json.dumps(payload, sort_keys=True))
@@ -244,6 +266,33 @@ def _render_result(command: str, result) -> None:
         }
         print(json.dumps(output, sort_keys=True))
         return
+    print(json.dumps({"flow_id": result.resolved_flow.manifest.flow_id}))
+
+
+def _render_human_result(command: str, result) -> None:
+    if command == "plan":
+        plan = result.resolved_flow.plan
+        print(
+            f"Plan ready: flow_id={plan.flow_id} steps={len(plan.steps)} "
+            f"dataset={plan.dataset.dataset_id}"
+        )
+        return
+    if command == "dry-run":
+        trace = result.trace
+        print(
+            f"Dry-run trace: run_id={result.run_id} events={len(trace.events)} "
+            f"artifacts={len(result.artifacts)}"
+        )
+        return
+    if command in {"run", "unsafe-run"}:
+        trace = result.trace
+        entropy_count = len(trace.entropy_usage) if trace is not None else 0
+        print(
+            f"Run complete: run_id={result.run_id} steps={len(result.resolved_flow.plan.steps)} "
+            f"artifacts={len(result.artifacts)} evidence={len(result.evidence)} "
+            f"entropy_entries={entropy_count}"
+        )
+        return
     print(f"Flow loaded successfully: {result.resolved_flow.manifest.flow_id}")
 
 
@@ -259,14 +308,21 @@ def _normalize_for_json(value):
     return value
 
 
-def _inspect_run(args: argparse.Namespace) -> None:
+def _inspect_run(args: argparse.Namespace, *, json_output: bool) -> None:
     store = DuckDBExecutionReadStore(Path(args.db_path))
     trace = store.load_trace(RunID(args.run_id), tenant_id=TenantID(args.tenant_id))
-    payload = _normalize_for_json(asdict(trace))
-    print(json.dumps(payload, sort_keys=True))
+    if json_output:
+        payload = _normalize_for_json(asdict(trace))
+        print(json.dumps(payload, sort_keys=True))
+        return
+    print(
+        f"Run {args.run_id}: events={len(trace.events)} "
+        f"tool_invocations={len(trace.tool_invocations)} "
+        f"entropy_entries={len(trace.entropy_usage)}"
+    )
 
 
-def _diff_runs(args: argparse.Namespace) -> None:
+def _diff_runs(args: argparse.Namespace, *, json_output: bool) -> None:
     store = DuckDBExecutionReadStore(Path(args.db_path))
     tenant_id = TenantID(args.tenant_id)
     trace_a = store.load_trace(RunID(args.run_a), tenant_id=tenant_id)
@@ -274,10 +330,16 @@ def _diff_runs(args: argparse.Namespace) -> None:
     diff = semantic_trace_diff(
         trace_a, trace_b, acceptability=trace_a.replay_acceptability
     )
-    print(json.dumps(_normalize_for_json(diff), sort_keys=True))
+    if json_output:
+        print(json.dumps(_normalize_for_json(diff), sort_keys=True))
+        return
+    if diff:
+        print(f"Diff detected: keys={', '.join(sorted(diff.keys()))}")
+    else:
+        print("Diff clean: no semantic differences")
 
 
-def _explain_failure(args: argparse.Namespace) -> None:
+def _explain_failure(args: argparse.Namespace, *, json_output: bool) -> None:
     store = DuckDBExecutionReadStore(Path(args.db_path))
     trace = store.load_trace(RunID(args.run_id), tenant_id=TenantID(args.tenant_id))
     failure_events = [
@@ -300,12 +362,24 @@ def _explain_failure(args: argparse.Namespace) -> None:
         else None,
         "event_type": failure_events[-1].event_type.value if failure_events else None,
     }
-    print(json.dumps(payload, sort_keys=True))
+    if json_output:
+        print(json.dumps(payload, sort_keys=True))
+        return
+    if failure_events:
+        last = failure_events[-1]
+        print(
+            f"Failure {last.event_type.value}: " f"{_normalize_for_json(last.payload)}"
+        )
+    else:
+        print("No failure events recorded")
 
 
-def _validate_db(args: argparse.Namespace) -> None:
+def _validate_db(args: argparse.Namespace, *, json_output: bool) -> None:
     DuckDBExecutionReadStore(Path(args.db_path))
-    print(json.dumps({"status": "ok"}, sort_keys=True))
+    if json_output:
+        print(json.dumps({"status": "ok"}, sort_keys=True))
+        return
+    print("DB validated: ok")
 
 
 def _replay_confidence(acceptability: ReplayAcceptability) -> str:

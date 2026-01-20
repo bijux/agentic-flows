@@ -5,14 +5,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import duckdb
 import pytest
 
 from agentic_flows.runtime.observability.execution_store import (
-    DuckDBExecutionWriteStore,
     MIGRATIONS_DIR,
     SCHEMA_CONTRACT_PATH,
     SCHEMA_HASH_PATH,
     SCHEMA_VERSION,
+    DuckDBExecutionWriteStore,
 )
 
 pytestmark = pytest.mark.unit
@@ -64,7 +65,7 @@ def test_duckdb_migrations_rollback_on_failure(tmp_path: Path, monkeypatch) -> N
         "agentic_flows.runtime.observability.execution_store.MIGRATIONS_DIR",
         migrations_dir,
     )
-    with pytest.raises(Exception):
+    with pytest.raises(duckdb.Error):
         DuckDBExecutionWriteStore(tmp_path / "broken.duckdb")
 
 

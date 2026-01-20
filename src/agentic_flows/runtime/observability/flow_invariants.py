@@ -6,7 +6,7 @@ from __future__ import annotations
 from agentic_flows.core.errors import SemanticViolationError
 from agentic_flows.runtime.context import ExecutionContext
 from agentic_flows.spec.model.artifact import Artifact
-from agentic_flows.spec.ontology.ontology import ArtifactType
+from agentic_flows.spec.ontology import ArtifactType
 
 
 def validate_flow_invariants(

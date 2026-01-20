@@ -8,7 +8,8 @@ from agentic_flows.runtime.observability.determinism_classification import (
 )
 from agentic_flows.spec.model.entropy_usage import EntropyUsage
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
-from agentic_flows.spec.ontology.ontology import EntropyMagnitude, ReplayAcceptability
+from agentic_flows.spec.ontology import EntropyMagnitude
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 _MAGNITUDE_ORDER = {
     EntropyMagnitude.LOW: 0,

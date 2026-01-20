@@ -16,13 +16,13 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, RuleID
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import (
     ArbitrationRule,
     ReasonCode,
     VerificationPhase,
     VerificationRandomness,
 )
+from agentic_flows.spec.ontology.ids import ArtifactID, PolicyFingerprint, RuleID
 
 
 class VerificationEngine(Protocol):

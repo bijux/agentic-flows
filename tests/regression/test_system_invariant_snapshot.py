@@ -8,7 +8,7 @@ import pytest
 from agentic_flows import api
 from agentic_flows.core import authority
 from agentic_flows.spec.contracts import compatibility_contract
-from agentic_flows.spec.ontology.ontology import (
+from agentic_flows.spec.ontology import (
     ArbitrationRule,
     ArtifactScope,
     StepType,

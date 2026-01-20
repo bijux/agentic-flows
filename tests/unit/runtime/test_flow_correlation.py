@@ -11,6 +11,11 @@ from agentic_flows.runtime.observability.flow_correlation import (
 from agentic_flows.spec.model.dataset_descriptor import DatasetDescriptor
 from agentic_flows.spec.model.execution_trace import ExecutionTrace
 from agentic_flows.spec.model.replay_envelope import ReplayEnvelope
+from agentic_flows.spec.ontology import (
+    DatasetState,
+    DeterminismLevel,
+    FlowState,
+)
 from agentic_flows.spec.ontology.ids import (
     DatasetID,
     EnvironmentFingerprint,
@@ -19,12 +24,7 @@ from agentic_flows.spec.ontology.ids import (
     ResolverID,
     TenantID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DatasetState,
-    DeterminismLevel,
-    FlowState,
-    ReplayAcceptability,
-)
+from agentic_flows.spec.ontology.public import ReplayAcceptability
 
 
 def test_flow_correlation_requires_parent() -> None:

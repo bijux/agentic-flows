@@ -8,7 +8,11 @@ from dataclasses import dataclass
 
 from agentic_flows.spec.model.artifact import Artifact
 from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
-from agentic_flows.spec.ontology.ontology import ArtifactScope, ArtifactType, StepType
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    StepType,
+)
 
 
 @dataclass(frozen=True)

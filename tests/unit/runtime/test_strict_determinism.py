@@ -44,7 +44,7 @@ from agentic_flows.spec.ontology.public import (
 
 
 @pytest.mark.unit
-def test_unauthorized_entropy_intent(
+def test_strict_determinism_aborts_on_first_entropy_violation(
     baseline_policy,
     resolved_flow_factory,
     entropy_budget,
@@ -53,20 +53,20 @@ def test_unauthorized_entropy_intent(
     execution_store,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    step = ResolvedStep(
+    step_one = ResolvedStep(
         spec_version="v1",
         step_index=0,
         step_type=StepType.AGENT,
         determinism_level=DeterminismLevel.STRICT,
         agent_id=AgentID("agent-a"),
-        inputs_fingerprint=InputsFingerprint("inputs"),
+        inputs_fingerprint=InputsFingerprint("inputs-0"),
         declared_dependencies=(),
         expected_artifacts=(),
         agent_invocation=AgentInvocation(
             spec_version="v1",
             agent_id=AgentID("agent-a"),
             agent_version=VersionID("0.0.0"),
-            inputs_fingerprint=InputsFingerprint("inputs"),
+            inputs_fingerprint=InputsFingerprint("inputs-0"),
             declared_outputs=(),
             execution_mode="seeded",
         ),
@@ -79,6 +79,25 @@ def test_unauthorized_entropy_intent(
             scope="tests",
         ),
     )
+    step_two = ResolvedStep(
+        spec_version="v1",
+        step_index=1,
+        step_type=StepType.AGENT,
+        determinism_level=DeterminismLevel.STRICT,
+        agent_id=AgentID("agent-b"),
+        inputs_fingerprint=InputsFingerprint("inputs-1"),
+        declared_dependencies=(),
+        expected_artifacts=(),
+        agent_invocation=AgentInvocation(
+            spec_version="v1",
+            agent_id=AgentID("agent-b"),
+            agent_version=VersionID("0.0.0"),
+            inputs_fingerprint=InputsFingerprint("inputs-1"),
+            declared_outputs=(),
+            execution_mode="seeded",
+        ),
+        retrieval_request=None,
+    )
     manifest = FlowManifest(
         spec_version="v1",
         flow_id=FlowID("flow-entropy"),
@@ -90,23 +109,27 @@ def test_unauthorized_entropy_intent(
         replay_envelope=replay_envelope,
         dataset=dataset_descriptor,
         allow_deprecated_datasets=False,
-        agents=(AgentID("agent-a"),),
+        agents=(AgentID("agent-a"), AgentID("agent-b")),
         dependencies=(),
         retrieval_contracts=(ContractID("contract-a"),),
         verification_gates=(),
     )
-    resolved_flow = resolved_flow_factory(manifest, (step,))
+    resolved_flow = resolved_flow_factory(manifest, (step_one, step_two))
+
+    retrieval_calls: list[int] = []
+    agent_calls: list[str] = []
 
     def _retrieval_execute(_self, _step, context):
+        retrieval_calls.append(_step.step_index)
         context.record_entropy(
             source=EntropySource.DATA,
             magnitude=EntropyMagnitude.LOW,
             description="unauthorized entropy",
-            step_index=0,
+            step_index=_step.step_index,
             nondeterminism_source=NonDeterminismSource(
                 source=EntropySource.DATA,
                 authorized=False,
-                scope=StepID("0"),
+                scope=StepID(str(_step.step_index)),
             ),
         )
         return [
@@ -122,18 +145,22 @@ def test_unauthorized_entropy_intent(
             )
         ]
 
+    def _agent_run(**_kwargs):
+        agent_calls.append(_kwargs["agent_id"])
+        return [
+            {
+                "artifact_id": f"artifact-{_kwargs['agent_id']}",
+                "artifact_type": "agent_invocation",
+                "content": "payload",
+                "parent_artifacts": [],
+            }
+        ]
+
     monkeypatch.setattr(
         "agentic_flows.runtime.execution.retrieval_executor.RetrievalExecutor.execute",
         _retrieval_execute,
     )
-    bijux_agent.run = lambda **_kwargs: [
-        {
-            "artifact_id": "artifact-entropy",
-            "artifact_type": "agent_invocation",
-            "content": "payload",
-            "parent_artifacts": [],
-        }
-    ]
+    bijux_agent.run = _agent_run
 
     with pytest.raises(SemanticViolationError, match="entropy source"):
         execute_flow(
@@ -145,3 +172,6 @@ def test_unauthorized_entropy_intent(
                 strict_determinism=True,
             ),
         )
+
+    assert retrieval_calls == [0]
+    assert agent_calls == []

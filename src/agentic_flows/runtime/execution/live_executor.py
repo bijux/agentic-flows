@@ -9,7 +9,7 @@ import os
 import signal
 
 from agentic_flows.core.authority import finalize_trace
-from agentic_flows.core.errors import ExecutionFailure
+from agentic_flows.core.errors import ExecutionFailure, SemanticViolationError
 from agentic_flows.runtime.context import ExecutionContext, RunMode
 from agentic_flows.runtime.execution.agent_executor import AgentExecutor
 from agentic_flows.runtime.execution.reasoning_executor import ReasoningExecutor
@@ -36,6 +36,14 @@ from agentic_flows.spec.model.retrieved_evidence import RetrievedEvidence
 from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
+from agentic_flows.spec.ontology import (
+    ArtifactScope,
+    ArtifactType,
+    CausalityTag,
+    StepType,
+    VerificationPhase,
+    VerificationRandomness,
+)
 from agentic_flows.spec.ontology.ids import (
     ArtifactID,
     ClaimID,
@@ -45,15 +53,7 @@ from agentic_flows.spec.ontology.ids import (
     RuleID,
     ToolID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    ArtifactScope,
-    ArtifactType,
-    CausalityTag,
-    EventType,
-    StepType,
-    VerificationPhase,
-    VerificationRandomness,
-)
+from agentic_flows.spec.ontology.public import EventType
 
 
 @dataclass
@@ -141,6 +141,7 @@ class LiveExecutor:
         evidence_index = context.starting_evidence_index
         tool_invocation_index = context.starting_tool_invocation_index
         entropy_index = context.starting_entropy_index
+        entropy_checked_index = context.starting_entropy_index
 
         def record_event(
             event_type: EventType, step_index: int, payload: dict[str, object]
@@ -229,6 +230,21 @@ class LiveExecutor:
                 starting_index=entropy_index,
             )
             entropy_index = len(usage)
+
+        def enforce_entropy_authorization() -> None:
+            nonlocal entropy_checked_index
+            usage = context.entropy_usage()
+            if len(usage) <= entropy_checked_index:
+                return
+            new_entries = usage[entropy_checked_index:]
+            entropy_checked_index = len(usage)
+            if not context.strict_determinism:
+                return
+            for entry in new_entries:
+                if not entry.nondeterminism_source.authorized:
+                    raise SemanticViolationError(
+                        "entropy source used without explicit authorization"
+                    )
 
         def save_checkpoint(step_index: int) -> None:
             if context.execution_store is None or context.run_id is None:
@@ -359,6 +375,7 @@ class LiveExecutor:
                     evidence.extend(retrieved)
                     context.record_evidence(step.step_index, current_evidence)
                     record_evidence(retrieved)
+                    enforce_entropy_authorization()
                     try:
                         context.consume_budget(artifacts=0)
                         context.consume_evidence_budget(len(retrieved))
@@ -847,6 +864,7 @@ class LiveExecutor:
                         "agent_id": step.agent_id,
                     },
                 )
+                enforce_entropy_authorization()
                 flush_entropy_usage()
                 save_checkpoint(step.step_index)
 

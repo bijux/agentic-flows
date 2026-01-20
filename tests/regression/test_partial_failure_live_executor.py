@@ -14,6 +14,11 @@ from agentic_flows.runtime.orchestration.execute_flow import (
 from agentic_flows.spec.model.agent_invocation import AgentInvocation
 from agentic_flows.spec.model.flow_manifest import FlowManifest
 from agentic_flows.spec.model.resolved_step import ResolvedStep
+from agentic_flows.spec.ontology import (
+    DeterminismLevel,
+    FlowState,
+    StepType,
+)
 from agentic_flows.spec.ontology.ids import (
     AgentID,
     ContractID,
@@ -23,12 +28,9 @@ from agentic_flows.spec.ontology.ids import (
     TenantID,
     VersionID,
 )
-from agentic_flows.spec.ontology.ontology import (
-    DeterminismLevel,
+from agentic_flows.spec.ontology.public import (
     EventType,
-    FlowState,
     ReplayAcceptability,
-    StepType,
 )
 
 pytestmark = pytest.mark.regression
