@@ -47,6 +47,8 @@ nav:
       - common-misuse: overview/common-misuse.md
       - audit-grade: overview/audit-grade.md
       - datasets: overview/datasets.md
+      - wont-support: overview/wont-support.md
+      - upgrade-policy: overview/upgrade-policy.md
       - versioning: overview/versioning.md
       - what-breaks-determinism: overview/what-breaks-determinism.md
       - relationship-to-agentic-proteins: overview/relationship-to-agentic-proteins.md
@@ -107,6 +109,7 @@ nav:
       - pathway_limits: architecture/pathway_limits.md
       - conservation: architecture/conservation.md
       - metrics: architecture/metrics.md
+      - observability: architecture/observability.md
       - negative_results: architecture/negative_results.md
       - design_debt: architecture/design_debt.md
   - CLI:

@@ -105,11 +105,11 @@ def run_flow(
     """Deterministic guarantees cover declared contracts and persisted envelopes only; runtime environment, external tools, and policy omissions are explicitly not guaranteed; replay equivalence is expected to fail when headers, policy fingerprints, or dataset identity diverge from the declared contract."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     seed_value = "0"
-    if x_determinism_level is None:
+    if x_determinism_level in {None, "", "default"}:
         payload = FailureEnvelope(
             failure_class="structural",
             reason_code="contradiction_detected",
-            violated_contract="determinism_level_required",
+            violated_contract="configuration_error",
             evidence_ids=[],
             determinism_impact="structural",
         )
@@ -170,11 +170,11 @@ def replay_flow(
     """Preconditions: required headers are present, determinism level is valid, and the replay request is well-formed; acceptable replay means differences stay within the declared acceptability threshold; mismatches return FailureEnvelope with failure_class set to authority."""
     allowed_levels = {"strict", "bounded", "probabilistic", "unconstrained"}
     seed_value = "0"
-    if x_determinism_level is None:
+    if x_determinism_level in {None, "", "default"}:
         payload = FailureEnvelope(
             failure_class="structural",
             reason_code="contradiction_detected",
-            violated_contract="determinism_level_required",
+            violated_contract="configuration_error",
             evidence_ids=[],
             determinism_impact="structural",
         )

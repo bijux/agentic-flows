@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.observability.determinism_classification import (
+from agentic_flows.runtime.observability.classification.determinism_classification import (
     determinism_classes_for_trace,
 )
 from agentic_flows.spec.model.entropy_usage import EntropyUsage

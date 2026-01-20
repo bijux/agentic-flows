@@ -10,7 +10,7 @@ from pathlib import Path
 import sys
 
 from agentic_flows.api import ExecutionConfig, RunMode, execute_flow
-from agentic_flows.core.errors import classify_failure
+from agentic_flows.core.errors import ConfigurationError, classify_failure
 from agentic_flows.runtime.observability.determinism_classification import (
     determinism_classes_for_trace,
 )
@@ -59,6 +59,27 @@ from agentic_flows.spec.ontology.public import (
 def _load_manifest(path: Path) -> FlowManifest:
     raw_contents = path.read_text(encoding="utf-8")
     payload = json.loads(raw_contents)
+    allowed_keys = {
+        "flow_id",
+        "tenant_id",
+        "flow_state",
+        "determinism_level",
+        "replay_acceptability",
+        "entropy_budget",
+        "replay_envelope",
+        "dataset",
+        "allow_deprecated_datasets",
+        "agents",
+        "dependencies",
+        "retrieval_contracts",
+        "verification_gates",
+    }
+    unknown_keys = sorted(set(payload) - allowed_keys)
+    if unknown_keys:
+        raise ConfigurationError(",".join(unknown_keys))
+    determinism_value = payload.get("determinism_level")
+    if determinism_value in (None, "", "default"):
+        raise ConfigurationError("determinism_level")
     return FlowManifest(
         spec_version="v1",
         flow_id=FlowID(payload["flow_id"]),
@@ -340,6 +361,9 @@ def main() -> None:
     try:
         result = execute_flow(manifest, config=config)
     except Exception as exc:
+        if isinstance(exc, ConfigurationError):
+            print(str(exc), file=sys.stderr)
+            raise SystemExit(EXIT_CONTRACT_VIOLATION) from exc
         try:
             failure_class = classify_failure(exc)
         except KeyError:
@@ -602,11 +626,14 @@ def _replay_run(args: argparse.Namespace, *, json_output: bool) -> None:
         }
         print(json.dumps(payload, sort_keys=True))
         if diff:
-            raise SystemExit(EXIT_FAILURE)
+            reason_code = next(iter(diff))
+            print(reason_code, file=sys.stderr)
+            raise SystemExit(EXIT_CONTRACT_VIOLATION)
         return
     if diff:
-        print(f"Replay diff detected: keys={', '.join(sorted(diff.keys()))}")
-        raise SystemExit(EXIT_FAILURE)
+        reason_code = next(iter(diff))
+        print(reason_code)
+        raise SystemExit(EXIT_CONTRACT_VIOLATION)
     else:
         print(f"Replay clean: run_id={result.run_id}")
 

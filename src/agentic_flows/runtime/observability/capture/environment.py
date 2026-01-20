@@ -9,7 +9,9 @@ from importlib import metadata
 import platform
 import sys
 
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_inputs,
+)
 
 
 def compute_environment_fingerprint() -> str:

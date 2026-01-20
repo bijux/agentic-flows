@@ -1,3 +1,4 @@
+# INTERNAL — NOT A PUBLIC EXTENSION POINT
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi
 # INTERNAL CORE — CHANGES REQUIRE REPLAY REVIEW
@@ -24,8 +25,10 @@ from agentic_flows.runtime.observability.execution_store_protocol import (
     ExecutionReadStoreProtocol,
     ExecutionWriteStoreProtocol,
 )
+from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
 from agentic_flows.runtime.observability.hooks import RuntimeObserver
 from agentic_flows.runtime.observability.observed_run import ObservedRun
+from agentic_flows.runtime.observability.time import utc_now_deterministic
 from agentic_flows.runtime.observability.trace_recorder import TraceRecorder
 from agentic_flows.runtime.orchestration.planner import ExecutionPlanner
 from agentic_flows.spec.model.artifact import Artifact
@@ -41,7 +44,7 @@ from agentic_flows.spec.model.tool_invocation import ToolInvocation
 from agentic_flows.spec.model.verification import VerificationPolicy
 from agentic_flows.spec.model.verification_arbitration import VerificationArbitration
 from agentic_flows.spec.model.verification_result import VerificationResult
-from agentic_flows.spec.ontology import DeterminismLevel
+from agentic_flows.spec.ontology import CausalityTag, DeterminismLevel, EventType
 from agentic_flows.spec.ontology.ids import ClaimID, FlowID, RunID, TenantID
 
 
@@ -196,6 +199,43 @@ def execute_flow(
             tenant_id=resolved_flow.plan.tenant_id,
             plan=resolved_flow.plan,
         )
+    relaxed_determinism = execution_config.determinism_level in {
+        DeterminismLevel.BOUNDED,
+        DeterminismLevel.PROBABILISTIC,
+        DeterminismLevel.UNCONSTRAINED,
+    }
+    permissive_verification = (
+        execution_config.verification_policy is not None
+        and execution_config.verification_policy.failure_mode != "halt"
+    )
+    if relaxed_determinism or permissive_verification:
+        payload = {
+            "warning": "unsafe_config",
+            "determinism_level": execution_config.determinism_level.value,
+            "verification_failure_mode": (
+                execution_config.verification_policy.failure_mode
+                if execution_config.verification_policy is not None
+                else None
+            ),
+        }
+        warning_event = ExecutionEvent(
+            spec_version="v1",
+            event_index=starting_event_index,
+            step_index=0,
+            event_type=EventType.SEMANTIC_VIOLATION,
+            causality_tag=CausalityTag.ENVIRONMENT,
+            timestamp_utc=utc_now_deterministic(starting_event_index),
+            payload=payload,
+            payload_hash=fingerprint_inputs(payload),
+        )
+        trace_recorder.record(warning_event, authority_token())
+        if execution_config.execution_store is not None and run_id is not None:
+            execution_config.execution_store.save_events(
+                run_id=run_id,
+                tenant_id=resolved_flow.plan.tenant_id,
+                events=(warning_event,),
+            )
+        starting_event_index += 1
     seed = _derive_seed_token(resolved_flow.plan)
     context = ExecutionContext(
         authority=authority_token(),

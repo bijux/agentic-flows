@@ -1,3 +1,4 @@
+# INTERNAL — NOT A PUBLIC EXTENSION POINT
 """Replay is read-only: it never mutates stores, registers datasets, or writes artifacts."""
 # SPDX-License-Identifier: Apache-2.0
 # Copyright © 2025 Bijan Mousavi

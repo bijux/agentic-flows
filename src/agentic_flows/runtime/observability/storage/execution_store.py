@@ -13,8 +13,8 @@ from uuid import uuid4
 import duckdb
 
 from agentic_flows.runtime.context import RunMode
-from agentic_flows.runtime.observability import schema_contracts
-from agentic_flows.runtime.observability.execution_store_protocol import (
+from agentic_flows.runtime.observability.storage import schema_contracts
+from agentic_flows.runtime.observability.storage.execution_store_protocol import (
     ExecutionReadStoreProtocol,
     ExecutionWriteStoreProtocol,
 )
@@ -66,9 +66,9 @@ from agentic_flows.spec.ontology.public import (
 )
 
 SCHEMA_VERSION = 1
-MIGRATIONS_DIR = Path(__file__).with_name("migrations")
-SCHEMA_CONTRACT_PATH = Path(__file__).with_name("schema.sql")
-SCHEMA_HASH_PATH = Path(__file__).with_name("schema.hash")
+MIGRATIONS_DIR = Path(__file__).resolve().parents[1] / "migrations"
+SCHEMA_CONTRACT_PATH = Path(__file__).resolve().parents[1] / "schema.sql"
+SCHEMA_HASH_PATH = Path(__file__).resolve().parents[1] / "schema.hash"
 
 
 class DuckDBExecutionStore:
@@ -495,12 +495,16 @@ class DuckDBExecutionStore:
         self._assert_dvc_dataset(dataset)
         existing = self._connection.execute(
             """
-            SELECT state FROM datasets
+            SELECT state, fingerprint FROM datasets
             WHERE tenant_id = ? AND dataset_id = ? AND version = ?
             """,
             (str(dataset.tenant_id), str(dataset.dataset_id), dataset.dataset_version),
         ).fetchone()
         previous = DatasetState(existing[0]) if existing else None
+        if existing and existing[1] != dataset.dataset_hash:
+            raise ValueError(
+                "Dataset fingerprint changed across runs; immutability violated"
+            )
         if previous == dataset.dataset_state:
             return
         validate_transition(previous, dataset.dataset_state)

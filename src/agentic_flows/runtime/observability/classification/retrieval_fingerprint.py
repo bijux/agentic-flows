@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
-from agentic_flows.runtime.observability.fingerprint import fingerprint_inputs
+from agentic_flows.runtime.observability.classification.fingerprint import (
+    fingerprint_inputs,
+)
 from agentic_flows.spec.model.retrieval_request import RetrievalRequest
 
 
