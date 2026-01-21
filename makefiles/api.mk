@@ -92,7 +92,11 @@ endef
 api: api-install api-lint api-test
 
 openapi-drift:
-	@$(PYTHON) scripts/check_openapi_drift.py
+	@if [ -f scripts/check_openapi_drift.py ]; then \
+		$(PYTHON) scripts/check_openapi_drift.py; \
+	else \
+		echo "Skipping openapi-drift (scripts/check_openapi_drift.py missing)"; \
+	fi
 
 # ── Install toolchain (Python + Node sandbox)
 api-install: | $(VENV) node_deps

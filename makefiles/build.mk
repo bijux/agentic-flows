@@ -1,4 +1,4 @@
-# Build Configuration — keep outputs under artifact/
+# Build Configuration — keep outputs under artifacts/
 
 # Dirs & flags
 BUILD_DIR        ?= artifacts/build
@@ -74,10 +74,10 @@ build-clean:
 
 ##@ Build
 build-tools: ## Ensure local venv has build tooling (pip, build, twine)
-build-clean: ## Remove ALL build artifact (artifact/build + temporary files)
+build-clean: ## Remove ALL build artifacts (artifacts/build + temporary files)
 clean-temp-build-files: ## (Internal) Remove temporary build files from the root directory
-build: ## Build wheel and sdist into artifact/build and clean up temporary files
-build-sdist: ## Build sdist only into artifact/build and clean up temporary files
-build-wheel: ## Build wheel only into artifact/build and clean up temporary files
-build-check: ## Run twine check on artifact/build/*
-release-dry: ## Build artifact and validate version + changelog (no upload)
+build: ## Build wheel and sdist into artifacts/build and clean up temporary files
+build-sdist: ## Build sdist only into artifacts/build and clean up temporary files
+build-wheel: ## Build wheel only into artifacts/build and clean up temporary files
+build-check: ## Run twine check on artifacts/build/*
+release-dry: ## Build artifacts and validate version + changelog (no upload)

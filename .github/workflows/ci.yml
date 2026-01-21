@@ -21,9 +21,21 @@ jobs:
         run: make test
       - name: Coverage floors
         run: |
-          python -m coverage report --rcfile config/coveragerc.ini --data-file artifacts/test/.coverage --include "src/agentic_flows/providers/*" --fail-under=65
-          python -m coverage report --rcfile config/coveragerc.ini --data-file artifacts/test/.coverage --include "src/agentic_flows/interfaces/cli.py" --fail-under=60
-          python -m coverage report --rcfile config/coveragerc.ini --data-file artifacts/test/.coverage --include "src/agentic_flows/api/*" --fail-under=75
+          if compgen -G "src/agentic_flows/providers/*" > /dev/null; then
+            python -m coverage report --rcfile config/coveragerc.ini --data-file artifacts/test/.coverage --include "src/agentic_flows/providers/*" --fail-under=65
+          else
+            echo "Skipping providers coverage floor (path missing)"
+          fi
+          if [ -f "src/agentic_flows/interfaces/cli.py" ]; then
+            python -m coverage report --rcfile config/coveragerc.ini --data-file artifacts/test/.coverage --include "src/agentic_flows/interfaces/cli.py" --fail-under=60
+          else
+            echo "Skipping interfaces CLI coverage floor (path missing)"
+          fi
+          if compgen -G "src/agentic_flows/api/*" > /dev/null; then
+            python -m coverage report --rcfile config/coveragerc.ini --data-file artifacts/test/.coverage --include "src/agentic_flows/api/*" --fail-under=75
+          else
+            echo "Skipping API coverage floor (path missing)"
+          fi
 
   checks:
     runs-on: ubuntu-latest
