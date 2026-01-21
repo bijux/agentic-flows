@@ -1,7 +1,10 @@
-# Agentic Flows
+# Agentic Flows  
 <a id="top"></a>
 
-**A deterministic, contract-first execution and replay framework** — strict invariants, reproducible runs, and traceable outputs. Build audit-ready agent workflows with stable artifacts and replayable traces.
+**A deterministic, contract-first execution and replay framework** — strict invariants, reproducible runs, and traceable outputs. Build audit-ready agent workflows with stable artifacts and replayable traces.  
+
+Non-determinism is explicitly declared, budgeted, classified, governed, and audited.
+Determinism is a policy decision, not a binary property.
 
 v1 scope covers deterministic execution, replay, and contract verification for offline workflows; it is intended for research engineers and platform teams who need audit-grade runs, and it is not for interactive chat systems, autonomous agents, or low-latency production serving.
 
@@ -234,4 +237,4 @@ This system is designed for auditability and replay, not exploratory or interact
 
 ## Publishing status
 
-Current maturity: experimental research framework with v1 contracts frozen. It is safe to rely on deterministic replay, contract validation, and published API schemas in v1. CLI output formatting and observability summaries may change without notice. Internal execution and verification APIs are not stable. Production usage should gate on strict determinism and explicit contracts.
+Current maturity: experimental research framework. v0.x carries no backward compatibility guarantees; schema compatibility is the only API guarantee. CLI output formatting and observability summaries may change without notice. Internal execution and verification APIs are not stable. Production usage should gate on strict determinism and explicit contracts.

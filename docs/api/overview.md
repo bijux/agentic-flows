@@ -2,7 +2,7 @@
 
 **Scope:** HTTP API summary.  
 **Audience:** API users.  
-**Guarantees:** API contracts are defined; implementation may be absent.  
+**Guarantees:** Schema compatibility is the only API guarantee; runtime behavior, policy interpretation, and enforcement may evolve.  
 **Non-Goals:** Authentication.  
 Why: This doc exists to record its single responsibility for review.  
 HTTP API is experimental and currently unimplemented.  

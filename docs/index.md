@@ -10,7 +10,7 @@
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-brightgreen)](https://bijux.github.io/agentic-flows/)
 [![CI Status](https://github.com/bijux/agentic-flows/actions/workflows/ci.yml/badge.svg)](https://github.com/bijux/agentic-flows/actions)
 
-> **At a glance:** deterministic execution • invariant enforcement • replayable traces • API + CLI surfaces • structured telemetry  
+> **At a glance:** deterministic execution • invariant enforcement • replayable traces • CLI surface • API schema only • structured telemetry  
 > **Quality:** coverage floors enforced per module, benchmark regression gate active, docs linted and built in CI, no telemetry.
 
 ---

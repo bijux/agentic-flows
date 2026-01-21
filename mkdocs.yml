@@ -60,6 +60,7 @@ nav:
       - non-goals: overview/non-goals.md
       - stability: overview/stability.md
       - release-checklist: overview/release-checklist.md
+      - release-notes-v0.1.0: overview/release-notes-v0.1.0.md
   - Concepts:
       - concepts: concepts/index.md
       - core_concepts: concepts/core_concepts.md
