@@ -36,6 +36,12 @@ jobs:
           else
             echo "Skipping API coverage floor (path missing)"
           fi
+      - name: Upload test artifacts
+        if: ${{ always() && hashFiles('artifacts/test/**') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-py311
+          path: artifacts/test
 
   checks:
     runs-on: ubuntu-latest
@@ -74,6 +80,18 @@ jobs:
           else
             make ${{ matrix.target }}
           fi
+      - name: Upload ${{ matrix.target }} artifacts
+        if: ${{ always() && hashFiles(format('artifacts/{0}/**', matrix.target)) != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: artifacts/${{ matrix.target }}
+      - name: Upload dist artifacts
+        if: ${{ always() && matrix.target == 'build' && hashFiles('artifacts/build/**') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: artifacts/build
 
   lint:
     runs-on: ubuntu-latest
@@ -92,3 +110,9 @@ jobs:
         run: python -m pip install -U pip && python -m pip install ".[dev]"
       - name: Lint
         run: make lint
+      - name: Upload lint artifacts
+        if: ${{ always() && hashFiles('artifacts/lint/**') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint
+          path: artifacts/lint
